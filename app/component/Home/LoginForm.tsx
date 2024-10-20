@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Checkbox, FormControlLabel } from '@mui/material';
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Typography, Link } from '@mui/material';
 
 interface LoginFormProps {
   open: boolean;
@@ -14,41 +14,74 @@ const LoginForm: React.FC<LoginFormProps> = ({ open, handleClose }) => {
       aria-labelledby="form-dialog-title"
       PaperProps={{
         style: {
-          width: '500px',
-          height: '650px',
+          width: '400px',
+          padding: '20px',
+          textAlign: 'center',
+          borderRadius: '10px',
         },
       }}
     >
-      <DialogTitle id="form-dialog-title">Đăng nhập</DialogTitle>
-      <DialogContent>
+      {/* Tiêu đề */}
+      <DialogTitle id="form-dialog-title">
+        <Typography variant="h5" style={{ fontWeight: 'bold' }}>Log in</Typography>
+      </DialogTitle>
+
+      <DialogContent style={{ textAlign: 'left' }}>
+        {/* Lời chào */}
+        <Typography variant="body1" style={{ marginBottom: '20px' }}>
+          Welcome to Britannica's Community Access Manager! Please log in to join the conversation.
+        </Typography>
+
         <TextField
           autoFocus
           margin="dense"
           id="username"
-          label="Tên đăng nhập"
+          label="Username Or Email"
           type="text"
           fullWidth
+          variant="outlined"
         />
+
         <TextField
           margin="dense"
           id="password"
-          label="Mật khẩu"
+          label="Password"
           type="password"
           fullWidth
+          variant="outlined"
+          style={{ marginBottom: '10px' }}
         />
-        <FormControlLabel
-          control={<Checkbox name="remember" />}
-          label="Ghi nhớ đăng nhập"
-        />
+
+        <Box display="flex" justifyContent="flex-end">
+          <Link href="#" variant="body2">
+            Forgot Password
+          </Link>
+        </Box>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose} color="primary">
-          Hủy
-        </Button>
-        <Button onClick={handleClose} color="primary">
-          Đăng nhập
+
+      <DialogActions style={{ justifyContent: 'center' }}>
+        <Button
+          variant="contained"
+          color="primary"
+          fullWidth
+          style={{
+            backgroundColor: '#0056b3',
+            padding: '10px 0',
+            marginBottom: '10px',
+            fontWeight: 'bold',
+            textTransform: 'none',
+          }}
+        >
+          Log in
         </Button>
       </DialogActions>
+
+      {/* Đăng ký */}
+      <Typography variant="body2" style={{ marginBottom: '10px' }}>
+        <Link href="#" style={{ fontWeight: 'bold' }}>
+          Create an Account
+        </Link>
+      </Typography>
     </Dialog>
   );
 };
