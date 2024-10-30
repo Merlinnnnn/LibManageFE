@@ -1,14 +1,26 @@
 import React, { useState } from 'react';
 import { TextField, Button, Checkbox, FormControlLabel, Link, Typography, Box, Divider, IconButton, InputAdornment } from '@mui/material';
 import { Google as GoogleIcon, Facebook as FacebookIcon, Visibility, VisibilityOff } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles'; 
+import { useTheme } from '@mui/material/styles';
+import { useAuth } from '../../component/Context/AuthContext';
 
 const LoginForm: React.FC = () => {
-  const theme = useTheme(); 
-  const [showPassword, setShowPassword] = useState(false); 
+  const theme = useTheme();
+  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { login } = useAuth();
 
   const handleTogglePassword = () => {
-    setShowPassword(!showPassword); 
+    setShowPassword(!showPassword);
+  };
+
+  const handleLogin = async () => {
+    try {
+      await login(email, password);
+    } catch (error) {
+      console.error('Login failed:', error);
+    }
   };
 
   return (
@@ -17,8 +29,8 @@ const LoginForm: React.FC = () => {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        height: '100vh', 
-        backgroundColor: theme.palette.background.default, 
+        height: '100vh',
+        backgroundColor: theme.palette.background.default,
       }}
     >
       <Box
@@ -32,7 +44,6 @@ const LoginForm: React.FC = () => {
           textAlign: 'center',
         }}
       >
-
         <Typography variant="h6" sx={{ marginBottom: '20px', fontWeight: 'bold', color: '#646cff' }}>
           Sitemark
         </Typography>
@@ -47,6 +58,8 @@ const LoginForm: React.FC = () => {
           placeholder="your@email.com"
           margin="normal"
           variant="outlined"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           InputLabelProps={{
             style: { color: theme.palette.text.primary },
           }}
@@ -58,11 +71,13 @@ const LoginForm: React.FC = () => {
           type={showPassword ? 'text' : 'password'}
           margin="normal"
           variant="outlined"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
                 <IconButton
-                  onClick={handleTogglePassword} 
+                  onClick={handleTogglePassword}
                   edge="end"
                 >
                   {showPassword ? <VisibilityOff /> : <Visibility />} {/* Đổi icon */}
@@ -97,6 +112,7 @@ const LoginForm: React.FC = () => {
             fontWeight: 'bold',
             marginTop: '10px',
           }}
+          onClick={handleLogin}
         >
           Sign in
         </Button>

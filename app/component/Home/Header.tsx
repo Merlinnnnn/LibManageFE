@@ -30,6 +30,7 @@ const Header = () => {
         width: '100%',
       }}
     >
+      
       <Toolbar>
         <Box sx={{ display: 'flex', alignItems: 'center', marginLeft: '10px', flexGrow: 1 }}>
           <Link href="/home" passHref>
