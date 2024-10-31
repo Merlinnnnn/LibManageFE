@@ -12,7 +12,7 @@ interface Book {
   isbn: string;
   author: string;
   publisher: string;
-  cover?: string;
+  documentLink: string;
 }
 
 interface ApiResponse {
@@ -54,8 +54,9 @@ const TrendingBooks: React.FC = () => {
     }
   };
 
-  const handleViewDocument = (id: string) => {
+  const handleViewDocument = (id: string, imgLink: string) => {
     setSelectedBookId(id);
+    console.log(imgLink)
   };
 
   const handleCloseDialog = () => {
@@ -74,12 +75,11 @@ const TrendingBooks: React.FC = () => {
           <BookCard 
             key={book.documentId} 
             book={book} 
-            onViewDocument={() => handleViewDocument(book.documentId.toString())} 
+            onViewDocument={() => handleViewDocument(book.documentId.toString(), book.documentLink.toString())} 
           />
         ))}
       </BookSlider>
 
-      {/* Hiển thị BookDetail dưới dạng Dialog */}
       {selectedBookId && (
         <BookDetail id={selectedBookId} open={!!selectedBookId} onClose={handleCloseDialog} />
       )}
