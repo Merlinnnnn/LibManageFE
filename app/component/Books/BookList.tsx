@@ -4,6 +4,7 @@ import { Box, Typography, Button } from '@mui/material';
 import { styled } from '@mui/system';
 import apiService from '../../untils/api';
 import BookCard from './BookCard';
+import BookDetail from './BookDetail'; // Import BookDetail component
 
 interface Book {
   documentId: number;
@@ -38,8 +39,9 @@ const BookSlider = styled(Box)({
   cursor: 'grab',
 });
 
-const BookList: React.FC = () => {
+const TrendingBooks: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
+  const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
 
   const fetchAllBooks = async () => {
     try {
@@ -52,53 +54,37 @@ const BookList: React.FC = () => {
     }
   };
 
+  const handleViewDocument = (id: string) => {
+    setSelectedBookId(id);
+  };
+
+  const handleCloseDialog = () => {
+    setSelectedBookId(null);
+  };
+
   useEffect(() => {
     fetchAllBooks();
   }, []);
 
-  // Drag functionality for horizontal scrolling
-  const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
-    const slider = e.currentTarget as HTMLDivElement & { isDown?: boolean; startX?: number; scrollLeft?: number };
-    slider.isDown = true;
-    slider.startX = e.pageX - slider.offsetLeft;
-    slider.scrollLeft = slider.scrollLeft;
-  };
-
-  const handleMouseLeave = (e: MouseEvent<HTMLDivElement>) => {
-    const slider = e.currentTarget as HTMLDivElement & { isDown?: boolean };
-    slider.isDown = false;
-  };
-
-  const handleMouseUp = (e: MouseEvent<HTMLDivElement>) => {
-    const slider = e.currentTarget as HTMLDivElement & { isDown?: boolean };
-    slider.isDown = false;
-  };
-
-  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
-    const slider = e.currentTarget as HTMLDivElement & { isDown?: boolean; startX?: number; scrollLeft?: number };
-    if (!slider.isDown) return;
-    e.preventDefault();
-    const x = e.pageX - slider.offsetLeft;
-    const walk = (x - (slider.startX || 0)) * 2; // Adjust scroll speed
-    slider.scrollLeft = (slider.scrollLeft || 0) - walk;
-  };
-
   return (
     <Container>
       <Typography variant="h4" gutterBottom>Trending Books</Typography>
-      <BookSlider
-        onMouseDown={handleMouseDown}
-        onMouseLeave={handleMouseLeave}
-        onMouseUp={handleMouseUp}
-        onMouseMove={handleMouseMove}
-      >
+      <BookSlider>
         {books.map((book) => (
-          <BookCard key={book.documentId} book={book} />
+          <BookCard 
+            key={book.documentId} 
+            book={book} 
+            onViewDocument={() => handleViewDocument(book.documentId.toString())} 
+          />
         ))}
       </BookSlider>
-      <Button variant="contained" sx={{ marginTop: '20px' }}>View More</Button>
+
+      {/* Hiển thị BookDetail dưới dạng Dialog */}
+      {selectedBookId && (
+        <BookDetail id={selectedBookId} open={!!selectedBookId} onClose={handleCloseDialog} />
+      )}
     </Container>
   );
 };
 
-export default BookList;
+export default TrendingBooks;

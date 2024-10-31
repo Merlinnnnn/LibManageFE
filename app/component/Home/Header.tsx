@@ -1,16 +1,24 @@
-import React, { useState } from 'react';
-import { AppBar, Toolbar, Button, IconButton, Box, Typography, TextField, InputAdornment, Switch } from '@mui/material';
-import LoginForm from './LoginForm';
-import Image from 'next/image';
-import Link from 'next/link';
+import React, { useState, useEffect } from 'react';
+import { AppBar, Toolbar, Button, IconButton, Box, Typography, TextField, InputAdornment, Switch, Menu, MenuItem } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import MenuIcon from '@mui/icons-material/Menu';
+import Link from 'next/link';
 import { useThemeContext } from '../Context/ThemeContext';
-import { useTheme } from '@mui/material/styles'; // Import useTheme để sử dụng màu từ theme
+import { useTheme } from '@mui/material/styles';
+import { useAuth } from '../Context/AuthContext'; 
 
 const Header = () => {
   const [open, setOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [username, setUsername] = useState<string | null>(null);
   const { toggleTheme, mode } = useThemeContext();
-  const theme = useTheme(); // Lấy màu từ theme
+  const theme = useTheme();
+  const { logout } = useAuth();
+
+  useEffect(() => {
+    const storedUsername = sessionStorage.getItem('fullname');
+    setUsername(storedUsername);
+  }, []);
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -18,6 +26,14 @@ const Header = () => {
 
   const handleClose = () => {
     setOpen(false);
+  };
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
   };
 
   return (
@@ -30,33 +46,28 @@ const Header = () => {
         width: '100%',
       }}
     >
-      
       <Toolbar>
-        <Box sx={{ display: 'flex', alignItems: 'center', marginLeft: '10px', flexGrow: 1 }}>
-          <Link href="/home" passHref>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <IconButton size="large" edge="start" color="inherit" aria-label="logo" >
-                <Image src="/logo.png" alt="Logo" width={70} height={50} />
-              </IconButton>
-              <Image src="/logo-text.png" alt="Logo" width={300} height={50} />
-            </Box>
-          </Link>
-          {/* <Typography
-            variant="h4"
-            component="div"
-            sx={{
-              marginLeft: '10px',
-              color: theme.palette.text.primary,
-              fontSize: '32px',
-              fontWeight: 'bold',
-              letterSpacing: '1px',
-              fontFamily: 'Arial, sans-serif',
-            }}
-          >
-            Public Lib
-          </Typography> */}
-        </Box>
+        {/* Icon Menu để mở menu chọn trang */}
+        <IconButton
+          size="large"
+          edge="start"
+          color="inherit"
+          aria-label="menu"
+          onClick={handleMenuOpen}
+          sx={{ marginLeft: '10px' }}
+        >
+          <MenuIcon />
+        </IconButton>
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+        >
+          <MenuItem component={Link} href="/home" onClick={handleMenuClose}>Home</MenuItem>
+          <MenuItem component={Link} href="/bookshelf" onClick={handleMenuClose}>Bookshelf</MenuItem>
+        </Menu>
 
+        {/* Thanh tìm kiếm ở giữa */}
         <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
           <TextField
             variant="outlined"
@@ -84,15 +95,27 @@ const Header = () => {
               ),
             }}
           />
-
         </Box>
 
-        <Box sx={{ display: 'flex', marginRight: '30px', gap: '20px', flexGrow: 1, justifyContent: 'flex-end' }}>
-          <Button color="primary" variant="outlined" href="/signup">Sign Up</Button>
-          <Button color="primary" variant="contained" href="/login">Sign In</Button>
+        {/* Hiển thị thông điệp chào hoặc các nút đăng nhập/đăng ký */}
+        <Box sx={{ display: 'flex', alignItems: 'center', marginRight: '30px', gap: '20px' }}>
+          {username ? (
+            <>
+              <Typography variant="body1" color="textPrimary">
+                Hello, {username}
+              </Typography>
+              <Button color="secondary" variant="outlined" onClick={logout}>
+                Logout
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button color="primary" variant="outlined" href="/signup">Sign Up</Button>
+              <Button color="primary" variant="contained" href="/login">Sign In</Button>
+            </>
+          )}
         </Box>
 
-        {/* Toggle button để chuyển đổi giữa dark và light mode */}
         <Box sx={{ marginRight: '20px' }}>
           <Typography
             variant="body1"
@@ -107,7 +130,6 @@ const Header = () => {
           <Switch checked={mode === 'dark'} onChange={toggleTheme} />
         </Box>
 
-        <LoginForm open={open} handleClose={handleClose} />
       </Toolbar>
     </AppBar>
   );

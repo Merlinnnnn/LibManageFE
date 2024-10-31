@@ -1,7 +1,8 @@
 // BookCard.tsx
-import React from 'react';
-import { Card, CardContent, Typography, Button, Box } from '@mui/material';
+import React, { useState } from 'react';
+import { Card, CardContent, Typography, Button } from '@mui/material';
 import { styled } from '@mui/system';
+import BookDetail from './BookDetail';
 
 interface Book {
   documentId: number;
@@ -11,6 +12,7 @@ interface Book {
 
 interface BookCardProps {
   book: Book;
+  onViewDocument: () => void; // Thêm thuộc tính onViewDocument vào props
 }
 
 const BookCardContainer = styled(Card)(({ theme }) => ({
@@ -57,7 +59,7 @@ const ViewDocumentButton = styled(Button)({
   },
 });
 
-const BookCard: React.FC<BookCardProps> = ({ book }) => {
+const BookCard: React.FC<BookCardProps> = ({ book, onViewDocument }) => {
   return (
     <BookCardContainer>
       <BookCover
@@ -66,7 +68,7 @@ const BookCard: React.FC<BookCardProps> = ({ book }) => {
       />
       <BookInfo>
         <BookTitle>{book.documentName}</BookTitle>
-        <ViewDocumentButton variant="contained" onClick={() => window.open(book.cover, '_blank')}>
+        <ViewDocumentButton variant="contained" onClick={onViewDocument}>
           View Document
         </ViewDocumentButton>
       </BookInfo>

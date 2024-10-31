@@ -1,8 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-
 import apiService from '../../untils/api';
 import { useRouter } from 'next/navigation';
+import {jwtDecode} from 'jwt-decode';  // Import thư viện jwt-decode
 
+// Định nghĩa interface cho response của API
+interface LoginResponse {
+  code: number;
+  result: {
+    authenticated: boolean;
+    token: string;
+  };
+}
 
 interface AuthContextType {
   token: string | null;
@@ -17,7 +25,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
 
   useEffect(() => {
-
     const savedToken = sessionStorage.getItem('access_token');
     if (savedToken) {
       setToken(savedToken);
@@ -26,13 +33,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = async (username: string, password: string) => {
     try {
-      const response = await apiService.post<{ token: string }>('/api/v1/auth/login', {
+      const response = await apiService.post<LoginResponse>('/api/v1/auth/login', {
         username,
         password,
       });
-      const authToken = response.data.token;
+
+      const authToken = response.data.result.token;
+
+      const decodedToken: any = jwtDecode(authToken);
+      const fullName = decodedToken.fullName;
 
       sessionStorage.setItem('access_token', authToken);
+      sessionStorage.setItem('fullname', fullName);
       setToken(authToken);
 
       router.push('/home');
@@ -42,12 +54,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const logout = () => {
-    // Xóa token khỏi sessionStorage và cập nhật state
-    sessionStorage.removeItem('access_token');
-    setToken(null);
-    // Chuyển hướng người dùng đến trang đăng nhập
-    router.push('/login');
+  const logout = async () => {
+    try {
+      await apiService.post('/api/v1/auth/logout', token);
+
+      sessionStorage.removeItem('access_token');
+      sessionStorage.removeItem('fullname');
+      setToken(null);
+
+      router.push('/login');
+    } catch (error) {
+      console.error('Đăng xuất thất bại:', error);
+      alert('Đăng xuất thất bại. Vui lòng thử lại.');
+    }
   };
 
   return (
