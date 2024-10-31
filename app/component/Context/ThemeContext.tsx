@@ -1,4 +1,4 @@
-import React, { createContext, useState, useMemo, useContext } from 'react';
+import React, { createContext, useState, useMemo, useContext, useEffect } from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 
@@ -21,7 +21,7 @@ export const CustomThemeProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const toggleTheme = () => {
         setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
     };
-
+    
     const theme = useMemo(
         () =>
             createTheme({
@@ -50,7 +50,10 @@ export const CustomThemeProvider: React.FC<{ children: React.ReactNode }> = ({ c
             }),
         [mode]
     );
+    useEffect(() => {
 
+        document.documentElement.setAttribute('data-theme', mode);
+      }, [mode]);
     return (
         <ThemeContext.Provider value={{ toggleTheme, mode }}>
             <ThemeProvider theme={theme}>

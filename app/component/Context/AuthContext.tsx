@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -24,10 +24,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (username: string, password: string) => {
     try {
       const response = await apiService.post<{ token: string }>('/api/v1/auth/login', {
-        email,
+        username,
         password,
       });
       const authToken = response.data.token;
