@@ -65,9 +65,9 @@ const Header = () => {
         >
           <MenuItem component={Link} href="/home" onClick={handleMenuClose}>Home</MenuItem>
           <MenuItem component={Link} href="/bookshelf" onClick={handleMenuClose}>Bookshelf</MenuItem>
+          <MenuItem component={Link} href="/bookfavo" onClick={handleMenuClose}>Favorite</MenuItem>
         </Menu>
 
-        {/* Thanh tìm kiếm ở giữa */}
         <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
           <TextField
             variant="outlined"
@@ -97,7 +97,6 @@ const Header = () => {
           />
         </Box>
 
-        {/* Hiển thị thông điệp chào hoặc các nút đăng nhập/đăng ký */}
         <Box sx={{ display: 'flex', alignItems: 'center', marginRight: '30px', gap: '20px' }}>
           {username ? (
             <>
