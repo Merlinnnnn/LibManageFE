@@ -38,6 +38,9 @@ class ApiService {
     delete<T>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
         return this.api.delete<T>(url, config);
     }
+    patch<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+        return this.api.patch<T>(url, data, config);
+    }
 }
 
 const apiService = new ApiService('http://localhost:8009');

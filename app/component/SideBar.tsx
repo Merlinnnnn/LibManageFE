@@ -30,18 +30,18 @@ const Sidebar: React.FC = () => {
                 </ListItemButton>
                 <Collapse in={openInventory} timeout="auto" unmountOnExit>
                     <List component="div" disablePadding>
-                        <ListItemButton sx={{ paddingLeft: 4 }} onClick={() => {}}>
-                            <ListItemText primary="Books Management" />
+                        <ListItemButton sx={{ paddingLeft: 4 }} href='/addbook'>
+                            <ListItemText primary="Add Book" />
                         </ListItemButton>
-                        <ListItemButton sx={{ paddingLeft: 4 }} onClick={() => {}}>
-                            <ListItemText primary="Students" />
+                        <ListItemButton sx={{ paddingLeft: 4 }} onClick={() => {}} >
+                            <ListItemText primary="Books Management" />
                         </ListItemButton>
                     </List>
                 </Collapse>
 
                 <ListItemButton onClick={handleBusinessClick}>
                     <ListItemIcon><Money /></ListItemIcon>
-                    <ListItemText primary="Business" />
+                    <ListItemText primary="Manager" />
                     {openBusiness ? <ExpandLess /> : <ExpandMore />}
                 </ListItemButton>
                 <Collapse in={openBusiness} timeout="auto" unmountOnExit>
