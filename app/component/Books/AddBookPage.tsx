@@ -33,11 +33,20 @@ interface Book {
     documentTypeIds: number[];
     warehouseId: number;
 }
-
 interface DocumentType {
-    id: number;
-    name: string;
+    documentTypeId: number;
+    typeName: string;
 }
+
+
+interface DocumentTypeRes {
+    code: number;
+    message: string;
+    result: {
+        content: DocumentType[]
+    };
+}
+
 
 const AddBookPage: React.FC = () => {
     const [book, setBook] = useState<Book>({
@@ -71,10 +80,12 @@ const AddBookPage: React.FC = () => {
 
     const fetchDocumentTypes = async () => {
         try {
-            const response = await apiService.get<{ result: DocumentType[] }>('/api/v1/document-types');
-            setDocumentTypes(response.data.result);
+            const response = await apiService.get<DocumentTypeRes>('/api/v1/document-types');
+            setDocumentTypes(response.data.result.content || []);
+            console.log(response);
         } catch (error) {
             console.error('Error fetching document types:', error);
+            setDocumentTypes([]);
         }
     };
 
@@ -101,8 +112,9 @@ const AddBookPage: React.FC = () => {
 
     const handleAddBook = async () => {
         try {
-            const response = await apiService.post('/api/v1/documents', { ...book, documentTypeIds: selectedTags });
-            console.log('Book added successfully:', response.data);
+            //const response = await apiService.post('/api/v1/documents', { ...book, documentTypeIds: selectedTags });
+            const payload = {...book, documentTypeIds : selectedTags.map((tag) => parseInt(tag.toString(), 10))};
+            console.log('Book added successfully:', payload);
             alert('Book added successfully!');
 
         } catch (error) {
@@ -209,14 +221,14 @@ const AddBookPage: React.FC = () => {
                     <Box mt={3}>
                         <Typography variant="h6">Select Tags</Typography>
                         <Box mt={1} display="flex" flexWrap="wrap" gap={1}>
-                            {documentTypes.map((tag) => (
+                            {(Array.isArray(documentTypes) ? documentTypes : []).map((tag) => (
                                 <Chip
-                                    key={tag.id}
-                                    label={tag.name}
+                                    key={tag.documentTypeId}
+                                    label={tag.typeName}
                                     clickable
-                                    color={selectedTags.includes(tag.id) ? 'primary' : 'default'}
-                                    onClick={() => handleTagToggle(tag.id)}
-                                    onDelete={selectedTags.includes(tag.id) ? () => handleTagToggle(tag.id) : undefined}
+                                    color={selectedTags.includes(tag.documentTypeId) ? 'primary' : 'default'}
+                                    onClick={() => handleTagToggle(tag.documentTypeId)}
+                                    onDelete={selectedTags.includes(tag.documentTypeId) ? () => handleTagToggle(tag.documentTypeId) : undefined}
                                 />
                             ))}
                         </Box>

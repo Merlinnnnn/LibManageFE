@@ -1,5 +1,5 @@
 // Sidebar.tsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { List, ListItem, ListItemIcon, ListItemText, Collapse, ListItemButton, Box, Typography, IconButton } from '@mui/material';
 import { Dashboard, Book, Money, ExitToApp, Notifications } from '@mui/icons-material';
 import BookIcon from '@mui/icons-material/Book';
@@ -9,8 +9,14 @@ import { ExpandLess, ExpandMore } from '@mui/icons-material';
 const Sidebar: React.FC = () => {
     const [openInventory, setOpenInventory] = useState(false);
     const [openBusiness, setOpenBusiness] = useState(false);
+    const [fullName, setFullName] = useState("")
 
-    const fullname = sessionStorage.getItem('fullname') || 'noname';
+    useEffect(() => {
+        const storedFullname = sessionStorage.getItem('fullname');
+        if (storedFullname) {
+            setFullName(storedFullname);
+        }
+    }, []);
 
     const handleInventoryClick = () => setOpenInventory(!openInventory);
     const handleBusinessClick = () => setOpenBusiness(!openBusiness);
@@ -63,7 +69,7 @@ const Sidebar: React.FC = () => {
 
             <Box display="flex" alignItems="center" justifyContent="space-between" p={2} bgcolor="#333" color="white">
                 <Typography variant="body1">
-                    {fullname}
+                    {fullName==="" ? 'no name': fullName}
                 </Typography>
                 <IconButton color="inherit" onClick={() => {  }}>
                     <Notifications />
