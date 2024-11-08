@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Grid, Box, Pagination, CircularProgress, Typography } from '@mui/material';
+import { Grid, Box, Pagination, CircularProgress, Typography, Drawer } from '@mui/material';
 import BookCard from './BookCard';
 import apiService from '../../untils/api';
 import Header from '../Home/Header';
+import Sidebar from '../SideBar';
 
 interface Book {
     documentId: number;
@@ -70,41 +71,45 @@ export default function BookShelf() {
     };
 
     return (
-        <Box sx={{ padding: '20px' }}>
-            <Header />
+        <Box display="flex" flexDirection="row" sx={{ height: '100vh' }}>
+            
+            <Sidebar/>
 
-            {loading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
-                    <CircularProgress />
-                </Box>
-            ) : books.length > 0 ? (
-                <>
-                    <Grid container spacing={2} justifyContent="center" sx={{marginTop: '20px'}}>
-                        {books.map((book) => (
-                            <Grid item key={book.documentId}>
-                                <BookCard
-                                    book={book}
-                                    onViewDocument={() => {
-                                        console.log(`Viewing document ID: ${book.documentId}`);
-                                    }}
-                                />
-                            </Grid>
-                        ))}
-                    </Grid>
-                    <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-                        <Pagination
-                            count={totalPages}
-                            page={currentPage + 1} // Chuyển đổi `currentPage` từ backend để phù hợp với Pagination (bắt đầu từ 1)
-                            onChange={handlePageChange}
-                            color="primary"
-                        />
+            {/* Nội dung chính hiển thị danh sách sách */}
+            <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+                {loading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
+                        <CircularProgress />
                     </Box>
-                </>
-            ) : (
-                <Typography variant="h6" align="center" sx={{ marginTop: '20px' }}>
-                    No data be find.
-                </Typography>
-            )}
+                ) : books.length > 0 ? (
+                    <>
+                        <Grid container spacing={2} justifyContent="center" sx={{ marginTop: '20px' }}>
+                            {books.map((book) => (
+                                <Grid item key={book.documentId}>
+                                    <BookCard
+                                        book={book}
+                                        onViewDocument={() => {
+                                            console.log(`Viewing document ID: ${book.documentId}`);
+                                        }}
+                                    />
+                                </Grid>
+                            ))}
+                        </Grid>
+                        <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
+                            <Pagination
+                                count={totalPages}
+                                page={currentPage + 1} // Chuyển đổi `currentPage` từ backend để phù hợp với Pagination (bắt đầu từ 1)
+                                onChange={handlePageChange}
+                                color="primary"
+                            />
+                        </Box>
+                    </>
+                ) : (
+                    <Typography variant="h6" align="center" sx={{ marginTop: '20px' }}>
+                        No data be find.
+                    </Typography>
+                )}
+            </Box>
         </Box>
     );
 }

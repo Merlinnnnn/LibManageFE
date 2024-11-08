@@ -113,7 +113,7 @@ const AddBookPage: React.FC = () => {
     const handleAddBook = async () => {
         try {
             //const response = await apiService.post('/api/v1/documents', { ...book, documentTypeIds: selectedTags });
-            const payload = {...book, documentTypeIds : selectedTags.map((tag) => parseInt(tag.toString(), 10))};
+            const payload = { ...book, documentTypeIds: selectedTags.map((tag) => parseInt(tag.toString(), 10)) };
             console.log('Book added successfully:', payload);
             alert('Book added successfully!');
 
@@ -125,14 +125,10 @@ const AddBookPage: React.FC = () => {
 
     return (
         <Box display="flex">
-            {/* Sidebar */}
-            <Drawer variant="permanent" sx={{ width: 240 }}>
-                <Sidebar />
-            </Drawer>
-
+            <Sidebar />
             {/* Main Content */}
             <Box flex={1} display="flex" justifyContent="center" p={3}>
-                <Paper sx={{ padding: 3, maxWidth: 800 }}>
+                <Paper sx={{ padding: 3, maxWidth: 1200 }}>
                     <Typography variant="h4" align="center" gutterBottom>
                         Add New Book
                     </Typography>

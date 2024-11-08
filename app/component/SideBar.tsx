@@ -1,15 +1,39 @@
-// Sidebar.tsx
 import React, { useEffect, useState } from 'react';
-import { List, ListItem, ListItemIcon, ListItemText, Collapse, ListItemButton, Box, Typography, IconButton } from '@mui/material';
-import { Dashboard, Book, Money, ExitToApp, Notifications } from '@mui/icons-material';
-import BookIcon from '@mui/icons-material/Book';
+import {
+    List,
+    ListItemButton,
+    ListItemIcon,
+    ListItemText,
+    Collapse,
+    Box,
+    Typography,
+    IconButton,
+    Drawer
+} from '@mui/material';
+import {
+    Dashboard,
+    Money,
+    ExitToApp,
+    Notifications,
+    ExpandLess,
+    ExpandMore,
+    Menu as MenuIcon
+} from '@mui/icons-material';
+import AddIcon from '@mui/icons-material/Add';
 import AutoStoriesIcon from '@mui/icons-material/AutoStories';
-import { ExpandLess, ExpandMore } from '@mui/icons-material';
+
+import { useAuth } from './Context/AuthContext';
 
 const Sidebar: React.FC = () => {
     const [openInventory, setOpenInventory] = useState(false);
     const [openBusiness, setOpenBusiness] = useState(false);
-    const [fullName, setFullName] = useState("")
+    const [isExpanded, setIsExpanded] = useState(true);
+    const [selectedIndex, setSelectedIndex] = useState<number>(() => {
+        return parseInt(sessionStorage.getItem("selectedIndex") ?? "0");
+    });
+    const [fullName, setFullName] = useState("");
+
+    const { logout } = useAuth(); 
 
     useEffect(() => {
         const storedFullname = sessionStorage.getItem('fullname');
@@ -17,65 +41,255 @@ const Sidebar: React.FC = () => {
             setFullName(storedFullname);
         }
     }, []);
+    useEffect(() => {
+        sessionStorage.setItem("selectedIndex", selectedIndex.toString());
+    }, [selectedIndex]);
+    const handleListItemClick = (index: number, path: string) => {
+        setSelectedIndex(index);
+    };
+
+    const handleToggleSidebar = () => {
+        setIsExpanded(!isExpanded);
+    };
 
     const handleInventoryClick = () => setOpenInventory(!openInventory);
     const handleBusinessClick = () => setOpenBusiness(!openBusiness);
 
+    const handleLogoutClick = () => {
+        logout(); 
+    };
+
+    const menuItems = [
+        {
+            text: "Dashboard",
+            icon: <Dashboard />,
+            path: "/dashboard"
+        },
+        {
+            text: "Inventory",
+            icon: <AutoStoriesIcon />,
+            path: "",
+            subItems: [
+                {
+                    text: "Add Book",
+                    icon: <AddIcon />,
+                    path: "/addbook"
+                },
+                {
+                    text: "Books Management",
+                    icon: <AddIcon />,
+                    path: "/book-manage"
+                }
+            ]
+        },
+        {
+            text: "Manager",
+            icon: <Money />,
+            path: "",
+            subItems: [
+                {
+                    text: "Books Loan",
+                    icon: <AddIcon />,
+                    path: "/loan-manager"
+                },
+                {
+                    text: "Subscription",
+                    icon: <AddIcon />,
+                    path: "/subscription"
+                }
+            ]
+        },
+        {
+            text: "Logout",
+            icon: <ExitToApp />,
+            path: "/logout"
+        }
+    ];
+
     return (
-        <Box display="flex" flexDirection="column" height="100vh">
-            <List component="nav" sx={{ flexGrow: 1 }}>
-                <ListItemButton onClick={() => {}}>
-                    <ListItemIcon><Dashboard /></ListItemIcon>
-                    <ListItemText primary="Dashboard" />
-                </ListItemButton>
-
-                <ListItemButton onClick={handleInventoryClick}>
-                    <ListItemIcon><AutoStoriesIcon /></ListItemIcon>
-                    <ListItemText primary="Inventory" />
-                    {openInventory ? <ExpandLess /> : <ExpandMore />}
-                </ListItemButton>
-                <Collapse in={openInventory} timeout="auto" unmountOnExit>
-                    <List component="div" disablePadding>
-                        <ListItemButton sx={{ paddingLeft: 4 }} href='/addbook'>
-                            <ListItemText primary="Add Book" />
-                        </ListItemButton>
-                        <ListItemButton sx={{ paddingLeft: 4 }} onClick={() => {}} >
-                            <ListItemText primary="Books Management" />
-                        </ListItemButton>
-                    </List>
-                </Collapse>
-
-                <ListItemButton onClick={handleBusinessClick}>
-                    <ListItemIcon><Money /></ListItemIcon>
-                    <ListItemText primary="Manager" />
-                    {openBusiness ? <ExpandLess /> : <ExpandMore />}
-                </ListItemButton>
-                <Collapse in={openBusiness} timeout="auto" unmountOnExit>
-                    <List component="div" disablePadding>
-                        <ListItemButton sx={{ paddingLeft: 4 }} onClick={() => {}}>
-                            <ListItemText primary="Books Loan" />
-                        </ListItemButton>
-                        <ListItemButton sx={{ paddingLeft: 4 }} onClick={() => {}}>
-                            <ListItemText primary="Subscription" />
-                        </ListItemButton>
-                    </List>
-                </Collapse>
-
-                <ListItemButton onClick={() => {}}>
-                    <ListItemIcon><ExitToApp /></ListItemIcon>
-                    <ListItemText primary="Logout" />
-                </ListItemButton>
-            </List>
-
-            <Box display="flex" alignItems="center" justifyContent="space-between" p={2} bgcolor="#333" color="white">
-                <Typography variant="body1">
-                    {fullName==="" ? 'no name': fullName}
-                </Typography>
-                <IconButton color="inherit" onClick={() => {  }}>
-                    <Notifications />
+        <Drawer
+            variant="permanent"
+            open={isExpanded}
+            sx={{
+                zIndex: 1000,
+                width: isExpanded ? 240 : 60,
+                transition: "width 0.3s",
+                "& .MuiDrawer-paper": {
+                    width: isExpanded ? 240 : 60,
+                    overflowX: "hidden",
+                    boxSizing: 'border-box',
+                    backgroundColor: "#fff",
+                },
+            }}
+        >
+            <Box
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "10px",
+                    height: "65px",
+                    backgroundColor: "#fff",
+                }}
+            >
+                {isExpanded && (
+                    <Typography variant="h6" sx={{ ml: 1 }}>
+                        {fullName === "" ? 'No Name' : fullName}
+                    </Typography>
+                )}
+                <IconButton
+                    edge="start"
+                    aria-label="menu"
+                    onClick={handleToggleSidebar}
+                    sx={{ justifyContent: isExpanded ? "flex-start" : "center", margin: isExpanded ? 0 : "auto" }}
+                >
+                    <MenuIcon />
                 </IconButton>
             </Box>
-        </Box>
+
+            <List sx={{ padding: "0 10px" }}>
+                {menuItems.map((item, index) => (
+                    item.text === "Logout" ? (
+                        <ListItemButton
+                            key={item.text}
+                            onClick={handleLogoutClick} // Gọi handleLogoutClick khi nhấn vào Logout
+                            sx={{
+                                backgroundColor: selectedIndex === index ? "#204A9C" : "transparent",
+                                color: selectedIndex === index ? "white" : "inherit",
+                                borderRadius: "8px",
+                                margin: "5px 0 0 0",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: isExpanded ? "flex-start" : "center",
+                                "&:hover": {
+                                    backgroundColor: selectedIndex === index ? "#204A9C" : "#e0e0e0",
+                                },
+                            }}
+                        >
+                            <ListItemIcon
+                                sx={{
+                                    color: selectedIndex === index ? "white" : "inherit",
+                                    minWidth: 40,
+                                    justifyContent: "center",
+                                }}
+                            >
+                                {item.icon}
+                            </ListItemIcon>
+                            {isExpanded && (
+                                <ListItemText primary={item.text} />
+                            )}
+                        </ListItemButton>
+                    ) : (
+                        item.subItems ? (
+                            <div key={item.text}>
+                                <ListItemButton
+                                    onClick={() => {
+                                        setSelectedIndex(index);
+                                        item.text === "Inventory" ? handleInventoryClick() : handleBusinessClick();
+                                    }}
+                                    sx={{
+                                        backgroundColor: selectedIndex === index ? "#204A9C" : "transparent",
+                                        color: selectedIndex === index ? "white" : "inherit",
+                                        borderRadius: "8px",
+                                        margin: "5px 0 0 0",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: isExpanded ? "flex-start" : "center",
+                                        "&:hover": {
+                                            backgroundColor: selectedIndex === index ? "#204A9C" : "#e0e0e0",
+                                        },
+                                    }}
+                                >
+                                    <ListItemIcon
+                                        sx={{
+                                            color: selectedIndex === index ? "white" : "inherit",
+                                            minWidth: 40,
+                                            justifyContent: "center",
+                                        }}
+                                    >
+                                        {item.icon}
+                                    </ListItemIcon>
+                                    {isExpanded && (
+                                        <ListItemText primary={item.text} />
+                                    )}
+                                    {isExpanded && (
+                                        index === 1 ? (openInventory ? <ExpandLess /> : <ExpandMore />) :
+                                        (openBusiness ? <ExpandLess /> : <ExpandMore />)
+                                    )}
+                                </ListItemButton>
+                                <Collapse in={openInventory && index === 1 || openBusiness && index === 2} timeout="auto" unmountOnExit>
+                                    <List component="div" disablePadding>
+                                        {item.subItems.map((subItem) => (
+                                            <ListItemButton
+                                                key={subItem.text}
+                                                component="a"
+                                                href={subItem.path}
+                                                sx={{
+                                                    paddingLeft: isExpanded ? 4 : 0,
+                                                    backgroundColor: "transparent",
+                                                    color: "inherit",
+                                                    "&:hover": {
+                                                        backgroundColor: "#e0e0e0",
+                                                    },
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                }}
+                                            >
+                                                <ListItemIcon
+                                                    sx={{
+                                                        color: "inherit",
+                                                        minWidth: isExpanded ? 40 : 24,
+                                                        justifyContent: "center",
+                                                    }}
+                                                >
+                                                    {subItem.icon}
+                                                </ListItemIcon>
+                                                {isExpanded && (
+                                                    <ListItemText primary={subItem.text} />
+                                                )}
+                                            </ListItemButton>
+                                        ))}
+                                    </List>
+                                </Collapse>
+                            </div>
+                        ) : (
+                            <ListItemButton
+                                key={item.text}
+                                onClick={() => handleListItemClick(index, item.path)}
+                                component="a"
+                                href={item.path}
+                                sx={{
+                                    backgroundColor: selectedIndex === index ? "#204A9C" : "transparent",
+                                    color: selectedIndex === index ? "white" : "inherit",
+                                    borderRadius: "8px",
+                                    margin: "5px 0 0 0",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: isExpanded ? "flex-start" : "center",
+                                    "&:hover": {
+                                        backgroundColor: selectedIndex === index ? "#204A9C" : "#e0e0e0",
+                                    },
+                                }}
+                            >
+                                <ListItemIcon
+                                    sx={{
+                                        color: selectedIndex === index ? "white" : "inherit",
+                                        minWidth: 40,
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    {item.icon}
+                                </ListItemIcon>
+                                {isExpanded && (
+                                    <ListItemText primary={item.text} />
+                                )}
+                            </ListItemButton>
+                        )
+                    )
+                ))}
+            </List>
+        </Drawer>
     );
 };
 
