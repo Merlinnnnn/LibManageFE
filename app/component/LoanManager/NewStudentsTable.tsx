@@ -11,12 +11,19 @@ import {
     IconButton,
     Box,
     TablePagination,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    TextField,
+    Button
 } from '@mui/material';
 import apiService from '../../untils/api';
 import EmailIcon from '@mui/icons-material/Email';
 
 interface User {
-    id: string;
+    userId: string;
     firstName: string;
     lastName: string;
     username: string;
@@ -29,6 +36,10 @@ const NewStudentsTable: React.FC = () => {
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [openDialog, setOpenDialog] = useState(false);
+    const [dialogUserId, setDialogUserId] = useState<string | null>(null);
+    const [notificationTitle, setNotificationTitle] = useState("");
+    const [notificationContent, setNotificationContent] = useState("");
 
     useEffect(() => {
         fetchStudents();
@@ -38,6 +49,7 @@ const NewStudentsTable: React.FC = () => {
         try {
             const response = await apiService.get<{ result: { content: User[] } }>('/api/v1/users');
             setStudents(response.data.result.content);
+            console.log("ds student", response.data.result.content)
         } catch (error) {
             console.error("Lỗi khi gọi API danh sách sinh viên:", error);
         }
@@ -45,7 +57,7 @@ const NewStudentsTable: React.FC = () => {
 
     const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.checked) {
-            setSelectedUsers(students.map((student) => student.id));
+            setSelectedUsers(students.map((student) => student.userId));
         } else {
             setSelectedUsers([]);
         }
@@ -59,8 +71,33 @@ const NewStudentsTable: React.FC = () => {
         }
     };
 
-    const handleSendEmail = (userId: string) => {
-        console.log(`Gửi email cho user với ID: ${userId}`);
+    const handleOpenDialog = (userId: string) => {
+        setDialogUserId(userId);
+        setOpenDialog(true);
+    };
+
+    const handleCloseDialog = () => {
+        setOpenDialog(false);
+        setDialogUserId(null);
+        setNotificationTitle("");
+        setNotificationContent("");
+    };
+
+    const handleSendNotification = async () => {
+        if (dialogUserId) {
+            const payload = {
+                "userIds": [dialogUserId],
+                "title": notificationTitle,
+                "content": notificationContent
+            };
+            try {
+                const response = await apiService.post(`/api/v1/notifications`, payload);
+                console.log(response);
+                handleCloseDialog();
+            } catch (error) {
+                console.error("Lỗi khi gửi thông báo:", error);
+            }
+        }
     };
 
     const handleChangePage = (event: unknown, newPage: number) => {
@@ -97,11 +134,11 @@ const NewStudentsTable: React.FC = () => {
                     </TableHead>
                     <TableBody>
                         {students.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((student) => (
-                            <TableRow key={student.id}>
+                            <TableRow key={student.userId}>
                                 <TableCell padding="checkbox" style={{ padding: '4px 8px' }}>
                                     <Checkbox
-                                        checked={selectedUsers.includes(student.id)}
-                                        onChange={() => handleSelectUser(student.id)}
+                                        checked={selectedUsers.includes(student.userId)}
+                                        onChange={() => handleSelectUser(student.userId)}
                                     />
                                 </TableCell>
                                 <TableCell style={{ padding: '4px 8px' }}>{student.firstName}</TableCell>
@@ -110,7 +147,7 @@ const NewStudentsTable: React.FC = () => {
                                 <TableCell style={{ padding: '4px 8px' }}>{student.address}</TableCell>
                                 <TableCell style={{ padding: '4px 8px' }}>{student.isActive ? 'Yes' : 'No'}</TableCell>
                                 <TableCell style={{ padding: '4px 8px' }}>
-                                    <IconButton color="primary" onClick={() => handleSendEmail(student.id)}>
+                                    <IconButton color="primary" onClick={() => handleOpenDialog(student.userId)}>
                                         <EmailIcon />
                                     </IconButton>
                                 </TableCell>
@@ -128,6 +165,43 @@ const NewStudentsTable: React.FC = () => {
                 onRowsPerPageChange={handleChangeRowsPerPage}
                 rowsPerPageOptions={[5, 10, 25]}
             />
+
+            {/* Dialog for Sending Notification */}
+            <Dialog open={openDialog} onClose={handleCloseDialog}>
+                <DialogTitle>Send Notification</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Please enter the title and content of the notification you want to send.
+                    </DialogContentText>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        label="Title"
+                        type="text"
+                        fullWidth
+                        value={notificationTitle}
+                        onChange={(e) => setNotificationTitle(e.target.value)}
+                    />
+                    <TextField
+                        margin="dense"
+                        label="Content"
+                        type="text"
+                        fullWidth
+                        multiline
+                        rows={4}
+                        value={notificationContent}
+                        onChange={(e) => setNotificationContent(e.target.value)}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseDialog} color="primary">
+                        Cancel
+                    </Button>
+                    <Button onClick={handleSendNotification} color="primary">
+                        Send
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };

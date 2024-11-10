@@ -15,9 +15,11 @@ interface GenericApiResponse<T> {
     result: T;
     message?: string;
 }
-interface IsFavoRes {
-    code: number;
-    result: boolean;
+
+interface DocumentType {
+    documentTypeId: number;
+    typeName: string;
+    description: string;
 }
 
 interface Book {
@@ -36,7 +38,7 @@ interface Book {
     status: string;
     description: string;
     documentLink: string;
-    documentTypeName: string;
+    documentTypes: DocumentType[];  // Cập nhật để lưu danh sách loại sách
 }
 
 const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
@@ -51,6 +53,7 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
                 const response = await apiService.get<GenericApiResponse<Book>>(`/api/v1/documents/${id}`);
                 if (response.data.code === 1000) {
                     setBook(response.data.result);
+                    console.log(response.data.result);
                 } else {
                     console.error('Error fetching book details:', response.data.message);
                 }
@@ -61,23 +64,23 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
 
         const fetchIsFavorite = async () => {
             try {
-                const response = await apiService.get<IsFavoRes>(`/api/v1/documents/${id}/is-favorite`);
+                const response = await apiService.get<GenericApiResponse<boolean>>(`/api/v1/documents/${id}/is-favorite`);
                 if (response.status === 200) {
-                    setIsFavorite(response.data.result);
-                } else {
+                    console.log('fetch is favo', response);
+                    setIsFavorite(response.data.result); 
                     console.error('Error fetching favorite status');
                 }
             } catch (error) {
                 console.error('Error fetching favorite status:', error);
             }
         };
-
+        
         const fetchIsBorrowed = async () => {
             try {
-                const response = await apiService.get<IsFavoRes>(`/api/v1/loan-transactions/check-user-borrowing/${id}`);
+                const response = await apiService.get<GenericApiResponse<boolean>>(`/api/v1/loan-transactions/user/check-user-borrowing/${id}`);
                 if (response.status === 200) {
-                    console.log(response.data.result);
-                    setIsBorrowed(response.data.result);
+                    console.log('fetch is borrow', response);
+                    setIsBorrowed(response.data.result); 
                 } else {
                     console.error('Error fetching borrowed status');
                 }
@@ -85,6 +88,7 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
                 console.error('Error fetching borrowed status:', error);
             }
         };
+        
 
         if (open) {
             fetchBookDetails();
@@ -103,7 +107,6 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
             }
 
             if (response.status === 200) {
-                console.log("Updated favorite status successfully");
                 setIsFavorite(!isFavorite);
             } else {
                 console.error('Error updating favorite status');
@@ -124,8 +127,7 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
             });
 
             if (response.status === 200) {
-                console.log("Loan request successful");
-                setIsBorrowed(true); // Cập nhật trạng thái mượn sách thành công
+                setIsBorrowed(true); 
             } else {
                 console.error('Error requesting loan');
             }
@@ -146,9 +148,7 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
 
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-            <DialogTitle>
-                {book.documentName}
-            </DialogTitle>
+            <DialogTitle>{book.documentName}</DialogTitle>
             <DialogContent>
                 <Box display="flex" alignItems="flex-start">
                     {/* Ảnh bìa sách */}
@@ -158,10 +158,12 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
                             alt="cover"
                             style={{ width: '100%', height: '300px', objectFit: 'cover', borderRadius: '4px' }}
                         />
-                        <Box display="flex" gap={1} marginTop={1}>
-                            <Chip label={book.documentTypeName} />
+                        {/* <Box display="flex" gap={1} marginTop={1} flexWrap="wrap">
+                            {book.documentTypes.map((type) => (
+                                <Chip key={type.documentTypeId} label={type.typeName} />
+                            ))}
                             <Chip label={book.status} color="primary" />
-                        </Box>
+                        </Box> */}
                     </Box>
 
                     {/* Thông tin sách */}
@@ -180,11 +182,14 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
                             <Typography variant="body2">Language: {book.language || 'N/A'}</Typography>
                             <Typography variant="body2">Available: {book.availableCount} copies</Typography>
                         </Box>
+                        <Box display="flex" gap={1} marginTop={1} flexWrap="wrap">
+                            {book.documentTypes.map((type) => (
+                                <Chip key={type.documentTypeId} label={type.typeName} />
+                            ))}
+                            <Chip label={book.status} color="primary" />
+                        </Box>
                         <Box display="flex" alignItems="center" gap={2} marginTop={2}>
-                            <IconButton
-                                aria-label="favorite"
-                                onClick={handleAddFavo}
-                            >
+                            <IconButton aria-label="favorite" onClick={handleAddFavo}>
                                 {isFavorite ? (
                                     <FavoriteIcon sx={{ color: 'red' }} />
                                 ) : (

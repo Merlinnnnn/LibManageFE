@@ -3,6 +3,7 @@ import { Grid, Box, Pagination, CircularProgress, Typography } from '@mui/materi
 import BookCard from './BookCard';
 import apiService from '../../untils/api';
 import Header from '../Home/Header';
+import BookDetail from './BookDetail';
 
 interface Book {
     documentId: number;
@@ -11,6 +12,7 @@ interface Book {
     author?: string;
     publisher?: string;
     isbn?: string;
+    documentLink: string;
 }
 
 interface BooksApiResponse {
@@ -31,7 +33,7 @@ export default function BookShelf() {
     const [currentPage, setCurrentPage] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(false);
-
+    const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
     const booksPerPage = 20;
 
     useEffect(() => {
@@ -62,12 +64,17 @@ export default function BookShelf() {
 
         fetchBooks();
     }, [currentPage]);
+    const handleViewDocument = (id: string, imgLink: string) => {
+        setSelectedBookId(id);
+        console.log(imgLink);
+    };
 
-    // Khi người dùng chuyển trang trên giao diện
     const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
-        // Pagination của Material UI bắt đầu từ 1, cần điều chỉnh thành 0 để phù hợp với backend
         setCurrentPage(value - 1);
     };
+    const handleCloseDialog = () => {
+        setSelectedBookId(null);
+      };
 
     return (
         <Box sx={{ padding: '20px' }}>
@@ -79,14 +86,12 @@ export default function BookShelf() {
                 </Box>
             ) : books.length > 0 ? (
                 <>
-                    <Grid container spacing={2} justifyContent="center" sx={{marginTop: '20px'}}>
+                    <Grid container spacing={2} justifyContent="center" sx={{ marginTop: '20px' }}>
                         {books.map((book) => (
                             <Grid item key={book.documentId}>
                                 <BookCard
                                     book={book}
-                                    onViewDocument={() => {
-                                        console.log(`Viewing document ID: ${book.documentId}`);
-                                    }}
+                                    onViewDocument={() => handleViewDocument(book.documentId.toString(), book.documentLink)}
                                 />
                             </Grid>
                         ))}
@@ -94,7 +99,7 @@ export default function BookShelf() {
                     <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
                         <Pagination
                             count={totalPages}
-                            page={currentPage + 1} // Chuyển đổi `currentPage` từ backend để phù hợp với Pagination (bắt đầu từ 1)
+                            page={currentPage + 1}
                             onChange={handlePageChange}
                             color="primary"
                         />
@@ -105,6 +110,10 @@ export default function BookShelf() {
                     No data be find.
                 </Typography>
             )}
+            {selectedBookId && (
+                <BookDetail id={selectedBookId} open={!!selectedBookId} onClose={handleCloseDialog} />
+            )}
         </Box>
+
     );
 }

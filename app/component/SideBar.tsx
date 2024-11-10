@@ -20,11 +20,17 @@ import {
     Menu as MenuIcon
 } from '@mui/icons-material';
 import AddIcon from '@mui/icons-material/Add';
+import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import StackedBarChartIcon from '@mui/icons-material/StackedBarChart';
+import PersonIcon from '@mui/icons-material/Person';
+import NotificationsIcon from '@mui/icons-material/Notifications';
 import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 
 import { useAuth } from './Context/AuthContext';
 
 const Sidebar: React.FC = () => {
+    const [openDashboard, setOpenDashboard] = useState(false);
     const [openInventory, setOpenInventory] = useState(false);
     const [openBusiness, setOpenBusiness] = useState(false);
     const [isExpanded, setIsExpanded] = useState(true);
@@ -33,7 +39,7 @@ const Sidebar: React.FC = () => {
     });
     const [fullName, setFullName] = useState("");
 
-    const { logout } = useAuth(); 
+    const { logout } = useAuth();
 
     useEffect(() => {
         const storedFullname = sessionStorage.getItem('fullname');
@@ -52,18 +58,36 @@ const Sidebar: React.FC = () => {
         setIsExpanded(!isExpanded);
     };
 
+    const handleDashboardClick = () => setOpenDashboard(!openDashboard);
     const handleInventoryClick = () => setOpenInventory(!openInventory);
     const handleBusinessClick = () => setOpenBusiness(!openBusiness);
 
     const handleLogoutClick = () => {
-        logout(); 
+        logout();
     };
 
     const menuItems = [
         {
             text: "Dashboard",
-            icon: <Dashboard />,
-            path: "/dashboard"
+            icon: <Dashboard />, 
+            path: "",
+            subItems: [
+                {
+                    text: "New User",
+                    icon: <PersonIcon />,
+                    path: "/dashboard"
+                },
+                {
+                    text: "Fines Manage",
+                    icon: <AttachMoneyIcon />,
+                    path: "/book-manage"
+                },
+                {
+                    text: "Top Book",
+                    icon: <StackedBarChartIcon />,
+                    path: "/book-manage"
+                }
+            ]
         },
         {
             text: "Inventory",
@@ -77,7 +101,7 @@ const Sidebar: React.FC = () => {
                 },
                 {
                     text: "Books Management",
-                    icon: <AddIcon />,
+                    icon: <LibraryBooksIcon />,
                     path: "/book-manage"
                 }
             ]
@@ -88,7 +112,7 @@ const Sidebar: React.FC = () => {
             path: "",
             subItems: [
                 {
-                    text: "Books Loan",
+                    text: "Manager",
                     icon: <AddIcon />,
                     path: "/loan-manager"
                 },
@@ -133,8 +157,8 @@ const Sidebar: React.FC = () => {
                 }}
             >
                 {isExpanded && (
-                    <Typography variant="h6" sx={{ ml: 1 }}>
-                        {fullName === "" ? 'No Name' : fullName}
+                    <Typography variant="h6" component="a" href='/home' sx={{ ml: 1 }} >
+                        LibHub
                     </Typography>
                 )}
                 <IconButton
@@ -185,6 +209,7 @@ const Sidebar: React.FC = () => {
                                 <ListItemButton
                                     onClick={() => {
                                         setSelectedIndex(index);
+                                        item.text === "Dashboard" ? handleDashboardClick() :
                                         item.text === "Inventory" ? handleInventoryClick() : handleBusinessClick();
                                     }}
                                     sx={{
@@ -213,11 +238,12 @@ const Sidebar: React.FC = () => {
                                         <ListItemText primary={item.text} />
                                     )}
                                     {isExpanded && (
-                                        index === 1 ? (openInventory ? <ExpandLess /> : <ExpandMore />) :
+                                        item.text === "Dashboard" ? (openDashboard ? <ExpandLess /> : <ExpandMore />) :
+                                        item.text === "Inventory" ? (openInventory ? <ExpandLess /> : <ExpandMore />) :
                                         (openBusiness ? <ExpandLess /> : <ExpandMore />)
                                     )}
                                 </ListItemButton>
-                                <Collapse in={openInventory && index === 1 || openBusiness && index === 2} timeout="auto" unmountOnExit>
+                                <Collapse in={(item.text === "Dashboard" && openDashboard) || (item.text === "Inventory" && openInventory) || (item.text === "Manager" && openBusiness)} timeout="auto" unmountOnExit>
                                     <List component="div" disablePadding>
                                         {item.subItems.map((subItem) => (
                                             <ListItemButton
@@ -289,6 +315,36 @@ const Sidebar: React.FC = () => {
                     )
                 ))}
             </List>
+
+            {/* User Name and Notification Icon at the Bottom */}
+            <Box
+                sx={{
+                    mt: 'auto',
+                    mb: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent:isExpanded ? 'space-between' :  'center', 
+                    padding: isExpanded ? '0 16px' : '0', 
+                }}
+            >
+                {isExpanded && (
+                    <Typography variant="subtitle1">
+                        {fullName === "" ? 'No Name' : fullName}
+                    </Typography>
+                )}
+                <IconButton
+                    edge="end"
+                    aria-label="notifications"
+                    sx={{
+                        color: 'inherit',
+                        margin: 0, 
+                        padding: 0, 
+                        alignSelf: 'center',
+                    }}
+                >
+                    <NotificationsIcon />
+                </IconButton>
+            </Box>
         </Drawer>
     );
 };

@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         username,
         password,
       });
-
+      console.log(response)
       const authToken = response.data.result.token;
 
       const decodedToken: any = jwtDecode(authToken);

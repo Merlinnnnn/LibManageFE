@@ -48,6 +48,7 @@ export default function BookShelf() {
                 console.log(response);
                 if (response.data && response.data.result) {
                     setBooks(response.data.result.content);
+                    console.log(response.data.result.content);
                     setTotalPages(response.data.result.totalPages);
                 } else {
                     setBooks([]);

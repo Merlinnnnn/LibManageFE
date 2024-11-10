@@ -67,6 +67,28 @@ const RecentLoansTable: React.FC = () => {
         }
     };
 
+    const getStatusColor = (status: string) => {
+        const style = {
+            borderRadius: '8px',
+            padding: '4px 8px',
+            display: 'inline-block',
+            fontWeight: 'bold',
+            textTransform: 'none'
+        };
+        
+        switch (status) {
+            case 'APPROVED':
+                return { ...style, backgroundColor: '#ebfaf4', color: '#2e7d32' }; // Chỉnh màu chữ cho dễ nhìn
+            case 'CANCEL':
+                return { ...style, backgroundColor: '#f8d7da', color: '#721c24' };
+            case 'PENDING':
+                return { ...style, backgroundColor: '#fff3cd', color: '#856404' };
+            default:
+                return style;
+        }
+    };
+    
+
     return (
         <Box>
             <TableContainer component={Paper} style={{ maxHeight: '300px', overflow: 'auto' }}>
@@ -88,7 +110,15 @@ const RecentLoansTable: React.FC = () => {
                                 <TableCell style={{ padding: '4px 8px' }}>{loan.documentName}</TableCell>
                                 <TableCell style={{ padding: '4px 8px' }}>{loan.username}</TableCell>
                                 <TableCell style={{ padding: '4px 8px' }}>{loan.loanDate}</TableCell>
-                                <TableCell style={{ padding: '4px 8px' }}>{loan.status}</TableCell>
+                                <TableCell style={{ padding: '4px 8px' }}>
+                                    <Box 
+                                        sx={{ 
+                                            ...getStatusColor(loan.status) 
+                                        }}
+                                    >
+                                        {loan.status.toLowerCase()}
+                                    </Box>
+                                </TableCell>
                                 <TableCell style={{ padding: '4px 8px' }}>
                                     <Tooltip title="Approve">
                                         <IconButton color="primary" onClick={() => handleLoanAction(loan.transactionId, 'APPROVE')}>

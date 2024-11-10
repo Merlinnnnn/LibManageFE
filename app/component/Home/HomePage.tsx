@@ -2,7 +2,6 @@ import React from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import Header from './Header';
 import { useTheme } from '@mui/material/styles';
-import TrendingBooks from './ListBooks';
 import BookList from '../Books/BookList';
 
 
