@@ -117,9 +117,9 @@ const Sidebar: React.FC = () => {
                     path: "/loan-manager"
                 },
                 {
-                    text: "Subscription",
+                    text: "Library map",
                     icon: <AddIcon />,
-                    path: "/subscription"
+                    path: "/map"
                 }
             ]
         },

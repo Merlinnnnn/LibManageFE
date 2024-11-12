@@ -6,9 +6,9 @@ class ApiService {
     constructor(baseURL: string) {
         this.api = axios.create({
             baseURL,
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            // headers: {
+            //     'Content-Type': 'application/json',
+            // },
         });
 
         this.api.interceptors.request.use(

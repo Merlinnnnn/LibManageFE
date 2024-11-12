@@ -66,6 +66,7 @@ const Header = () => {
           <MenuItem component={Link} href="/home" onClick={handleMenuClose}>Home</MenuItem>
           <MenuItem component={Link} href="/bookshelf" onClick={handleMenuClose}>Bookshelf</MenuItem>
           <MenuItem component={Link} href="/bookfavo" onClick={handleMenuClose}>Favorite</MenuItem>
+          <MenuItem component={Link} href="/borrowed-book" onClick={handleMenuClose}>Borrowed Books</MenuItem>
         </Menu>
 
         <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>

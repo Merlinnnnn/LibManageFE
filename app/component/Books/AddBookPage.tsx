@@ -6,13 +6,16 @@ import {
     Typography,
     Paper,
     Grid,
-    Drawer,
     Chip,
     Avatar,
+    IconButton,
 } from '@mui/material';
 import Sidebar from '../SideBar';
 import apiService from '../../untils/api';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
+
 
 interface Book {
     isbn: string;
@@ -38,7 +41,6 @@ interface DocumentType {
     typeName: string;
 }
 
-
 interface DocumentTypeRes {
     code: number;
     message: string;
@@ -46,7 +48,6 @@ interface DocumentTypeRes {
         content: DocumentType[]
     };
 }
-
 
 const AddBookPage: React.FC = () => {
     const [book, setBook] = useState<Book>({
@@ -62,7 +63,7 @@ const AddBookPage: React.FC = () => {
         status: 'AVAILABLE',
         description: '',
         coverImage: '',
-        documentLink: 'http://example.com/documents/intro-to-algorithms.pdf',
+        documentLink: '',
         price: 0,
         size: 'MEDIUM',
         documentTypeIds: [],
@@ -70,6 +71,7 @@ const AddBookPage: React.FC = () => {
     });
 
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [selectedPdfFile, setSelectedPdfFile] = useState<File | null>(null); // State cho PDF file
     const [preview, setPreview] = useState<string | null>(null);
     const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
     const [selectedTags, setSelectedTags] = useState<number[]>([]);
@@ -102,6 +104,13 @@ const AddBookPage: React.FC = () => {
         }
     };
 
+    const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const pdfFile = e.target.files[0];
+            setSelectedPdfFile(pdfFile); // Lưu PDF file vào state
+        }
+    };
+
     const handleTagToggle = (tagId: number) => {
         if (selectedTags.includes(tagId)) {
             setSelectedTags(selectedTags.filter((id) => id !== tagId));
@@ -112,16 +121,42 @@ const AddBookPage: React.FC = () => {
 
     const handleAddBook = async () => {
         try {
-            //const response = await apiService.post('/api/v1/documents', { ...book, documentTypeIds: selectedTags });
-            const payload = { ...book, documentTypeIds: selectedTags.map((tag) => parseInt(tag.toString(), 10)) };
-            console.log('Book added successfully:', payload);
-            alert('Book added successfully!');
+            const formData = new FormData();
 
+            formData.append('isbn', book.isbn);
+            formData.append('documentName', book.documentName);
+            formData.append('author', book.author);
+            formData.append('publisher', book.publisher);
+            formData.append('publishedDate', book.publishedDate);
+            formData.append('pageCount', book.pageCount.toString());
+            formData.append('language', book.language);
+            formData.append('quantity', book.quantity.toString());
+            formData.append('availableCount', book.availableCount.toString());
+            formData.append('status', book.status);
+            formData.append('description', book.description);
+            formData.append('price', book.price.toString());
+            formData.append('size', book.size);
+            formData.append('warehouseId', book.warehouseId.toString());
+
+            selectedTags.forEach((tagId) => formData.append('documentTypeIds', tagId.toString()));
+
+            if (selectedFile) {
+                formData.append('image', selectedFile);
+            }
+
+            if (selectedPdfFile) {
+                formData.append('documentLink', selectedPdfFile);
+            }
+            const response = await apiService.post('/api/v1/documents', formData);
+
+            console.log('Book added successfully:', response);
+            alert('Book added successfully!');
         } catch (error) {
             console.error('Failed to add book:', error);
             alert('Failed to add book');
         }
     };
+
 
     return (
         <Box display="flex">
@@ -179,6 +214,7 @@ const AddBookPage: React.FC = () => {
                         {/* Form Section */}
                         <Grid item xs={12} sm={8}>
                             <Grid container spacing={2}>
+                                {/* Các trường TextField cho thông tin sách */}
                                 <Grid item xs={6}>
                                     <TextField size="small" fullWidth label="ISBN" name="isbn" value={book.isbn} onChange={handleChange} />
                                 </Grid>
@@ -213,6 +249,43 @@ const AddBookPage: React.FC = () => {
                         </Grid>
                     </Grid>
 
+                    {/* PDF Upload Section */}
+                    <Box mt={2} textAlign="center">
+                        <input
+                            type="file"
+                            accept="application/pdf"
+                            style={{ display: 'none' }}
+                            id="upload-pdf"
+                            onChange={handlePdfChange}
+                        />
+                        <label htmlFor="upload-pdf">
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                component="span"
+                                startIcon={<UploadFileIcon />}
+                                disabled={!!selectedPdfFile} // Vô hiệu hóa nút khi đã có file được chọn
+                            >
+                                Upload PDF
+                            </Button>
+                        </label>
+                    </Box>
+
+                    {/* Hiển thị tên PDF file và nút x để hủy chọn */}
+                    {selectedPdfFile && (
+                        <Box mt={2} textAlign="center" display="flex" justifyContent="center" alignItems="center">
+                            <Typography variant="body2" sx={{ marginRight: 1 }}>
+                                {selectedPdfFile.name}
+                            </Typography>
+                            <IconButton
+                                color="error"
+                                size="small"
+                                onClick={() => setSelectedPdfFile(null)}
+                            >
+                                <CloseIcon fontSize="small" />
+                            </IconButton>
+                        </Box>
+                    )}
                     {/* Tags Selection */}
                     <Box mt={3}>
                         <Typography variant="h6">Select Tags</Typography>
@@ -229,7 +302,6 @@ const AddBookPage: React.FC = () => {
                             ))}
                         </Box>
                     </Box>
-
                     {/* Submit Button */}
                     <Box mt={3} textAlign="center">
                         <Button variant="contained" color="primary" onClick={handleAddBook}>

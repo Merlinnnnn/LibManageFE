@@ -5,7 +5,7 @@ import { styled } from '@mui/system';
 interface Book {
   documentId: number;
   documentName: string;
-  documentLink?: string;
+  coverImage?: string;
 }
 
 interface BookCardProps {
@@ -72,8 +72,8 @@ const BookCard: React.FC<BookCardProps> = ({ book, onViewDocument }) => {
   return (
     <BookCardContainer>
       <BookCover
-        src={book.documentLink || 'https://via.placeholder.com/200x250'}
-        alt={book.documentName}
+        src={book.coverImage || 'https://via.placeholder.com/200x250'}
+        alt='Image not found'
       />
       <BookInfo>
         <BookTitle>{book.documentName}</BookTitle>
