@@ -26,10 +26,14 @@ import StackedBarChartIcon from '@mui/icons-material/StackedBarChart';
 import PersonIcon from '@mui/icons-material/Person';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import AutoStoriesIcon from '@mui/icons-material/AutoStories';
+import MapIcon from '@mui/icons-material/Map';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 
 import { useAuth } from './Context/AuthContext';
+import { useThemeContext } from './Context/ThemeContext';
 
 const Sidebar: React.FC = () => {
+    const { mode } = useThemeContext(); // Truy cập theme mode từ ThemeContext
     const [openDashboard, setOpenDashboard] = useState(false);
     const [openInventory, setOpenInventory] = useState(false);
     const [openBusiness, setOpenBusiness] = useState(false);
@@ -108,17 +112,17 @@ const Sidebar: React.FC = () => {
         },
         {
             text: "Manager",
-            icon: <Money />,
+            icon: <ManageAccountsIcon />,
             path: "",
             subItems: [
                 {
                     text: "Manager",
-                    icon: <AddIcon />,
+                    icon: <ManageAccountsIcon />,
                     path: "/loan-manager"
                 },
                 {
                     text: "Library map",
-                    icon: <AddIcon />,
+                    icon: <MapIcon />,
                     path: "/map"
                 }
             ]
@@ -129,6 +133,10 @@ const Sidebar: React.FC = () => {
             path: "/logout"
         }
     ];
+
+    const backgroundColor = mode === 'light' ? '#ffffff' : '#222428';
+    const textColor = mode === 'light' ? '#000000' : '#ffffff';
+    const hoverColor = mode === 'light' ? '#e0e0e0' : '#333333';
 
     return (
         <Drawer
@@ -142,7 +150,7 @@ const Sidebar: React.FC = () => {
                     width: isExpanded ? 240 : 60,
                     overflowX: "hidden",
                     boxSizing: 'border-box',
-                    backgroundColor: "#fff",
+                    backgroundColor: backgroundColor,
                 },
             }}
         >
@@ -153,11 +161,11 @@ const Sidebar: React.FC = () => {
                     justifyContent: "space-between",
                     padding: "10px",
                     height: "65px",
-                    backgroundColor: "#fff",
+                    backgroundColor: backgroundColor,
                 }}
             >
                 {isExpanded && (
-                    <Typography variant="h6" component="a" href='/home' sx={{ ml: 1 }} >
+                    <Typography variant="h6" component="a" href='/home' sx={{ ml: 1, color: textColor }} >
                         LibHub
                     </Typography>
                 )}
@@ -165,7 +173,7 @@ const Sidebar: React.FC = () => {
                     edge="start"
                     aria-label="menu"
                     onClick={handleToggleSidebar}
-                    sx={{ justifyContent: isExpanded ? "flex-start" : "center", margin: isExpanded ? 0 : "auto" }}
+                    sx={{ justifyContent: isExpanded ? "flex-start" : "center", margin: isExpanded ? 0 : "auto", color: textColor }}
                 >
                     <MenuIcon />
                 </IconButton>
@@ -176,23 +184,23 @@ const Sidebar: React.FC = () => {
                     item.text === "Logout" ? (
                         <ListItemButton
                             key={item.text}
-                            onClick={handleLogoutClick} // Gọi handleLogoutClick khi nhấn vào Logout
+                            onClick={handleLogoutClick}
                             sx={{
                                 backgroundColor: selectedIndex === index ? "#204A9C" : "transparent",
-                                color: selectedIndex === index ? "white" : "inherit",
+                                color: selectedIndex === index ? "white" : textColor,
                                 borderRadius: "8px",
                                 margin: "5px 0 0 0",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: isExpanded ? "flex-start" : "center",
                                 "&:hover": {
-                                    backgroundColor: selectedIndex === index ? "#204A9C" : "#e0e0e0",
+                                    backgroundColor: hoverColor,
                                 },
                             }}
                         >
                             <ListItemIcon
                                 sx={{
-                                    color: selectedIndex === index ? "white" : "inherit",
+                                    color: selectedIndex === index ? "white" : textColor,
                                     minWidth: 40,
                                     justifyContent: "center",
                                 }}
@@ -214,20 +222,20 @@ const Sidebar: React.FC = () => {
                                     }}
                                     sx={{
                                         backgroundColor: selectedIndex === index ? "#204A9C" : "transparent",
-                                        color: selectedIndex === index ? "white" : "inherit",
+                                        color: selectedIndex === index ? "white" : textColor,
                                         borderRadius: "8px",
                                         margin: "5px 0 0 0",
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: isExpanded ? "flex-start" : "center",
                                         "&:hover": {
-                                            backgroundColor: selectedIndex === index ? "#204A9C" : "#e0e0e0",
+                                            backgroundColor: hoverColor,
                                         },
                                     }}
                                 >
                                     <ListItemIcon
                                         sx={{
-                                            color: selectedIndex === index ? "white" : "inherit",
+                                            color: selectedIndex === index ? "white" : textColor,
                                             minWidth: 40,
                                             justifyContent: "center",
                                         }}
@@ -253,9 +261,9 @@ const Sidebar: React.FC = () => {
                                                 sx={{
                                                     paddingLeft: isExpanded ? 4 : 0,
                                                     backgroundColor: "transparent",
-                                                    color: "inherit",
+                                                    color: textColor,
                                                     "&:hover": {
-                                                        backgroundColor: "#e0e0e0",
+                                                        backgroundColor: hoverColor,
                                                     },
                                                     display: "flex",
                                                     alignItems: "center",
@@ -264,7 +272,7 @@ const Sidebar: React.FC = () => {
                                             >
                                                 <ListItemIcon
                                                     sx={{
-                                                        color: "inherit",
+                                                        color: textColor,
                                                         minWidth: isExpanded ? 40 : 24,
                                                         justifyContent: "center",
                                                     }}
@@ -287,20 +295,20 @@ const Sidebar: React.FC = () => {
                                 href={item.path}
                                 sx={{
                                     backgroundColor: selectedIndex === index ? "#204A9C" : "transparent",
-                                    color: selectedIndex === index ? "white" : "inherit",
+                                    color: selectedIndex === index ? "white" : textColor,
                                     borderRadius: "8px",
                                     margin: "5px 0 0 0",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: isExpanded ? "flex-start" : "center",
                                     "&:hover": {
-                                        backgroundColor: selectedIndex === index ? "#204A9C" : "#e0e0e0",
+                                        backgroundColor: hoverColor,
                                     },
                                 }}
                             >
                                 <ListItemIcon
                                     sx={{
-                                        color: selectedIndex === index ? "white" : "inherit",
+                                        color: selectedIndex === index ? "white" : textColor,
                                         minWidth: 40,
                                         justifyContent: "center",
                                     }}
@@ -316,15 +324,15 @@ const Sidebar: React.FC = () => {
                 ))}
             </List>
 
-            {/* User Name and Notification Icon at the Bottom */}
             <Box
                 sx={{
                     mt: 'auto',
                     mb: 2,
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent:isExpanded ? 'space-between' :  'center', 
+                    justifyContent: isExpanded ? 'space-between' : 'center', 
                     padding: isExpanded ? '0 16px' : '0', 
+                    color: textColor,
                 }}
             >
                 {isExpanded && (
@@ -336,7 +344,7 @@ const Sidebar: React.FC = () => {
                     edge="end"
                     aria-label="notifications"
                     sx={{
-                        color: 'inherit',
+                        color: textColor,
                         margin: 0, 
                         padding: 0, 
                         alignSelf: 'center',

@@ -145,7 +145,7 @@ const AddBookPage: React.FC = () => {
             }
 
             if (selectedPdfFile) {
-                formData.append('documentLink', selectedPdfFile);
+                formData.append('pdfFile', selectedPdfFile);
             }
             const response = await apiService.post('/api/v1/documents', formData);
 

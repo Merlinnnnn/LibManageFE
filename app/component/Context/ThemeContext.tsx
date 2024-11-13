@@ -5,6 +5,7 @@ import { CssBaseline } from '@mui/material';
 interface ThemeContextType {
     toggleTheme: () => void;
     mode: 'light' | 'dark';
+    setMode: React.Dispatch<React.SetStateAction<'light' | 'dark'>>;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -16,12 +17,20 @@ export const useThemeContext = () => {
 };
 
 export const CustomThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [mode, setMode] = useState<'light' | 'dark'>('light');
+    const [mode, setMode] = useState<'light' | 'dark'>(() => {
+        const savedMode = localStorage.getItem('theme');
+        return savedMode === 'dark' ? 'dark' : 'light'; 
+    });
 
     const toggleTheme = () => {
         setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
     };
-    
+
+    useEffect(() => {
+        localStorage.setItem('theme', mode); 
+        document.documentElement.setAttribute('data-theme', mode);
+    }, [mode]);
+
     const theme = useMemo(
         () =>
             createTheme({
@@ -29,33 +38,30 @@ export const CustomThemeProvider: React.FC<{ children: React.ReactNode }> = ({ c
                     mode,
                     ...(mode === 'light'
                         ? {
-                            background: {
-                                default: '#ffffff',
-                                paper: '#f5f5f5',
-                            },
-                            text: {
-                                primary: '#000000',
-                            },
-                        }
+                              background: {
+                                  default: '#ffffff',
+                                  paper: '#f5f5f5',
+                              },
+                              text: {
+                                  primary: '#000000',
+                              },
+                          }
                         : {
-                            background: {
-                                default: '#222428',
-                                paper: '#222428',
-                            },
-                            text: {
-                                primary: '#ffffff',
-                            },
-                        }),
+                              background: {
+                                  default: '#222428',
+                                  paper: '#222428',
+                              },
+                              text: {
+                                  primary: '#ffffff',
+                              },
+                          }),
                 },
             }),
         [mode]
     );
-    useEffect(() => {
 
-        document.documentElement.setAttribute('data-theme', mode);
-      }, [mode]);
     return (
-        <ThemeContext.Provider value={{ toggleTheme, mode }}>
+        <ThemeContext.Provider value={{ toggleTheme, mode, setMode }}>
             <ThemeProvider theme={theme}>
                 <CssBaseline />
                 {children}

@@ -5,20 +5,32 @@ import MenuIcon from '@mui/icons-material/Menu';
 import Link from 'next/link';
 import { useThemeContext } from '../Context/ThemeContext';
 import { useTheme } from '@mui/material/styles';
-import { useAuth } from '../Context/AuthContext'; 
+import { useAuth } from '../Context/AuthContext';
 
 const Header = () => {
   const [open, setOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [username, setUsername] = useState<string | null>(null);
-  const { toggleTheme, mode } = useThemeContext();
+  const { toggleTheme, mode, setMode } = useThemeContext();
   const theme = useTheme();
   const { logout } = useAuth();
 
   useEffect(() => {
     const storedUsername = sessionStorage.getItem('fullname');
     setUsername(storedUsername);
-  }, []);
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light' || savedTheme === 'dark') {
+      setMode(savedTheme as 'light' | 'dark'); 
+    }
+  }, [setMode]);
+  
+
+  const handleToggleTheme = () => {
+    toggleTheme();
+    // Lưu theme vào localStorage
+    const newMode = mode === 'light' ? 'dark' : 'light';
+    localStorage.setItem('theme', newMode);
+  };
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -47,7 +59,6 @@ const Header = () => {
       }}
     >
       <Toolbar>
-        {/* Icon Menu để mở menu chọn trang */}
         <IconButton
           size="large"
           edge="start"
@@ -127,7 +138,7 @@ const Header = () => {
           >
             {mode === 'light' ? 'Light Mode' : 'Dark Mode'}
           </Typography>
-          <Switch checked={mode === 'dark'} onChange={toggleTheme} />
+          <Switch checked={mode === 'dark'} onChange={handleToggleTheme} />
         </Box>
 
       </Toolbar>

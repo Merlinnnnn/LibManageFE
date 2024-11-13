@@ -38,7 +38,8 @@ interface Book {
     status: string;
     description: string;
     documentLink: string;
-    documentTypes: DocumentType[];  // Cập nhật để lưu danh sách loại sách
+    documentTypes: DocumentType[];
+    coverImage: string;
 }
 
 const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
@@ -67,20 +68,19 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
                 const response = await apiService.get<GenericApiResponse<boolean>>(`/api/v1/documents/${id}/is-favorite`);
                 if (response.status === 200) {
                     console.log('fetch is favo', response);
-                    setIsFavorite(response.data.result); 
-                    console.error('Error fetching favorite status');
+                    setIsFavorite(response.data.result);
                 }
             } catch (error) {
                 console.error('Error fetching favorite status:', error);
             }
         };
-        
+
         const fetchIsBorrowed = async () => {
             try {
                 const response = await apiService.get<GenericApiResponse<boolean>>(`/api/v1/loan-transactions/user/check-user-borrowing/${id}`);
                 if (response.status === 200) {
                     console.log('fetch is borrow', response);
-                    setIsBorrowed(response.data.result); 
+                    setIsBorrowed(response.data.result);
                 } else {
                     console.error('Error fetching borrowed status');
                 }
@@ -88,7 +88,6 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
                 console.error('Error fetching borrowed status:', error);
             }
         };
-        
 
         if (open) {
             fetchBookDetails();
@@ -127,7 +126,7 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
             });
 
             if (response.status === 200) {
-                setIsBorrowed(true); 
+                setIsBorrowed(true);
             } else {
                 console.error('Error requesting loan');
             }
@@ -141,6 +140,10 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
     const handleCloseConfirmDialog = () => {
         setConfirmDialogOpen(false);
     };
+
+    const handleReadBookClick = (bookId: number | string) => () => {
+        window.open(`http://localhost:3000/read-book?id=${bookId.toString()}`);
+    };    
 
     if (!book) {
         return <Typography>Loading...</Typography>;
@@ -158,12 +161,6 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
                             alt="cover"
                             style={{ width: '100%', height: '300px', objectFit: 'cover', borderRadius: '4px' }}
                         />
-                        {/* <Box display="flex" gap={1} marginTop={1} flexWrap="wrap">
-                            {book.documentTypes.map((type) => (
-                                <Chip key={type.documentTypeId} label={type.typeName} />
-                            ))}
-                            <Chip label={book.status} color="primary" />
-                        </Box> */}
                     </Box>
 
                     {/* Thông tin sách */}
@@ -201,10 +198,19 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
                                 color="primary"
                                 onClick={handleViewDocumentClick}
                                 style={{ flex: 1 }}
-                                disabled={isBorrowed} // Vô hiệu hóa nút nếu người dùng đang mượn sách
+                                disabled={isBorrowed}
                             >
                                 Borrow Book
                             </Button>
+                            <Button
+                                variant="outlined"
+                                color="secondary"
+                                onClick={handleReadBookClick(book.documentId.toString())} // Ép kiểu thành chuỗi
+                                style={{ flex: 1 }}
+                            >
+                                Read Book
+                            </Button>
+
                         </Box>
                     </Box>
                 </Box>
