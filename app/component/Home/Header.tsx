@@ -1,12 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { AppBar, Toolbar, Button, Tooltip, IconButton, Box, Typography, TextField, InputAdornment, Switch, Menu, MenuItem, Popover, List, ListItem, ListItemText, ListItemButton, Divider } from '@mui/material';
+import {
+  AppBar,
+  Toolbar,
+  Button,
+  Tooltip,
+  IconButton,
+  Box,
+  Typography,
+  TextField,
+  InputAdornment,
+  Switch,
+  Menu,
+  MenuItem,
+  Popover,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemButton,
+  Divider,
+} from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import MenuIcon from '@mui/icons-material/Menu';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import LogoutIcon from '@mui/icons-material/Logout';
 import Link from 'next/link';
-import { useThemeContext } from '../Context/ThemeContext';
 import { useTheme } from '@mui/material/styles';
+import { useThemeContext } from '../Context/ThemeContext';
 import { useAuth } from '../Context/AuthContext';
 import apiService from '../../untils/api';
 import dayjs from 'dayjs';
@@ -30,38 +49,24 @@ interface ApiResponse {
 }
 
 const Header: React.FC = () => {
-  const [open, setOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const { toggleTheme, mode } = useThemeContext(); // Sử dụng từ CustomThemeProvider
+  const theme = useTheme(); // Lấy theme từ MUI ThemeProvider
   const [username, setUsername] = useState<string | null>(null);
-  const { toggleTheme, mode, setMode } = useThemeContext();
-  const theme = useTheme();
   const { logout } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
   const [expandedNotificationId, setExpandedNotificationId] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedUsername = sessionStorage.getItem('fullname');
-    setUsername(storedUsername);
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'light' || savedTheme === 'dark') {
-      setMode(savedTheme as 'light' | 'dark');
+    if (typeof window !== 'undefined') {
+        sessionStorage.setItem('fullname', '');
+        const storedUsername = sessionStorage.getItem('fullname');
+        if (storedUsername) {
+            setUsername(storedUsername);
+        }
     }
-  }, [setMode]);
+}, []);
 
-  const handleToggleTheme = () => {
-    toggleTheme();
-    const newMode = mode === 'light' ? 'dark' : 'light';
-    localStorage.setItem('theme', newMode);
-  };
-
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
 
   const handleNotificationClick = (event: React.MouseEvent<HTMLElement>) => {
     fetchNotifications();
@@ -75,20 +80,13 @@ const Header: React.FC = () => {
   const fetchNotifications = async () => {
     try {
       const response: ApiResponse = await apiService.get('/api/v1/notifications/my-notifications');
-      console.log('Notifications response:', response);
       if (response.data && response.data.result && response.data.result.content) {
         setNotifications(response.data.result.content);
-      } else {
-        console.log('No notifications found.');
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
   };
-
-  // useEffect(() => {
-  //   fetchNotifications();
-  // }, []);
 
   const openNotifications = Boolean(notificationAnchor);
 
@@ -107,27 +105,18 @@ const Header: React.FC = () => {
       }}
     >
       <Toolbar>
+        {/* Menu Button */}
         <IconButton
           size="large"
           edge="start"
           color="inherit"
           aria-label="menu"
-          onClick={handleMenuOpen}
           sx={{ marginLeft: '10px' }}
         >
           <MenuIcon />
         </IconButton>
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleMenuClose}
-        >
-          <MenuItem component={Link} href="/home" onClick={handleMenuClose}>Home</MenuItem>
-          <MenuItem component={Link} href="/bookshelf" onClick={handleMenuClose}>Bookshelf</MenuItem>
-          <MenuItem component={Link} href="/bookfavo" onClick={handleMenuClose}>Favorite</MenuItem>
-          <MenuItem component={Link} href="/borrowed-book" onClick={handleMenuClose}>Borrowed Books</MenuItem>
-        </Menu>
 
+        {/* Search Field */}
         <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
           <TextField
             variant="outlined"
@@ -157,6 +146,7 @@ const Header: React.FC = () => {
           />
         </Box>
 
+        {/* User Actions */}
         <Box sx={{ display: 'flex', alignItems: 'center', marginRight: '30px', gap: '20px' }}>
           {username ? (
             <>
@@ -168,12 +158,7 @@ const Header: React.FC = () => {
                   edge="end"
                   aria-label="notifications"
                   onClick={handleNotificationClick}
-                  sx={{
-                    color: theme.palette.text.primary,
-                    margin: 0,
-                    padding: 0,
-                    alignSelf: 'center',
-                  }}
+                  sx={{ color: theme.palette.text.primary }}
                 >
                   <NotificationsIcon />
                 </IconButton>
@@ -192,20 +177,26 @@ const Header: React.FC = () => {
                 }}
               >
                 <Box p={2} width={400}>
-                  <Typography variant="h6" gutterBottom>Các thông báo</Typography>
+                  <Typography variant="h6" gutterBottom>
+                    Notifications
+                  </Typography>
                   <List>
                     {notifications.map((notification) => (
                       <Box key={notification.id} mb={2}>
                         <ListItem disablePadding>
                           <ListItemButton onClick={() => handleExpandNotification(notification.id)}>
                             <ListItemText
-                              primaryTypographyProps={{ style: { wordWrap: 'break-word', whiteSpace: 'normal' } }} primary={notification.title}
+                              primary={notification.title}
                               secondary={dayjs(notification.createdAt).format('DD/MM/YYYY HH:mm:ss')}
                             />
                           </ListItemButton>
                         </ListItem>
                         {expandedNotificationId === notification.id && (
-                          <Typography variant="body2" color="textSecondary" sx={{ ml: 2, mt: 1 }}>
+                          <Typography
+                            variant="body2"
+                            color="textSecondary"
+                            sx={{ ml: 2, mt: 1 }}
+                          >
                             {notification.content}
                           </Typography>
                         )}
@@ -220,12 +211,7 @@ const Header: React.FC = () => {
                   edge="end"
                   aria-label="logout"
                   onClick={logout}
-                  sx={{
-                    color: theme.palette.text.primary,
-                    margin: 0,
-                    padding: 0,
-                    alignSelf: 'center',
-                  }}
+                  sx={{ color: theme.palette.text.primary }}
                 >
                   <LogoutIcon />
                 </IconButton>
@@ -233,24 +219,29 @@ const Header: React.FC = () => {
             </>
           ) : (
             <>
-              <Button color="primary" variant="outlined" href="/signup">Sign Up</Button>
-              <Button color="primary" variant="contained" href="/login">Sign In</Button>
+              <Button color="primary" variant="outlined" href="/signup">
+                Sign Up
+              </Button>
+              <Button color="primary" variant="contained" href="/login">
+                Sign In
+              </Button>
             </>
           )}
         </Box>
 
+        {/* Theme Toggle */}
         <Box sx={{ marginRight: '20px' }}>
           <Typography
             variant="body1"
             style={{
               display: 'inline',
               marginRight: '10px',
-              color: mode === 'light' ? 'black' : 'white',
+              color: theme.palette.text.primary,
             }}
           >
             {mode === 'light' ? 'Light Mode' : 'Dark Mode'}
           </Typography>
-          <Switch checked={mode === 'dark'} onChange={handleToggleTheme} />
+          <Switch checked={mode === 'dark'} onChange={toggleTheme} />
         </Box>
       </Toolbar>
     </AppBar>

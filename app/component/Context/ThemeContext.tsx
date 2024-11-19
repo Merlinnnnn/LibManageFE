@@ -18,11 +18,14 @@ export const useThemeContext = () => {
 
 export const CustomThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [mode, setMode] = useState<'light' | 'dark'>(() => {
+        // Chỉ định giá trị mặc định là 'light' để tránh lỗi SSR
         if (typeof window !== 'undefined') {
             const savedMode = localStorage.getItem('theme');
-            return savedMode === 'dark' ? 'dark' : 'light';
+            if (savedMode === 'light' || savedMode === 'dark') {
+                return savedMode;
+            }
         }
-        return 'light';
+        return 'light'; // Giá trị mặc định nếu SSR
     });
 
     const toggleTheme = () => {
@@ -30,8 +33,10 @@ export const CustomThemeProvider: React.FC<{ children: React.ReactNode }> = ({ c
     };
 
     useEffect(() => {
-        localStorage.setItem('theme', mode); 
-        document.documentElement.setAttribute('data-theme', mode);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('theme', mode);
+            document.documentElement.setAttribute('data-theme', mode);
+        }
     }, [mode]);
 
     const theme = useMemo(
