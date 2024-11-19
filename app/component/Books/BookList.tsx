@@ -1,6 +1,6 @@
 // TrendingBooks.tsx
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Button, IconButton } from '@mui/material';
+import { Box, Typography, IconButton } from '@mui/material';
 import { styled } from '@mui/system';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
@@ -71,12 +71,16 @@ const TrendingBooks: React.FC = () => {
 
   const fetchAllBooks = async () => {
     try {
-      const response: ApiResponse = await apiService.get(`/api/v1/documents?size=20`);
-      if (response.data && response.data.result && response.data.result.content) {
+      const response: ApiResponse = await apiService.get(`/api/v1/recommendations/users?size=20`);
+      if (response.data && response.data.result && response.data.result.content.length > 0) {
         setBooks(response.data.result.content);
+      } else {
+        console.log('No books found:', response);
+        setBooks([]);
       }
     } catch (error) {
       console.error('Error fetching books:', error);
+      setBooks([]);
     }
   };
 
@@ -109,24 +113,28 @@ const TrendingBooks: React.FC = () => {
 
   return (
     <Container>
-      <Typography variant="h4" gutterBottom>Trending Books</Typography>
-      <BookSliderContainer>
-        <LeftArrowButton onClick={scrollLeft}>
-          <ArrowBackIosIcon />
-        </LeftArrowButton>
-        <BookSlider id="book-slider">
-          {books.map((book) => (
-            <BookCard 
-              key={book.documentId} 
-              book={book} 
-              onViewDocument={() => handleViewDocument(book.documentId.toString(), book.documentLink)} 
-            />
-          ))}
-        </BookSlider>
-        <RightArrowButton onClick={scrollRight}>
-          <ArrowForwardIosIcon />
-        </RightArrowButton>
-      </BookSliderContainer>
+      <Typography variant="h4" gutterBottom>Recoment Books</Typography>
+      {books.length > 0 ? (
+        <BookSliderContainer>
+          <LeftArrowButton onClick={scrollLeft}>
+            <ArrowBackIosIcon />
+          </LeftArrowButton>
+          <BookSlider id="book-slider">
+            {books.map((book) => (
+              <BookCard 
+                key={book.documentId} 
+                book={book} 
+                onViewDocument={() => handleViewDocument(book.documentId.toString(), book.documentLink)} 
+              />
+            ))}
+          </BookSlider>
+          <RightArrowButton onClick={scrollRight}>
+            <ArrowForwardIosIcon />
+          </RightArrowButton>
+        </BookSliderContainer>
+      ) : (
+        <Typography variant="body1">No books available for recommendation.</Typography>
+      )}
 
       {selectedBookId && (
         <BookDetail id={selectedBookId} open={!!selectedBookId} onClose={handleCloseDialog} />

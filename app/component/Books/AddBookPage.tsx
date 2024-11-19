@@ -9,13 +9,22 @@ import {
     Chip,
     Avatar,
     IconButton,
+    SpeedDial,
+    SpeedDialAction,
+    DialogActions,
+    DialogContent,
+    Dialog,
+    DialogTitle,
 } from '@mui/material';
 import Sidebar from '../SideBar';
 import apiService from '../../untils/api';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
-
+import SubjectIcon from '@mui/icons-material/Subject';
+import LabelIcon from '@mui/icons-material/Label';
+import PublishIcon from '@mui/icons-material/Publish';
+import ImportExcelDialog from '../AddBooks/ImportExcelDiolog';
 
 interface Book {
     isbn: string;
@@ -35,10 +44,16 @@ interface Book {
     size: string;
     documentTypeIds: number[];
     warehouseId: number;
+    courseIds: number[],
 }
 interface DocumentType {
     documentTypeId: number;
     typeName: string;
+}
+
+interface Course {
+    courseId: number; // Changed to courseId
+    courseName: string;
 }
 
 interface DocumentTypeRes {
@@ -46,6 +61,13 @@ interface DocumentTypeRes {
     message: string;
     result: {
         content: DocumentType[]
+    };
+}
+interface CourseRes {
+    code: number;
+    message: string;
+    result: {
+        content: Course[];
     };
 }
 
@@ -68,17 +90,37 @@ const AddBookPage: React.FC = () => {
         size: 'MEDIUM',
         documentTypeIds: [],
         warehouseId: 1,
+        courseIds: [],
     });
 
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [selectedPdfFile, setSelectedPdfFile] = useState<File | null>(null); // State cho PDF file
+    const [selectedPdfFile, setSelectedPdfFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
     const [selectedTags, setSelectedTags] = useState<number[]>([]);
+    const [openAddTypeDialog, setOpenAddTypeDialog] = useState(false);
+    const [openAddCourseDialog, setOpenAddCourseDialog] = useState(false);
+    const [openImportDiolog, setOpenImportDiolog] = useState(false);
+    const [newTypeName, setNewTypeName] = useState('');
+    const [newCourseCode, setNewCourseCode] = useState('');
+    const [newDescription, setNewDescription] = useState('');
+    const [courses, setCourses] = useState<Course[]>([]);
+    //const [selectedTypes, setSelectedTypes] = useState<number[]>([]);
+    const [selectedCourses, setSelectedCourses] = useState<number[]>([]);
 
     useEffect(() => {
         fetchDocumentTypes();
+        fetchCourses();
     }, []);
+    const fetchCourses = async () => {
+        try {
+            const response = await apiService.get<CourseRes>('/api/v1/courses'); // Fetch courses
+            setCourses(response.data.result.content || []);
+        } catch (error) {
+            console.error('Error fetching courses:', error);
+            setCourses([]);
+        }
+    };
 
     const fetchDocumentTypes = async () => {
         try {
@@ -119,6 +161,14 @@ const AddBookPage: React.FC = () => {
         }
     };
 
+    const handleCourseToggle = (courseId: number) => {
+        if (selectedCourses.includes(courseId)) {
+            setSelectedCourses(selectedCourses.filter((id) => id !== courseId));
+        } else {
+            setSelectedCourses([...selectedCourses, courseId]);
+        }
+    };
+
     const handleAddBook = async () => {
         try {
             const formData = new FormData();
@@ -139,7 +189,7 @@ const AddBookPage: React.FC = () => {
             formData.append('warehouseId', book.warehouseId.toString());
 
             selectedTags.forEach((tagId) => formData.append('documentTypeIds', tagId.toString()));
-
+            selectedCourses.forEach((courseId) => formData.append('courseIds', courseId.toString()));
             if (selectedFile) {
                 formData.append('image', selectedFile);
             }
@@ -156,6 +206,80 @@ const AddBookPage: React.FC = () => {
             alert('Failed to add book');
         }
     };
+
+    const handleOpenAddTypeDialog = () => {
+        setOpenAddTypeDialog(true);
+    };
+
+    const handleCloseAddTypeDialog = () => {
+        setOpenAddTypeDialog(false);
+        setNewTypeName('');
+        setNewDescription('');
+    };
+    const handleCloseAddCourseDialog = () => {
+        setOpenAddCourseDialog(false);
+        setNewTypeName('');
+        setNewDescription('');
+        setNewCourseCode('');
+    };
+
+    const handleAddNewType = async () => {
+        const payload = {
+            typeName: newTypeName,
+            description: newDescription,
+        };
+        try {
+            const response = await apiService.post('/api/v1/document-types', payload);
+            console.log('New type added successfully:', response);
+            alert('New type added successfully!');
+            handleCloseAddTypeDialog();
+            fetchDocumentTypes();
+            setNewTypeName('');
+            setNewCourseCode('');
+            setNewDescription('');
+        } catch (error) {
+            console.error('Failed to add new type:', error);
+            alert('Failed to add new type');
+        }
+    };
+    const handleAddNewCourse = async () => {
+        const payload = {
+            courseCode: newCourseCode,
+            courseName: newTypeName,
+            description: newDescription,
+        };
+        try {
+            const response = await apiService.post('/api/v1/courses', payload);
+            console.log('New course added successfully:', response);
+            alert('New course added successfully!');
+            handleCloseAddCourseDialog();
+            fetchDocumentTypes();
+            setNewTypeName('');
+            setNewCourseCode('');
+            setNewDescription('');
+        } catch (error) {
+            console.error('Failed to add new course:', error);
+            alert('Failed to add new course');
+        }
+    };
+
+
+    // const handleAddType = () => {
+    //     alert("Add Type clicked!");
+    // };
+
+    const handleAddSubjectCode = () => {
+        setOpenAddCourseDialog(true);
+    };
+    const handleOpenImportDialog = () => {
+        setOpenImportDiolog(true);
+    };
+
+    // Handle closing the import dialog
+    const handleCloseImportDialog = () => {
+        setOpenImportDiolog(false);
+    };
+    
 
 
     return (
@@ -288,7 +412,7 @@ const AddBookPage: React.FC = () => {
                     )}
                     {/* Tags Selection */}
                     <Box mt={3}>
-                        <Typography variant="h6">Select Tags</Typography>
+                        <Typography variant="h6">Select Type</Typography>
                         <Box mt={1} display="flex" flexWrap="wrap" gap={1}>
                             {(Array.isArray(documentTypes) ? documentTypes : []).map((tag) => (
                                 <Chip
@@ -302,12 +426,125 @@ const AddBookPage: React.FC = () => {
                             ))}
                         </Box>
                     </Box>
+                    <Box mt={3}>
+                        <Typography variant="h6">Select Courses</Typography>
+                        <Box mt={1} display="flex" flexWrap="wrap" gap={1}>
+                            {courses.map((course) => (
+                                <Chip
+                                    key={course.courseId}
+                                    label={course.courseName}
+                                    clickable
+                                    color={selectedCourses.includes(course.courseId) ? 'primary' : 'default'}
+                                    onClick={() => handleCourseToggle(course.courseId)}
+                                    onDelete={selectedCourses.includes(course.courseId) ? () => handleCourseToggle(course.courseId) : undefined}
+                                />
+                            ))}
+                        </Box>
+                    </Box>
                     {/* Submit Button */}
                     <Box mt={3} textAlign="center">
                         <Button variant="contained" color="primary" onClick={handleAddBook}>
                             Add Book
                         </Button>
                     </Box>
+                    <SpeedDial
+                        ariaLabel="Add options"
+                        sx={{ position: 'fixed', bottom: 16, right: 16 }}
+                        icon={<AddIcon />}
+                    >
+                        <SpeedDialAction
+                            icon={<LabelIcon />}
+                            tooltipTitle="Add Type"
+                            onClick={handleOpenAddTypeDialog}
+                        />
+                        <SpeedDialAction
+                            icon={<SubjectIcon />}
+                            tooltipTitle="Add Subject Code"
+                            onClick={handleAddSubjectCode}
+                        />
+                        <SpeedDialAction
+                            icon={<PublishIcon />}
+                            tooltipTitle="Add Subject Code"
+                            onClick={handleOpenImportDialog}
+                        />
+                    </SpeedDial>
+                    <Dialog open={openAddTypeDialog} onClose={handleCloseAddTypeDialog}>
+                        <DialogTitle>Add New Type</DialogTitle>
+                        <DialogContent>
+                            <TextField
+                                autoFocus
+                                margin="dense"
+                                label="Type Name"
+                                type="text"
+                                fullWidth
+                                value={newTypeName}
+                                onChange={(e) => setNewTypeName(e.target.value)}
+                            />
+                            <TextField
+                                margin="dense"
+                                label="Description"
+                                type="text"
+                                fullWidth
+                                multiline
+                                rows={3}
+                                value={newDescription}
+                                onChange={(e) => setNewDescription(e.target.value)}
+                            />
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={handleCloseAddTypeDialog} color="primary">
+                                Cancel
+                            </Button>
+                            <Button onClick={handleAddNewType} color="primary" variant="contained">
+                                Add
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
+                    <Dialog open={openAddCourseDialog} onClose={handleCloseAddCourseDialog}>
+                        <DialogTitle>Add New Course</DialogTitle>
+                        <DialogContent>
+                            <TextField
+                                autoFocus
+                                margin="dense"
+                                label="Course Code"
+                                type="text"
+                                fullWidth
+                                value={newCourseCode}
+                                onChange={(e) => setNewCourseCode(e.target.value)}
+                            />
+                            <TextField
+                                autoFocus
+                                margin="dense"
+                                label="Course Name"
+                                type="text"
+                                fullWidth
+                                value={newTypeName}
+                                onChange={(e) => setNewTypeName(e.target.value)}
+                            />
+                            <TextField
+                                margin="dense"
+                                label="Description"
+                                type="text"
+                                fullWidth
+                                multiline
+                                rows={3}
+                                value={newDescription}
+                                onChange={(e) => setNewDescription(e.target.value)}
+                            />
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={handleCloseAddCourseDialog} color="primary">
+                                Cancel
+                            </Button>
+                            <Button onClick={handleAddNewCourse} color="primary" variant="contained">
+                                Add
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
+                    <ImportExcelDialog 
+                    open={openImportDiolog}
+                    onClose={handleCloseImportDialog}
+                />
                 </Paper>
             </Box>
         </Box>

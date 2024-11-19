@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
 import apiService from '../../untils/api';
 
-// Interface cho dữ liệu trả về từ API
 interface GenericApiResponse<T> {
     code: number;
     result: T;
@@ -10,7 +9,6 @@ interface GenericApiResponse<T> {
 }
 
 const ReadBook: React.FC = () => {
-    // Sử dụng URLSearchParams để lấy `id` từ URL
     const searchParams = new URLSearchParams(window.location.search);
     const id = searchParams.get('id');
 

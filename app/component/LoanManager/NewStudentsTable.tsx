@@ -21,6 +21,7 @@ import {
 } from '@mui/material';
 import apiService from '../../untils/api';
 import EmailIcon from '@mui/icons-material/Email';
+import SendNotiDialog from './SendNotiDiolog';
 
 interface User {
     userId: string;
@@ -37,13 +38,19 @@ const NewStudentsTable: React.FC = () => {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [openDialog, setOpenDialog] = useState(false);
-    const [dialogUserId, setDialogUserId] = useState<string | null>(null);
+    const [openNotiDialog, setOpenNotiDialog] = useState(false);
+    const [dialogUserId, setDialogUserId] = useState<string[]>([]);
     const [notificationTitle, setNotificationTitle] = useState("");
     const [notificationContent, setNotificationContent] = useState("");
 
     useEffect(() => {
         fetchStudents();
     }, []);
+    useEffect(() => {
+        if(selectedUsers.length === 0){
+            setOpenNotiDialog(false);
+        }
+    }, [selectedUsers]);
 
     const fetchStudents = async () => {
         try {
@@ -58,6 +65,7 @@ const NewStudentsTable: React.FC = () => {
     const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.checked) {
             setSelectedUsers(students.map((student) => student.userId));
+            setOpenNotiDialog(true);
         } else {
             setSelectedUsers([]);
         }
@@ -68,32 +76,45 @@ const NewStudentsTable: React.FC = () => {
             setSelectedUsers(selectedUsers.filter((id) => id !== userId));
         } else {
             setSelectedUsers([...selectedUsers, userId]);
+            setOpenNotiDialog(true);
         }
     };
 
     const handleOpenDialog = (userId: string) => {
-        setDialogUserId(userId);
+        setDialogUserId((prevUserIds) => [...prevUserIds, userId]);
+        console.log(userId);
         setOpenDialog(true);
     };
+    const handleCloseOpenNoti = ()=>{
+        console.log('user', selectedUsers);
+        setOpenNotiDialog(false);
+    }
+    const handleSend = ()=>{
+        console.log('user', selectedUsers);
+        setDialogUserId(selectedUsers);
+        setOpenDialog(true);
+    }
 
     const handleCloseDialog = () => {
         setOpenDialog(false);
-        setDialogUserId(null);
+        setDialogUserId([]);
         setNotificationTitle("");
         setNotificationContent("");
     };
 
     const handleSendNotification = async () => {
-        if (dialogUserId) {
+        if (dialogUserId.length >0) {
             const payload = {
-                "userIds": [dialogUserId],
+                "userIds": dialogUserId,
                 "title": notificationTitle,
                 "content": notificationContent
             };
+            console.log(payload);
             try {
                 const response = await apiService.post(`/api/v1/notifications`, payload);
                 console.log(response);
                 handleCloseDialog();
+                setSelectedUsers([]);
             } catch (error) {
                 console.error("Lỗi khi gửi thông báo:", error);
             }
@@ -165,7 +186,7 @@ const NewStudentsTable: React.FC = () => {
                 onRowsPerPageChange={handleChangeRowsPerPage}
                 rowsPerPageOptions={[5, 10, 25]}
             />
-
+            <SendNotiDialog open={openNotiDialog} handleClose={handleCloseOpenNoti} quantity={selectedUsers.length} onSend={handleSend} />
             {/* Dialog for Sending Notification */}
             <Dialog open={openDialog} onClose={handleCloseDialog}>
                 <DialogTitle>Send Notification</DialogTitle>

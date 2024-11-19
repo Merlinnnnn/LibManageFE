@@ -18,7 +18,7 @@ import apiService from '../../untils/api';
 interface Book {
     documentId: number;
     documentName: string;
-    coverImage?: string; // Sửa tên để phù hợp với dữ liệu API trả về
+    coverImage?: string;
     author?: string;
     publisher?: string;
     isbn?: string;
@@ -93,16 +93,22 @@ const EditBookDialog: React.FC<EditBookDialogProps> = ({ open, documentId, onClo
             formData.append('price', (book.price || 0).toString());
             formData.append('size', book.size || '');
             formData.append('warehouseId', (book.warehouseId || 0).toString());
+            const documentTypeIds = [1, 2, 3]; 
 
-            if (selectedFile) {
-                formData.append('coverImage', selectedFile); 
-            }
-
-            await apiService.put(`/api/v1/documents/${book.documentId}`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+            documentTypeIds.forEach((id) => {
+                formData.append('documentTypeIds', id.toString());
             });
+            
+            formData.append('warehouseId','AVAILABLE');
+
+            // if (selectedFile) {
+            //     formData.append('coverImage', selectedFile); 
+            // }
+            const jsonData: Record<string, any> = {};
+            formData.forEach((value, key) => {
+                jsonData[key] = value;
+            });
+            await apiService.put(`/api/v1/documents/${book.documentId}`, jsonData);
 
             alert('Book information updated successfully!');
             onClose();
@@ -154,7 +160,7 @@ const EditBookDialog: React.FC<EditBookDialogProps> = ({ open, documentId, onClo
                                             sx={{ width: '100%', height: '100%', borderRadius: 1 }}
                                             onError={(e: any) => {
                                                 e.target.onerror = null;
-                                                e.target.src = ''; 
+                                                e.target.src = '';
                                             }}
                                         />
                                     ) : (
