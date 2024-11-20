@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react';
 import Home from '../../component/Home/HomePage';
 import { CustomThemeProvider } from '../../component/Context/ThemeContext';
 import { AuthProvider } from '@/app/component/Context/AuthContext';
+import dynamic from 'next/dynamic'
+// const Home = dynamic(() => import('../../component/Home/HomePage'), { ssr: false })
 
 const HomePage: React.FC = () => {
     const [isClient, setIsClient] = useState(false);
@@ -12,7 +14,7 @@ const HomePage: React.FC = () => {
     }, []);
 
     if (!isClient) {
-        return null; // Tránh render HTML không đồng bộ
+        return <h1>Render Html</h1>; // Tránh render HTML không đồng bộ
     }
 
     return (

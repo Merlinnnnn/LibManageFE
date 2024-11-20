@@ -9,7 +9,7 @@ export default function Home() {
   const theme = useTheme();
 
   return (
-    <Box>
+    <Box suppressHydrationWarning>
       <Header />
       <Box sx={{ height: '100vh', background: theme.palette.background.default, padding: '20px' }}>
 
@@ -42,4 +42,5 @@ export default function Home() {
       </Box>
     </Box>
   );
+  
 }
