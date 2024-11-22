@@ -1,54 +1,222 @@
-import React from 'react';
-import { Box, Card, Typography, Grid, Divider, CircularProgress } from '@mui/material';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import React, { useEffect, useState } from 'react';
+import { Box, Card, Typography, Grid } from '@mui/material';
+import { Bar, Pie } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
+import Sidebar from '../SideBar';
+import apiService from '@/app/untils/api';
 
-const BookStatistics: React.FC = () => {
-  // Dữ liệu giả cho sách
-  const bookCategoriesData = [
-    { id: 1, category: 'Khoa học', count: 120, percentage: 40 },
-    { id: 2, category: 'Văn học', count: 80, percentage: 27 },
-    { id: 3, category: 'Công nghệ', count: 60, percentage: 20 },
-    { id: 4, category: 'Lịch sử', count: 30, percentage: 13 },
-  ];
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
-  const columns: GridColDef[] = [
-    { field: 'category', headerName: 'Thể Loại', width: 150 },
-    { field: 'count', headerName: 'Số Lượng', width: 130 },
-    { field: 'percentage', headerName: 'Tỷ Lệ (%)', width: 130 },
-  ];
+// Định nghĩa interface cho dữ liệu trả về từ API
+interface DocumentStatistics {
+  totalDocuments: number;
+  borrowedDocuments: number;
+  availableDocuments: number;
+  disabledDocuments: number;
+  documentsByType: {
+    typeName: string;
+    count: number;
+  }[];
+}
+
+interface DocumentStatisticsResponse {
+  code: number;
+  message: string;
+  result: DocumentStatistics;
+}
+
+const BookDashboard: React.FC = () => {
+  const [data, setData] = useState<DocumentStatistics>({
+    totalDocuments: 0,
+    borrowedDocuments: 0,
+    availableDocuments: 0,
+    disabledDocuments: 0,
+    documentsByType: [],
+  });
+
+  // Fetch API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await apiService.get<DocumentStatisticsResponse>(
+          '/api/v1/dashboards/documents/statistics'
+        );
+        setData(response.data.result);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Dữ liệu cho biểu đồ tròn (Books by Status)
+  const pieData = {
+    labels: ['Borrowed', 'Available', 'Disabled'],
+    datasets: [
+      {
+        data: [
+          data.borrowedDocuments,
+          data.availableDocuments,
+          data.disabledDocuments,
+        ],
+        backgroundColor: ['#ff5722', '#4caf50', '#f44336'],
+        hoverBackgroundColor: ['#e64a19', '#388e3c', '#d32f2f'],
+      },
+    ],
+  };
+
+  // Dữ liệu cho biểu đồ cột (Books by Category)
+  const barData = {
+    labels: data.documentsByType.map((type) => type.typeName),
+    datasets: [
+      {
+        label: 'Books by Category',
+        data: data.documentsByType.map((type) => type.count),
+        backgroundColor: '#3f51b5',
+        borderColor: '#303f9f',
+        borderWidth: 1,
+      },
+    ],
+  };
 
   return (
-    <Box padding={4} bgcolor="#f5f5f5">
-      <Typography variant="h4" gutterBottom>
-        Thống Kê Sách
-      </Typography>
-      <Grid container spacing={3} marginBottom={4}>
-        {bookCategoriesData.map((item) => (
-          <Grid item xs={3} key={item.id}>
-            <Card sx={{ padding: 3, textAlign: 'center' }}>
-              <Typography variant="h6">{item.category}</Typography>
-              <Typography variant="h4">{item.count}</Typography>
-              <CircularProgress
-                variant="determinate"
-                value={item.percentage}
-                size={80}
-                color="primary"
-                sx={{ marginTop: 2 }}
-              />
-              <Typography variant="body2">{item.percentage}%</Typography>
+    <Box display="flex" height="100vh">
+      {/* Sidebar */}
+      <Sidebar />
+
+      <Box flex={1} padding={3} bgcolor="#f5f5f5" overflow="auto">
+        <Grid container spacing={2}>
+          {/* Phần bên trái */}
+          <Grid item xs={12} md={8}>
+            <Grid
+              container
+              spacing={2}
+              direction="column"
+              alignItems="stretch"
+              sx={{ height: '100%' }}
+            >
+              {/* Card Tổng Số Sách */}
+              <Grid item>
+                <Card
+                  sx={{
+                    padding: 3,
+                    textAlign: 'center',
+                    backgroundColor: '#424242',
+                    color: '#fff',
+                  }}
+                >
+                  <Typography variant="h6">Total Documents</Typography>
+                  <Typography variant="h4">{data.totalDocuments}</Typography>
+                </Card>
+              </Grid>
+
+              {/* Các Card Status */}
+              <Grid item container spacing={2} alignItems="stretch">
+                <Grid item xs={4}>
+                  <Card
+                    sx={{
+                      padding: 2,
+                      textAlign: 'center',
+                      backgroundColor: '#ff5722',
+                      color: '#fff',
+                      height: '100%',
+                    }}
+                  >
+                    <Typography variant="h6">Borrowed</Typography>
+                    <Typography variant="h4">{data.borrowedDocuments}</Typography>
+                  </Card>
+                </Grid>
+                <Grid item xs={4}>
+                  <Card
+                    sx={{
+                      padding: 2,
+                      textAlign: 'center',
+                      backgroundColor: '#4caf50',
+                      color: '#fff',
+                      height: '100%',
+                    }}
+                  >
+                    <Typography variant="h6">Available</Typography>
+                    <Typography variant="h4">{data.availableDocuments}</Typography>
+                  </Card>
+                </Grid>
+                <Grid item xs={4}>
+                  <Card
+                    sx={{
+                      padding: 2,
+                      textAlign: 'center',
+                      backgroundColor: '#f44336',
+                      color: '#fff',
+                      height: '100%',
+                    }}
+                  >
+                    <Typography variant="h6">Disabled</Typography>
+                    <Typography variant="h4">{data.disabledDocuments}</Typography>
+                  </Card>
+                </Grid>
+              </Grid>
+            </Grid>
+          </Grid>
+
+          <Grid item xs={12} md={4} alignItems="stretch">
+            <Card sx={{ padding: 3, height: '100%' }}>
+              <Typography variant="h6" gutterBottom>
+                Documents by Status (Pie Chart)
+              </Typography>
+              <Box height="300px">
+                <Pie data={pieData} options={{ responsive: true, maintainAspectRatio: false }} />
+              </Box>
             </Card>
           </Grid>
-        ))}
-      </Grid>
-      <Divider />
-      <Typography variant="h6" marginTop={3}>
-        Thống Kê Trạng Thái Sách
-      </Typography>
-      <Box height={400} marginTop={2}>
-        <DataGrid rows={bookCategoriesData} columns={columns}  paginationModel={{ pageSize: 5, page: 0 }} />
+        </Grid>
+
+        {/* Biểu Đồ Cột và Bảng */}
+        <Grid container spacing={2} marginTop={4}>
+          {/* Biểu Đồ Cột */}
+          <Grid item xs={12} md={6}>
+            <Card sx={{ padding: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Books by Category (Bar Chart)
+              </Typography>
+              <Box height="300px">
+                <Bar data={barData} options={{ responsive: true, maintainAspectRatio: false }} />
+              </Box>
+            </Card>
+          </Grid>
+
+          {/* Bảng Thống Kê Theo Thể Loại */}
+          <Grid item xs={12} md={6}>
+            <Card sx={{ padding: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Books by Category
+              </Typography>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: 'left', padding: '8px' }}>Category</th>
+                    <th style={{ textAlign: 'right', padding: '8px' }}>Count</th>
+                    <th style={{ textAlign: 'right', padding: '8px' }}>Percentage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.documentsByType.map((type) => (
+                    <tr key={type.typeName}>
+                      <td style={{ textAlign: 'left', padding: '8px' }}>{type.typeName}</td>
+                      <td style={{ textAlign: 'right', padding: '8px' }}>{type.count}</td>
+                      <td style={{ textAlign: 'right', padding: '8px' }}>
+                        {((type.count / data.totalDocuments) * 100).toFixed(2)}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Card>
+          </Grid>
+        </Grid>
       </Box>
     </Box>
   );
 };
 
-export default BookStatistics;
+export default BookDashboard;

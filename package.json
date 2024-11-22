@@ -20,6 +20,7 @@
     "library_manager": "file:",
     "next": "^15.0.4-canary.19",
     "react": "^18",
+    "react-chartjs-2": "^5.2.0",
     "react-dom": "^18",
     "react-router-dom": "^6.28.0",
     "xlsx": "^0.18.5"

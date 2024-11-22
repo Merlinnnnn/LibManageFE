@@ -29,6 +29,7 @@ import { useThemeContext } from '../Context/ThemeContext';
 import { useAuth } from '../Context/AuthContext';
 import apiService from '../../untils/api';
 import dayjs from 'dayjs';
+import { Brightness4, Brightness7 } from '@mui/icons-material';
 
 interface Notification {
   id: string;
@@ -49,24 +50,38 @@ interface ApiResponse {
 }
 
 const Header: React.FC = () => {
-  const { toggleTheme, mode } = useThemeContext(); // Sử dụng từ CustomThemeProvider
-  const theme = useTheme(); // Lấy theme từ MUI ThemeProvider
-  const [username, setUsername] = useState<string | null>(null);
+  const { toggleTheme, mode, setMode } = useThemeContext();
+  const theme = useTheme();
   const { logout } = useAuth();
+  const [username, setUsername] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
   const [expandedNotificationId, setExpandedNotificationId] = useState<string | null>(null);
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-        sessionStorage.setItem('fullname', '');
-        const storedUsername = sessionStorage.getItem('fullname');
-        if (storedUsername) {
-            setUsername(storedUsername);
-        }
-    }
-}, []);
+    const storedUsername = sessionStorage.getItem('fullname');
+    setUsername(storedUsername);
 
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light' || savedTheme === 'dark') {
+      setMode(savedTheme as 'light' | 'dark');
+    }
+  }, [setMode]);
+
+  const handleToggleTheme = () => {
+    toggleTheme();
+    const newMode = mode === 'light' ? 'dark' : 'light';
+    localStorage.setItem('theme', newMode);
+  };
+
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setMenuAnchor(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+  };
 
   const handleNotificationClick = (event: React.MouseEvent<HTMLElement>) => {
     fetchNotifications();
@@ -89,6 +104,7 @@ const Header: React.FC = () => {
   };
 
   const openNotifications = Boolean(notificationAnchor);
+  const openMenu = Boolean(menuAnchor);
 
   const handleExpandNotification = (id: string) => {
     setExpandedNotificationId(id === expandedNotificationId ? null : id);
@@ -105,18 +121,37 @@ const Header: React.FC = () => {
       }}
     >
       <Toolbar>
-        {/* Menu Button */}
+        {/* Menu Icon */}
         <IconButton
           size="large"
           edge="start"
           color="inherit"
           aria-label="menu"
           sx={{ marginLeft: '10px' }}
+          onClick={handleMenuClick}
         >
-          <MenuIcon />
+          <MenuIcon sx={{ color: theme.palette.text.primary }} />
         </IconButton>
+        <Menu
+          anchorEl={menuAnchor}
+          open={openMenu}
+          onClose={handleMenuClose}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'left',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'left',
+          }}
+        >
+          <MenuItem component={Link} href="/home" onClick={handleMenuClose}>Home</MenuItem>
+          <MenuItem component={Link} href="/bookshelf" onClick={handleMenuClose}>Bookshelf</MenuItem>
+          <MenuItem component={Link} href="/bookfavo" onClick={handleMenuClose}>Favorite</MenuItem>
+          <MenuItem component={Link} href="/borrowed-book" onClick={handleMenuClose}>Borrowed Books</MenuItem>
+        </Menu>
 
-        {/* Search Field */}
+        {/* Search Bar */}
         <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
           <TextField
             variant="outlined"
@@ -146,7 +181,7 @@ const Header: React.FC = () => {
           />
         </Box>
 
-        {/* User Actions */}
+        {/* User Info and Notifications */}
         <Box sx={{ display: 'flex', alignItems: 'center', marginRight: '30px', gap: '20px' }}>
           {username ? (
             <>
@@ -192,11 +227,7 @@ const Header: React.FC = () => {
                           </ListItemButton>
                         </ListItem>
                         {expandedNotificationId === notification.id && (
-                          <Typography
-                            variant="body2"
-                            color="textSecondary"
-                            sx={{ ml: 2, mt: 1 }}
-                          >
+                          <Typography variant="body2" color="textSecondary" sx={{ ml: 2, mt: 1 }}>
                             {notification.content}
                           </Typography>
                         )}
@@ -230,18 +261,40 @@ const Header: React.FC = () => {
         </Box>
 
         {/* Theme Toggle */}
-        <Box sx={{ marginRight: '20px' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', marginRight: '20px' }}>
           <Typography
             variant="body1"
             style={{
-              display: 'inline',
               marginRight: '10px',
               color: theme.palette.text.primary,
             }}
           >
             {mode === 'light' ? 'Light Mode' : 'Dark Mode'}
           </Typography>
-          <Switch checked={mode === 'dark'} onChange={toggleTheme} />
+          <Brightness7
+            style={{
+              color: mode === 'light' ? theme.palette.warning.main : theme.palette.grey[500],
+              marginRight: '5px',
+            }}
+          />
+          <Switch
+            checked={mode === 'dark'}
+            onChange={handleToggleTheme}
+            sx={{
+              '& .MuiSwitch-thumb': {
+                backgroundColor: mode === 'dark' ? theme.palette.warning.main : theme.palette.grey[300],
+              },
+              '& .MuiSwitch-track': {
+                backgroundColor: mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[300],
+              },
+            }}
+          />
+          <Brightness4
+            style={{
+              color: mode === 'dark' ? theme.palette.warning.main : theme.palette.grey[500],
+              marginLeft: '5px',
+            }}
+          />
         </Box>
       </Toolbar>
     </AppBar>

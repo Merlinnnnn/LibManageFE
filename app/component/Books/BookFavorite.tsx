@@ -53,7 +53,7 @@ export default function BookFavorite() {
                     setTotalPages(1);
                 }
             } catch (error) {
-                console.error('Không thể tải sách:', error);
+                console.log('Không thể tải sách:', error);
                 setBooks([]);
             } finally {
                 setLoading(false);
@@ -68,7 +68,7 @@ export default function BookFavorite() {
     };
 
     return (
-        <Box sx={{ padding: '20px' }}>
+        <Box sx={{ padding: '20px' }} suppressHydrationWarning>
             <Header />
             {loading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>

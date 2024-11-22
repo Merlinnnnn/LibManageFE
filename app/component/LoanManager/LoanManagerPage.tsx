@@ -39,9 +39,9 @@ const LoanManagerPage: React.FC = () => {
     };
 
     useEffect(() => {
-        fetchDocCount();
-        fetchNewUserCount();
-        fetchBorrowedDocCount();
+        // fetchDocCount();
+        // fetchNewUserCount();
+        // fetchBorrowedDocCount();
     }, []);
 
     const fetchDocCount = async () => {

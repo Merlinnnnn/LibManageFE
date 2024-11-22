@@ -77,19 +77,19 @@ const Sidebar: React.FC = () => {
             path: "",
             subItems: [
                 {
-                    text: "New User",
+                    text: "User",
                     icon: <PersonIcon />,
-                    path: "/dashboard"
+                    path: "/user_dashboard"
                 },
                 {
-                    text: "Fines Manage",
+                    text: "Loan",
                     icon: <AttachMoneyIcon />,
-                    path: "/book-manage"
+                    path: "/loan_dashboard"
                 },
                 {
-                    text: "Top Book",
+                    text: "Book",
                     icon: <StackedBarChartIcon />,
-                    path: "/book-manage"
+                    path: "/book_dashboard"
                 }
             ]
         },

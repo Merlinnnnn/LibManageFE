@@ -1,141 +1,204 @@
-import React from 'react';
-import { Box, Card, Typography, Grid, Divider, Button, IconButton, Chip } from '@mui/material';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import React, { useEffect, useState } from 'react';
+import { Box, Card, Typography, Grid, IconButton } from '@mui/material';
+import { Pie } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, ChartOptions } from 'chart.js';
 import Sidebar from '../SideBar';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import PersonIcon from '@mui/icons-material/Person';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import apiService from '@/app/untils/api';
+
+ChartJS.register(ArcElement, Tooltip, Legend);
+
+// Định nghĩa interface cho dữ liệu trả về từ API
+interface UserRoleData {
+    totalUsers: number;
+    usersByRole: {
+        ADMIN: number;
+        MANAGER: number;
+        USER: number;
+    };
+}
+
+interface UserRoleResponse {
+    code: number;
+    message: string;
+    result: UserRoleData;
+}
 
 const Dashboard: React.FC = () => {
+    const [data, setData] = useState<UserRoleData>({
+        totalUsers: 0,
+        usersByRole: {
+            ADMIN: 0,
+            MANAGER: 0,
+            USER: 0,
+        },
+    });
+
+    // Fetch API
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await apiService.get<UserRoleResponse>('/api/v1/dashboards/users/statistics');
+                const responseData: UserRoleData = response.data.result;
+                setData(responseData);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    const pieData = {
+        labels: ['ADMIN', 'MANAGER', 'USER'],
+        datasets: [
+            {
+                data: [
+                    data.usersByRole.ADMIN || 0,
+                    data.usersByRole.MANAGER || 0,
+                    data.usersByRole.USER || 0,
+                ],
+                backgroundColor: ['#3f51b5', '#00bcd4', '#ff5722'],
+                hoverBackgroundColor: ['#303f9f', '#008394', '#e64a19'],
+            },
+        ],
+    };
+
+    const pieOptions: ChartOptions<'pie'> = {
+        plugins: {
+            legend: {
+                display: true,
+                position: 'right',
+                labels: {
+                    boxWidth: 20, 
+                    padding: 10,
+                },
+            },
+        },
+        maintainAspectRatio: true, 
+    };
+    
+
     return (
         <Box display="flex" height="100vh">
+            {/* Sidebar */}
             <Sidebar />
-            <Box flex={1} padding={4} bgcolor="#f5f5f5" overflow="auto" height="100vh">
-                {/* Header Metrics */}
-                <Grid container spacing={3} marginBottom={4}>
-                    <Grid item xs={2}>
-                        <Card sx={{ padding: 2, textAlign: 'center', backgroundColor: '#424242', color: '#fff' }}>
-                            <Typography variant="subtitle1">Total Quantity</Typography>
-                            <Typography variant="h4">631,920</Typography>
-                            <Typography variant="body2">0.00%</Typography>
-                            <IconButton sx={{ color: '#00bcd4', marginTop: 1 }}>
-                                <BarChartIcon fontSize="large" />
-                            </IconButton>
-                        </Card>
-                    </Grid>
-                    <Grid item xs={2}>
-                        <Card sx={{ padding: 2, textAlign: 'center' }}>
-                            <Typography variant="subtitle1">Total COGS</Typography>
-                            <Typography variant="h4">$180.80M</Typography>
-                            <Typography variant="body2">0.00%</Typography>
-                            <IconButton sx={{ color: '#00bcd4', marginTop: 1 }}>
-                                <AccountBalanceIcon fontSize="large" />
-                            </IconButton>
-                        </Card>
-                    </Grid>
-                    <Grid item xs={2}>
-                        <Card sx={{ padding: 2, textAlign: 'center' }}>
-                            <Typography variant="subtitle1">Total Revenue</Typography>
-                            <Typography variant="h4">$307.09M</Typography>
-                            <Typography variant="body2">0.00%</Typography>
-                            <IconButton sx={{ color: '#00bcd4', marginTop: 1 }}>
-                                <AttachMoneyIcon fontSize="large" />
-                            </IconButton>
-                        </Card>
-                    </Grid>
-                    <Grid item xs={2}>
-                        <Card sx={{ padding: 2, textAlign: 'center' }}>
-                            <Typography variant="subtitle1">Total Profit</Typography>
-                            <Typography variant="h4">$126.29M</Typography>
-                            <Typography variant="body2">0.00%</Typography>
-                            <IconButton sx={{ color: '#00bcd4', marginTop: 1 }}>
-                                <TrendingUpIcon fontSize="large" />
-                            </IconButton>
-                        </Card>
-                    </Grid>
-                    <Grid item xs={2}>
-                        <Card sx={{ padding: 2, textAlign: 'center' }}>
-                            <Typography variant="subtitle1">% Profit Margin</Typography>
-                            <Typography variant="h4">41.12%</Typography>
-                            <Typography variant="body2">0.00%</Typography>
-                            <IconButton sx={{ color: '#00bcd4', marginTop: 1 }}>
-                                <TrendingUpIcon fontSize="large" />
-                            </IconButton>
-                        </Card>
-                    </Grid>
-                    <Grid item xs={2}>
-                        <Card sx={{ padding: 2, textAlign: 'center', backgroundColor: '#424242', color: '#fff' }}>
-                            <Typography variant="subtitle1"># Transaction</Typography>
-                            <Typography variant="h4">60.40K</Typography>
-                            <Typography variant="body2">0.00%</Typography>
-                            <IconButton sx={{ color: '#00bcd4', marginTop: 1 }}>
-                                <ShoppingCartIcon fontSize="large" />
-                            </IconButton>
-                        </Card>
-                    </Grid>
-                </Grid>
 
-                {/* Transaction & Profit Chart */}
-                <Grid container spacing={3} marginBottom={4}>
-                    <Grid item xs={6}>
-                        <Card sx={{ padding: 3 }}>
-                            <Typography variant="h6" color="#00bcd4">
-                                93.9% Transaction came from 2008 and 2007
-                            </Typography>
-                            <Typography color="textSecondary">15,100 Average Transaction</Typography>
-                            <Box display="flex" justifyContent="space-between" alignItems="center" marginTop={2}>
-                                {['2005', '2006', '2007', '2008'].map(year => (
-                                    <Box key={year} textAlign="center">
-                                        <Typography variant="body1">{year}</Typography>
-                                        <Box height={year === '2008' ? 80 : year === '2007' ? 60 : 20} width={20} bgcolor="#00bcd4" marginTop={1} />
-                                    </Box>
-                                ))}
-                            </Box>
+            <Box flex={1} padding={3} bgcolor="#f5f5f5" overflow="auto">
+                <Grid container spacing={2}>
+                    {/* Total Users Card */}
+                    <Grid item xs={12}>
+                        <Card
+                            sx={{
+                                padding: 3,
+                                textAlign: 'center',
+                                backgroundColor: '#424242',
+                                color: '#fff',
+                            }}
+                        >
+                            <Typography variant="h6">Total Users</Typography>
+                            <Typography variant="h4">{data.totalUsers}</Typography>
                         </Card>
                     </Grid>
-                    <Grid item xs={6}>
-                        <Card sx={{ padding: 3 }}>
-                            <Typography variant="h6" color="#00bcd4">
-                                43.8% of Profit came from highlighted weekdays
-                            </Typography>
-                            <Box display="flex" justifyContent="space-between" marginTop={2}>
-                                {['Thu', 'Fri', 'Wed', 'Mon', 'Sat', 'Tue', 'Sun'].map((day, index) => (
-                                    <Box key={day} textAlign="center">
-                                        <Typography variant="body1">{day}</Typography>
-                                        <Box height={100 - index * 5} width={20} bgcolor={index < 3 ? '#00bcd4' : '#c4c4c4'} marginTop={1} />
-                                    </Box>
-                                ))}
-                            </Box>
-                        </Card>
-                    </Grid>
-                </Grid>
 
-                <Grid container spacing={3}>
-                    <Grid item xs={8}>
-                        <Card sx={{ padding: 3 }}>
-                            <Typography variant="subtitle1" gutterBottom>
-                                In 2005 May, Jun, & Dec collectively accounted for 31.9% of total Profit
+                    {/* Role Cards */}
+                        {/* Card Admin */}
+                        <Grid item xs={4}>
+                            <Card
+                                sx={{
+                                    padding: 2,
+                                    textAlign: 'center',
+                                    backgroundColor: '#424242',
+                                    color: '#fff',
+                                }}
+                            >
+                                <Typography variant="subtitle1">Admin</Typography>
+                                <Typography variant="h4">
+                                    {data.usersByRole.ADMIN || 0}
+                                </Typography>
+                                <Typography variant="body2">
+                                    {data.totalUsers > 0
+                                        ? `${(
+                                              ((data.usersByRole.ADMIN || 0) / data.totalUsers) *
+                                              100
+                                          ).toFixed(2)}%`
+                                        : '0.00%'}
+                                </Typography>
+                                <IconButton sx={{ color: '#00bcd4', marginTop: 1 }}>
+                                    <AdminPanelSettingsIcon fontSize="large" />
+                                </IconButton>
+                            </Card>
+                        </Grid>
+
+                        {/* Card Manager */}
+                        <Grid item xs={4}>
+                            <Card
+                                sx={{
+                                    padding: 2,
+                                    textAlign: 'center',
+                                    backgroundColor: '#424242',
+                                    color: '#fff',
+                                }}
+                            >
+                                <Typography variant="subtitle1">Manager</Typography>
+                                <Typography variant="h4">
+                                    {data.usersByRole.MANAGER || 0}
+                                </Typography>
+                                <Typography variant="body2">
+                                    {data.totalUsers > 0
+                                        ? `${(
+                                              ((data.usersByRole.MANAGER || 0) / data.totalUsers) *
+                                              100
+                                          ).toFixed(2)}%`
+                                        : '0.00%'}
+                                </Typography>
+                                <IconButton sx={{ color: '#00bcd4', marginTop: 1 }}>
+                                    <ManageAccountsIcon fontSize="large" />
+                                </IconButton>
+                            </Card>
+                        </Grid>
+
+                        {/* Card User */}
+                        <Grid item xs={4}>
+                            <Card
+                                sx={{
+                                    padding: 2,
+                                    textAlign: 'center',
+                                    backgroundColor: '#424242',
+                                    color: '#fff',
+                                }}
+                            >
+                                <Typography variant="subtitle1">User</Typography>
+                                <Typography variant="h4">
+                                    {data.usersByRole.USER || 0}
+                                </Typography>
+                                <Typography variant="body2">
+                                    {data.totalUsers > 0
+                                        ? `${(
+                                              ((data.usersByRole.USER || 0) / data.totalUsers) *
+                                              100
+                                          ).toFixed(2)}%`
+                                        : '0.00%'}
+                                </Typography>
+                                <IconButton sx={{ color: '#00bcd4', marginTop: 1 }}>
+                                    <PersonIcon fontSize="large" />
+                                </IconButton>
+                            </Card>
+                        </Grid>
+
+
+                    {/* Pie Chart */}
+                    <Grid item xs={12}>
+                        <Card sx={{ padding: 2, marginTop: 2 }}>
+                            <Typography variant="h6" gutterBottom>
+                                User Role Distribution
                             </Typography>
-                            <Box display="flex" justifyContent="space-between" marginTop={2}>
-                                {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map(month => (
-                                    <Chip key={month} label={month} color={month === 'May' || month === 'Jun' || month === 'Dec' ? 'primary' : 'default'} />
-                                ))}
-                            </Box>
-                            <Box height={100} bgcolor="grey.200" borderRadius={2} marginTop={3} />
-                        </Card>
-                    </Grid>
-                    <Grid item xs={4}>
-                        <Card sx={{ padding: 3 }}>
-                            <Typography variant="subtitle1" color="#00bcd4">
-                                Month Filter
-                            </Typography>
-                            <Box display="flex" flexWrap="wrap" justifyContent="center" gap={1} marginTop={2}>
-                                {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map(month => (
-                                    <Button key={month} variant="contained" color="primary" size="small">
-                                        {month}
-                                    </Button>
-                                ))}
+                            <Box display="flex" justifyContent="center" alignItems="center">
+                                <Box width="300px" height="300px">
+                                    <Pie data={pieData} options={pieOptions}/>
+                                </Box>
                             </Box>
                         </Card>
                     </Grid>

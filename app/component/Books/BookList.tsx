@@ -79,7 +79,7 @@ const TrendingBooks: React.FC = () => {
         setBooks([]);
       }
     } catch (error) {
-      console.error('Error fetching books:', error);
+      console.log('Error fetching books:', error);
       setBooks([]);
     }
   };
