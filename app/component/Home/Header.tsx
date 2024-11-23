@@ -18,6 +18,9 @@ import {
   ListItemText,
   ListItemButton,
   Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -29,6 +32,7 @@ import { useThemeContext } from '../Context/ThemeContext';
 import { useAuth } from '../Context/AuthContext';
 import apiService from '../../untils/api';
 import dayjs from 'dayjs';
+import QrCodeIcon from '@mui/icons-material/QrCode';
 import { Brightness4, Brightness7 } from '@mui/icons-material';
 
 interface Notification {
@@ -58,6 +62,8 @@ const Header: React.FC = () => {
   const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
   const [expandedNotificationId, setExpandedNotificationId] = useState<string | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [qrCodeOpen, setQrCodeOpen] = useState<boolean>(false);
+  const [qrCodeImage, setQrCodeImage] = useState<string | null>(null);
 
   useEffect(() => {
     const storedUsername = sessionStorage.getItem('fullname');
@@ -108,6 +114,27 @@ const Header: React.FC = () => {
 
   const handleExpandNotification = (id: string) => {
     setExpandedNotificationId(id === expandedNotificationId ? null : id);
+  };
+  const fetchQrCode = async () => {
+    try {
+      const response = await apiService.get('/api/v1/loan-transactions/1/qrcode-image', {
+        responseType: 'blob',
+      });
+
+      const qrCodeUrl = URL.createObjectURL(response.data as Blob);
+      setQrCodeImage(qrCodeUrl);
+      setQrCodeOpen(true);
+    } catch (error) {
+      console.error('Error fetching QR code:', error);
+    }
+  };
+  
+
+  const handleQrCodeClick = () => {
+    fetchQrCode();
+  };
+  const handleQrCodeClose = () => {
+    setQrCodeOpen(false);
   };
 
   return (
@@ -188,6 +215,24 @@ const Header: React.FC = () => {
               <Typography variant="body1" color="textPrimary">
                 Hello, {username}
               </Typography>
+              <Tooltip title="QR Code">
+                <IconButton
+                  edge="end"
+                  aria-label="qr code"
+                  onClick={handleQrCodeClick}
+                  sx={{ color: theme.palette.text.primary }}
+                >
+                  <QrCodeIcon />
+                </IconButton>
+              </Tooltip>
+              <Dialog open={qrCodeOpen} onClose={handleQrCodeClose}>
+                <DialogTitle>QR Code</DialogTitle>
+                <DialogContent>
+                  {qrCodeImage && (
+                    <img src={qrCodeImage} alt="QR Code" style={{ width: '100%' }} />
+                  )}
+                </DialogContent>
+              </Dialog>
               <Tooltip title="Notifications">
                 <IconButton
                   edge="end"

@@ -88,22 +88,29 @@ const BookDashboard: React.FC = () => {
       <Box flex={1} padding={3} bgcolor="#f5f5f5" overflow="auto">
         <Grid container spacing={2}>
           {/* Phần bên trái */}
-          <Grid item xs={12} md={8}>
+          <Grid item xs={12} md={8} >
             <Grid
               container
-              spacing={2}
               direction="column"
               alignItems="stretch"
-              sx={{ height: '100%' }}
+              sx={{
+                display: 'flex',      
+                flexDirection: 'column', 
+                height: '100%'        
+              }}
+              
+              //spacing={2}
             >
               {/* Card Tổng Số Sách */}
-              <Grid item>
+              <Grid item sx={{ height: '50%' }}>
                 <Card
                   sx={{
                     padding: 3,
                     textAlign: 'center',
                     backgroundColor: '#424242',
                     color: '#fff',
+                    height:'95%',
+                    
                   }}
                 >
                   <Typography variant="h6">Total Documents</Typography>
@@ -112,15 +119,16 @@ const BookDashboard: React.FC = () => {
               </Grid>
 
               {/* Các Card Status */}
-              <Grid item container spacing={2} alignItems="stretch">
+              <Grid item container alignItems="stretch"sx={{ height: '50%' }}>
                 <Grid item xs={4}>
                   <Card
                     sx={{
-                      padding: 2,
+                      
                       textAlign: 'center',
                       backgroundColor: '#ff5722',
                       color: '#fff',
                       height: '100%',
+                      marginRight: 2
                     }}
                   >
                     <Typography variant="h6">Borrowed</Typography>
@@ -130,7 +138,7 @@ const BookDashboard: React.FC = () => {
                 <Grid item xs={4}>
                   <Card
                     sx={{
-                      padding: 2,
+
                       textAlign: 'center',
                       backgroundColor: '#4caf50',
                       color: '#fff',
@@ -144,11 +152,12 @@ const BookDashboard: React.FC = () => {
                 <Grid item xs={4}>
                   <Card
                     sx={{
-                      padding: 2,
+
                       textAlign: 'center',
                       backgroundColor: '#f44336',
                       color: '#fff',
                       height: '100%',
+                      marginLeft: 2
                     }}
                   >
                     <Typography variant="h6">Disabled</Typography>
@@ -175,7 +184,7 @@ const BookDashboard: React.FC = () => {
         <Grid container spacing={2} marginTop={4}>
           {/* Biểu Đồ Cột */}
           <Grid item xs={12} md={6}>
-            <Card sx={{ padding: 3 }}>
+            <Card sx={{ padding: 3, height: '400px' }}>
               <Typography variant="h6" gutterBottom>
                 Books by Category (Bar Chart)
               </Typography>
@@ -187,7 +196,7 @@ const BookDashboard: React.FC = () => {
 
           {/* Bảng Thống Kê Theo Thể Loại */}
           <Grid item xs={12} md={6}>
-            <Card sx={{ padding: 3 }}>
+            <Card sx={{ padding: 3, height: '400px' }}>
               <Typography variant="h6" gutterBottom>
                 Books by Category
               </Typography>

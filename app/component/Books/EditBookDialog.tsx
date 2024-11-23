@@ -9,7 +9,8 @@ import {
     Button,
     Avatar,
     IconButton,
-    Typography
+    Typography,
+    Chip,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
@@ -17,22 +18,30 @@ import apiService from '../../untils/api';
 
 interface Book {
     documentId: number;
+    isbn: string;
     documentName: string;
+    author: string;
+    publisher: string;
+    publishedDate: string;
+    pageCount: number;
+    language: string;
+    quantity: number;
+    availableCount: number;
+    price: number;
+    size: string;
+    documentTypeIds: number[];
+    courseIds: number[];
     coverImage?: string;
-    author?: string;
-    publisher?: string;
-    isbn?: string;
-    publishedDate?: string;
-    pageCount?: number;
-    language?: string;
-    quantity?: number;
-    availableCount?: number;
-    status?: string;
-    description?: string;
-    price?: number;
-    size?: string;
-    documentTypeIds?: number[];
-    warehouseId?: number;
+}
+
+interface DocumentType {
+    documentTypeId: number;
+    typeName: string;
+}
+
+interface Course {
+    courseId: number;
+    courseName: string;
 }
 
 interface EditBookDialogProps {
@@ -45,21 +54,51 @@ const EditBookDialog: React.FC<EditBookDialogProps> = ({ open, documentId, onClo
     const [book, setBook] = useState<Book | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
+    const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
+    const [selectedTags, setSelectedTags] = useState<number[]>([]);
+    const [courses, setCourses] = useState<Course[]>([]);
+    const [selectedCourses, setSelectedCourses] = useState<number[]>([]);
 
     useEffect(() => {
         if (documentId) {
-            const fetchBook = async () => {
-                try {
-                    const response = await apiService.get<{ code: number; message: string; result: Book }>(`/api/v1/documents/${documentId}`);
-                    setBook(response.data.result);
-                    setPreview(`${response.data.result.coverImage}`);
-                } catch (error) {
-                    console.error('Không thể tải thông tin sách:', error);
-                }
-            };
-            fetchBook();
+            fetchBookDetails(documentId);
         }
+        fetchDocumentTypes();
+        fetchCourses();
     }, [documentId]);
+
+    const fetchBookDetails = async (id: number) => {
+        try {
+            const response = await apiService.get<{ result: Book }>(`/api/v1/documents/${id}`);
+            const bookData = response.data.result;
+            setBook(bookData);
+            setPreview(bookData.coverImage || null);
+            setSelectedTags(bookData.documentTypeIds || []);
+            setSelectedCourses(bookData.courseIds || []);
+        } catch (error) {
+            console.error('Error fetching book details:', error);
+        }
+    };
+
+    const fetchDocumentTypes = async () => {
+        try {
+            const response = await apiService.get<{ result: { content: DocumentType[] } }>(
+                '/api/v1/document-types'
+            );
+            setDocumentTypes(response.data.result.content || []);
+        } catch (error) {
+            console.error('Error fetching document types:', error);
+        }
+    };
+
+    const fetchCourses = async () => {
+        try {
+            const response = await apiService.get<{ result: { content: Course[] } }>('/api/v1/courses');
+            setCourses(response.data.result.content || []);
+        } catch (error) {
+            console.error('Error fetching courses:', error);
+        }
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!book) return;
@@ -72,6 +111,22 @@ const EditBookDialog: React.FC<EditBookDialogProps> = ({ open, documentId, onClo
             const file = e.target.files[0];
             setSelectedFile(file);
             setPreview(URL.createObjectURL(file));
+        }
+    };
+
+    const handleTagToggle = (tagId: number) => {
+        if (selectedTags.includes(tagId)) {
+            setSelectedTags(selectedTags.filter((id) => id !== tagId));
+        } else {
+            setSelectedTags([...selectedTags, tagId]);
+        }
+    };
+
+    const handleCourseToggle = (courseId: number) => {
+        if (selectedCourses.includes(courseId)) {
+            setSelectedCourses(selectedCourses.filter((id) => id !== courseId));
+        } else {
+            setSelectedCourses([...selectedCourses, courseId]);
         }
     };
 
@@ -92,28 +147,21 @@ const EditBookDialog: React.FC<EditBookDialogProps> = ({ open, documentId, onClo
             formData.append('availableCount', (book.availableCount || 0).toString());
             formData.append('price', (book.price || 0).toString());
             formData.append('size', book.size || '');
-            formData.append('warehouseId', (book.warehouseId || 0).toString());
-            const documentTypeIds = [1, 2, 3]; 
+            formData.append('status','AVAILABLE');
 
-            documentTypeIds.forEach((id) => {
-                formData.append('documentTypeIds', id.toString());
-            });
-            
-            formData.append('warehouseId','AVAILABLE');
+            selectedTags.forEach((tagId) => formData.append('documentTypeIds', tagId.toString()));
+            selectedCourses.forEach((courseId) => formData.append('courseIds', courseId.toString()));
 
-            // if (selectedFile) {
-            //     formData.append('coverImage', selectedFile); 
-            // }
-            const jsonData: Record<string, any> = {};
-            formData.forEach((value, key) => {
-                jsonData[key] = value;
-            });
-            await apiService.put(`/api/v1/documents/${book.documentId}`, jsonData);
+            if (selectedFile) {
+                formData.append('coverImage', selectedFile);
+            }
+
+            await apiService.put(`/api/v1/documents/${book.documentId}`, formData);
 
             alert('Book information updated successfully!');
             onClose();
         } catch (error) {
-            console.error('Không thể cập nhật sách:', error);
+            console.error('Error updating book:', error);
         }
     };
 
@@ -153,18 +201,7 @@ const EditBookDialog: React.FC<EditBookDialogProps> = ({ open, documentId, onClo
                                             alt="Selected File"
                                             sx={{ width: '100%', height: '100%', borderRadius: 1 }}
                                         />
-                                    ) : book?.coverImage ? (
-                                        <Avatar
-                                            src={book.coverImage}
-                                            alt="Book Cover"
-                                            sx={{ width: '100%', height: '100%', borderRadius: 1 }}
-                                            onError={(e: any) => {
-                                                e.target.onerror = null;
-                                                e.target.src = '';
-                                            }}
-                                        />
                                     ) : (
-
                                         <Box
                                             display="flex"
                                             flexDirection="column"
@@ -180,10 +217,6 @@ const EditBookDialog: React.FC<EditBookDialogProps> = ({ open, documentId, onClo
                                 </label>
                             </Box>
                         </Grid>
-
-
-
-                        {/* Form Section */}
                         <Grid item xs={12} sm={8}>
                             <Grid container spacing={2}>
                                 <Grid item xs={6}>
@@ -211,15 +244,40 @@ const EditBookDialog: React.FC<EditBookDialogProps> = ({ open, documentId, onClo
                                     <TextField size="small" fullWidth label="Quantity" name="quantity" type="number" value={book.quantity || 0} onChange={handleChange} />
                                 </Grid>
                                 <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Available Count" name="availableCount" type="number" value={book.availableCount || 0} onChange={handleChange} />
-                                </Grid>
-                                <Grid item xs={6}>
                                     <TextField size="small" fullWidth label="Price" name="price" type="number" value={book.price || 0} onChange={handleChange} />
                                 </Grid>
                             </Grid>
                         </Grid>
                     </Grid>
                 )}
+                <Box mt={3}>
+                    <Typography variant="h6">Select Types</Typography>
+                    <Box mt={1} display="flex" flexWrap="wrap" gap={1}>
+                        {documentTypes.map((tag) => (
+                            <Chip
+                                key={tag.documentTypeId}
+                                label={tag.typeName}
+                                clickable
+                                color={selectedTags.includes(tag.documentTypeId) ? 'primary' : 'default'}
+                                onClick={() => handleTagToggle(tag.documentTypeId)}
+                            />
+                        ))}
+                    </Box>
+                </Box>
+                <Box mt={3}>
+                    <Typography variant="h6">Select Courses</Typography>
+                    <Box mt={1} display="flex" flexWrap="wrap" gap={1}>
+                        {courses.map((course) => (
+                            <Chip
+                                key={course.courseId}
+                                label={course.courseName}
+                                clickable
+                                color={selectedCourses.includes(course.courseId) ? 'primary' : 'default'}
+                                onClick={() => handleCourseToggle(course.courseId)}
+                            />
+                        ))}
+                    </Box>
+                </Box>
                 <Box mt={3} textAlign="center">
                     <Button variant="contained" color="primary" onClick={handleSaveChanges}>
                         Save Changes

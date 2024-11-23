@@ -75,7 +75,7 @@ const RecentLoansTable: React.FC = () => {
             fontWeight: 'bold',
             textTransform: 'none'
         };
-        
+
         switch (status) {
             case 'APPROVED':
                 return { ...style, backgroundColor: '#ebfaf4', color: '#2e7d32' }; // Chỉnh màu chữ cho dễ nhìn
@@ -87,7 +87,7 @@ const RecentLoansTable: React.FC = () => {
                 return style;
         }
     };
-    
+
 
     return (
         <Box>
@@ -111,30 +111,35 @@ const RecentLoansTable: React.FC = () => {
                                 <TableCell style={{ padding: '4px 8px' }}>{loan.username}</TableCell>
                                 <TableCell style={{ padding: '4px 8px' }}>{loan.loanDate}</TableCell>
                                 <TableCell style={{ padding: '4px 8px' }}>
-                                    <Box 
-                                        sx={{ 
-                                            ...getStatusColor(loan.status) 
+                                    <Box
+                                        sx={{
+                                            ...getStatusColor(loan.status)
                                         }}
                                     >
                                         {loan.status.toLowerCase()}
                                     </Box>
                                 </TableCell>
                                 <TableCell style={{ padding: '4px 8px' }}>
-                                    <Tooltip title="Approve">
-                                        <IconButton color="primary" onClick={() => handleLoanAction(loan.transactionId, 'APPROVE')}>
-                                            <DoneIcon />
-                                        </IconButton>
-                                    </Tooltip>
-                                    <Tooltip title="Reject">
-                                        <IconButton color="secondary" onClick={() => handleLoanAction(loan.transactionId, 'REJECTED')}>
-                                            <BlockIcon />
-                                        </IconButton>
-                                    </Tooltip>
-                                    <Tooltip title="Cancel">
+                                    {loan.status === 'PENDING' ? (
+                                        <>
+                                            <Tooltip title="Approve">
+                                                <IconButton color="primary" onClick={() => handleLoanAction(loan.transactionId, 'APPROVE')}>
+                                                    <DoneIcon />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Reject">
+                                                <IconButton color="secondary" onClick={() => handleLoanAction(loan.transactionId, 'REJECTED')}>
+                                                    <BlockIcon />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </>)
+                                        :<></>
+                                    }
+                                    {/* <Tooltip title="Cancel">
                                         <IconButton color="default" onClick={() => handleLoanAction(loan.transactionId, 'CANCEL')}>
                                             <ClearIcon />
                                         </IconButton>
-                                    </Tooltip>
+                                    </Tooltip> */}
                                 </TableCell>
                             </TableRow>
                         ))}

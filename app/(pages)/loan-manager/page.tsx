@@ -3,6 +3,7 @@ import React from 'react';
 import Loan from '../../component/LoanManager/LoanManagerPage';
 import { CustomThemeProvider } from '../../component/Context/ThemeContext';
 import { AuthProvider } from '@/app/component/Context/AuthContext';
+import RoleContext from '@/app/component/Context/RoleContext';
 
 const LoanManager: React.FC = () => {
     return (
@@ -14,4 +15,4 @@ const LoanManager: React.FC = () => {
     );
 };
 
-export default LoanManager;
+export default RoleContext(LoanManager,['ROLE_ADMIN']);

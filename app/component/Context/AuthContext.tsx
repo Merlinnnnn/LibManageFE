@@ -42,9 +42,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       const decodedToken: any = jwtDecode(authToken);
       const fullName = decodedToken.fullName;
-
+      const role = decodedToken.scope
       sessionStorage.setItem('access_token', authToken);
       sessionStorage.setItem('fullname', fullName);
+      sessionStorage.setItem('role', role);
       setToken(authToken);
 
       router.push('/home');
