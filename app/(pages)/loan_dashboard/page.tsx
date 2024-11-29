@@ -3,6 +3,7 @@ import React from 'react';
 import LoanDashBoard from '../../component/DashBoard/LoanDashBoard';
 import { CustomThemeProvider } from '../../component/Context/ThemeContext';
 import { AuthProvider } from '@/app/component/Context/AuthContext';
+import RoleContext from '@/app/component/Context/RoleContext';
 
 const LoanDashBoardPage: React.FC = () => {
     return (
@@ -14,4 +15,4 @@ const LoanDashBoardPage: React.FC = () => {
     );
 };
 
-export default LoanDashBoardPage;
+export default RoleContext(LoanDashBoardPage,['ROLE_ADMIN']);

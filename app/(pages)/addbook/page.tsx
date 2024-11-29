@@ -3,6 +3,7 @@ import React from 'react';
 import AddBook from '../../component/Books/AddBookPage';
 import { CustomThemeProvider } from '../../component/Context/ThemeContext';
 import { AuthProvider } from '@/app/component/Context/AuthContext';
+import RoleContext from '@/app/component/Context/RoleContext';
 
 const AddBookPage: React.FC = () => {
     return (
@@ -14,4 +15,4 @@ const AddBookPage: React.FC = () => {
     );
 };
 
-export default AddBookPage;
+export default RoleContext(AddBookPage,['ROLE_ADMIN']);

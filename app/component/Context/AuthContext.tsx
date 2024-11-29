@@ -48,7 +48,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       sessionStorage.setItem('role', role);
       setToken(authToken);
 
-      router.push('/home');
+      if (role === 'ROLE_ADMIN') {
+        router.push('/user_dashboard');
+    } else {
+        router.push('/home');
+    }
     } catch (error) {
       console.error('Đăng nhập thất bại:', error);
       alert('Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập.');

@@ -34,6 +34,7 @@ import { useAuth } from './Context/AuthContext';
 import { useThemeContext } from './Context/ThemeContext';
 import apiService from '../untils/api';
 import dayjs from 'dayjs';
+import useWebSocket from '../services/useWebSocket';
 
 interface Notification {
     id: string;
@@ -82,6 +83,11 @@ const Sidebar: React.FC = () => {
             setFullName(storedFullname);
         }
     }, []);
+    useWebSocket((notification: Notification) => {
+        // Cập nhật danh sách thông báo khi nhận được thông báo mới từ WebSocket
+        setNotifications((prevNotifications) => [notification, ...prevNotifications]);
+        setUnreadCount((prevCount) => prevCount + 1);
+    });
 
     useEffect(() => {
         const fetchUnreadNotifications = async () => {

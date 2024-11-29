@@ -32,8 +32,8 @@ import { useThemeContext } from '../Context/ThemeContext';
 import { useAuth } from '../Context/AuthContext';
 import apiService from '../../untils/api';
 import dayjs from 'dayjs';
-import QrCodeIcon from '@mui/icons-material/QrCode';
 import { Brightness4, Brightness7 } from '@mui/icons-material';
+import useWebSocket from '../../services/useWebSocket';
 
 interface Notification {
   id: string;
@@ -62,8 +62,7 @@ const Header: React.FC = () => {
   const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
   const [expandedNotificationId, setExpandedNotificationId] = useState<string | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
-  const [qrCodeOpen, setQrCodeOpen] = useState<boolean>(false);
-  const [qrCodeImage, setQrCodeImage] = useState<string | null>(null);
+
 
   useEffect(() => {
     const storedUsername = sessionStorage.getItem('fullname');
@@ -74,6 +73,11 @@ const Header: React.FC = () => {
       setMode(savedTheme as 'light' | 'dark');
     }
   }, [setMode]);
+  useWebSocket((notification: Notification) => {
+    // Cập nhật danh sách thông báo khi nhận được thông báo mới từ WebSocket
+    setNotifications((prevNotifications) => [notification, ...prevNotifications]);
+    console.log('set notifications')
+});
 
   const handleToggleTheme = () => {
     toggleTheme();
@@ -102,12 +106,21 @@ const Header: React.FC = () => {
     try {
       const response: ApiResponse = await apiService.get('/api/v1/notifications/my-notifications');
       if (response.data && response.data.result && response.data.result.content) {
-        setNotifications(response.data.result.content);
+        setNotifications((prevNotifications) => {
+          // Hợp nhất thông báo mới từ API với các thông báo hiện có
+          const newNotifications = response.data.result.content;
+          const mergedNotifications = [
+            ...newNotifications.filter(newNotif => !prevNotifications.find(oldNotif => oldNotif.id === newNotif.id)),
+            ...prevNotifications
+          ];
+          return mergedNotifications;
+        });
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
   };
+  
 
   const openNotifications = Boolean(notificationAnchor);
   const openMenu = Boolean(menuAnchor);
@@ -115,27 +128,7 @@ const Header: React.FC = () => {
   const handleExpandNotification = (id: string) => {
     setExpandedNotificationId(id === expandedNotificationId ? null : id);
   };
-  const fetchQrCode = async () => {
-    try {
-      const response = await apiService.get('/api/v1/loan-transactions/1/qrcode-image', {
-        responseType: 'blob',
-      });
 
-      const qrCodeUrl = URL.createObjectURL(response.data as Blob);
-      setQrCodeImage(qrCodeUrl);
-      setQrCodeOpen(true);
-    } catch (error) {
-      console.error('Error fetching QR code:', error);
-    }
-  };
-  
-
-  const handleQrCodeClick = () => {
-    fetchQrCode();
-  };
-  const handleQrCodeClose = () => {
-    setQrCodeOpen(false);
-  };
 
   return (
     <AppBar
@@ -215,24 +208,8 @@ const Header: React.FC = () => {
               <Typography variant="body1" color="textPrimary">
                 Hello, {username}
               </Typography>
-              <Tooltip title="QR Code">
-                <IconButton
-                  edge="end"
-                  aria-label="qr code"
-                  onClick={handleQrCodeClick}
-                  sx={{ color: theme.palette.text.primary }}
-                >
-                  <QrCodeIcon />
-                </IconButton>
-              </Tooltip>
-              <Dialog open={qrCodeOpen} onClose={handleQrCodeClose}>
-                <DialogTitle>QR Code</DialogTitle>
-                <DialogContent>
-                  {qrCodeImage && (
-                    <img src={qrCodeImage} alt="QR Code" style={{ width: '100%' }} />
-                  )}
-                </DialogContent>
-              </Dialog>
+              
+              
               <Tooltip title="Notifications">
                 <IconButton
                   edge="end"

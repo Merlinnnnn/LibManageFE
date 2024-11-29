@@ -1,128 +1,225 @@
 import React, { useEffect, useState } from 'react';
 import {
-    Box,
-    Grid,
-    Card,
-    CardContent,
-    Typography,
-    Tabs,
-    Tab,
+  Box,
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  Tabs,
+  Tab,
+  IconButton,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Button,
+  Input,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import Sidebar from '../SideBar';
 import NewStudentsTable from './NewStudentsTable';
 import RecentLoansTable from './RecentLoansTable';
 import RecentSubscriptionsTable from './RecentSubscriptionsTable';
 import apiService from '@/app/untils/api';
+import QrCodeIcon from '@mui/icons-material/QrCode';
 
 interface DocumentCountResponse {
-    result: {
-        documentCount: number;
-    };
+  result: {
+    documentCount: number;
+  };
 }
 
 interface FinesUnpaidCountResponse {
-    result: number;
+  result: number;
 }
 
 interface UnreturnedDocumentsCountResponse {
-    result: number;
+  result: number;
 }
 
 const LoanManagerPage: React.FC = () => {
-    const [tabIndex, setTabIndex] = useState(0);
-    const [documentCount, setDocumentCount] = useState<number | null>(null);
-    const [unpaidFinesCount, setUnpaidFinesCount] = useState<number | null>(null);
-    const [borrowedDocCount, setBorrowedDocCount] = useState<number | null>(null);
+  const [tabIndex, setTabIndex] = useState(0);
+  const [documentCount, setDocumentCount] = useState<number | null>(null);
+  const [unpaidFinesCount, setUnpaidFinesCount] = useState<number | null>(null);
+  const [borrowedDocCount, setBorrowedDocCount] = useState<number | null>(null);
 
-    const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-        setTabIndex(newValue);
-    };
+  const [openDialog, setOpenDialog] = useState(false); // Trạng thái mở/đóng Dialog
+  const [qrImage, setQrImage] = useState<File | null>(null); // Trạng thái lưu trữ ảnh QR
 
-    useEffect(() => {
-        // fetchDocCount();
-        // fetchNewUserCount();
-        // fetchBorrowedDocCount();
-    }, []);
+  // Snackbar state
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
 
-    const fetchDocCount = async () => {
-        try {
-            const response = await apiService.get<DocumentCountResponse>('/api/v1/dashboard/documents/count');
-            setDocumentCount(response.data.result.documentCount);
-            console.log('Số lượng sách: ', response.data.result.documentCount);
-        } catch (error) {
-            console.error('Lỗi khi lấy số lượng sách:', error);
-        }
-    };
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabIndex(newValue);
+  };
 
-    const fetchNewUserCount = async () => {
-        try {
-            const response = await apiService.get<FinesUnpaidCountResponse>('/api/v1/dashboard/fines/unpaid/count');
-            setUnpaidFinesCount(response.data.result);
-            console.log('Khoản phạt chưa trả: ', response.data.result);
-        } catch (error) {
-            console.error('Lỗi khi lấy khoản phạt chưa trả:', error);
-        }
-    };
+  useEffect(() => {
+    fetchDocCount();
+    fetchNewUserCount();
+    fetchBorrowedDocCount();
+  }, []);
 
-    const fetchBorrowedDocCount = async () => {
-        try {
-            const response = await apiService.get<UnreturnedDocumentsCountResponse>('/api/v1/dashboard/documents/unreturned/count');
-            setBorrowedDocCount(response.data.result);
-            console.log('Số lượng sách đang mượn: ', response.data.result);
-        } catch (error) {
-            console.error('Lỗi khi lấy số lượng sách đang mượn:', error);
-        }
-    };
+  // Hàm thông báo lỗi và thành công
+  const showNotification = (type: 'success' | 'error', message: string) => {
+    setSnackbarSeverity(type);
+    setSnackbarMessage(message);
+    setOpenSnackbar(true);
+  };
 
-    return (
-        <Box display="flex" height="100vh">
-            <Sidebar />
-            <Box flex={1} p={3} overflow="auto" height="100vh">
-                <Typography variant="h4" gutterBottom>
-                    Dashboard
-                </Typography>
-                <Grid container spacing={3}>
-                    <Grid item xs={4}>
-                        <Card>
-                            <CardContent>
-                                <Typography variant="h5">TOTAL BOOKS</Typography>
-                                <Typography variant="h4">{documentCount !== null ? documentCount : 'Loading...'}</Typography>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                    <Grid item xs={4}>
-                        <Card>
-                            <CardContent>
-                                <Typography variant="h5">BORROWED BOOKS</Typography>
-                                <Typography variant="h4">{borrowedDocCount !== null ? borrowedDocCount : 'Loading...'}</Typography>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                    <Grid item xs={4}>
-                        <Card>
-                            <CardContent>
-                                <Typography variant="h5">UNPAID</Typography>
-                                <Typography variant="h4">{unpaidFinesCount !== null ? unpaidFinesCount : 'Loading...'}</Typography>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                </Grid>
+  const fetchDocCount = async () => {
+    try {
+      const response = await apiService.get<DocumentCountResponse>('/api/v1/dashboard/documents/count');
+      setDocumentCount(response.data.result.documentCount);
+      showNotification('success', `Số lượng sách: ${response.data.result.documentCount}`);
+    } catch (error: any) {
+      showNotification('error', error?.response?.data?.message || 'Có lỗi xảy ra khi lấy số lượng sách');
+    }
+  };
 
-                <Box mt={4}>
-                    <Tabs value={tabIndex} onChange={handleTabChange} indicatorColor="primary" textColor="primary">
-                        <Tab label="NEW STUDENTS" />
-                        <Tab label="RECENT LOANS" />
-                        <Tab label="RECENT SUBSCRIPTIONS" />
-                    </Tabs>
-                    <Box mt={2}>
-                        {tabIndex === 0 && <NewStudentsTable />}
-                        {tabIndex === 1 && <RecentLoansTable />}
-                        {tabIndex === 2 && <RecentSubscriptionsTable />}
-                    </Box>
-                </Box>
-            </Box>
+  const fetchNewUserCount = async () => {
+    try {
+      const response = await apiService.get<FinesUnpaidCountResponse>('/api/v1/dashboard/fines/unpaid/count');
+      setUnpaidFinesCount(response.data.result);
+      showNotification('success', `Khoản phạt chưa trả: ${response.data.result}`);
+    } catch (error: any) {
+      showNotification('error', error?.response?.data?.message || 'Có lỗi xảy ra khi lấy khoản phạt');
+    }
+  };
+
+  const fetchBorrowedDocCount = async () => {
+    try {
+      const response = await apiService.get<UnreturnedDocumentsCountResponse>('/api/v1/dashboard/documents/unreturned/count');
+      setBorrowedDocCount(response.data.result);
+      showNotification('success', `Số lượng sách đang mượn: ${response.data.result}`);
+    } catch (error: any) {
+      showNotification('error', error?.response?.data?.message || 'Có lỗi xảy ra khi lấy số lượng sách đang mượn');
+    }
+  };
+
+  const handleOpenDialog = () => {
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+  };
+
+  const handleQrImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files ? event.target.files[0] : null;
+    if (file) {
+      setQrImage(file);
+    }
+  };
+  const handleUploadQrImage = async () => {
+    if (qrImage) {
+      try {
+        console.log('Đang tải ảnh lên...', qrImage);
+        
+        showNotification('success', 'Tải ảnh QR thành công!');
+        handleCloseDialog();
+      } catch (error: any) {
+        console.error('Lỗi khi tải ảnh lên:', error);
+        showNotification('error', error?.response?.data?.message || 'Có lỗi xảy ra khi tải ảnh');
+      }
+    } else {
+      showNotification('error', 'Vui lòng chọn ảnh QR!');
+    }
+  };
+
+  return (
+    <Box display="flex" height="100vh">
+      <Sidebar />
+      <Box flex={1} p={3} overflow="auto" height="100vh">
+        <Typography variant="h4" gutterBottom>
+          Dashboard
+        </Typography>
+        <Grid container spacing={3}>
+          <Grid item xs={4}>
+            <Card
+              sx={{
+                padding: 2,
+                textAlign: 'center',
+                backgroundColor: '#424242',
+                color: '#fff',
+              }}
+            >
+              <Typography variant="subtitle1">TOTAL BOOKS</Typography>
+              <Typography variant="h4">
+                {documentCount !== null ? documentCount : 'Loading...'}
+              </Typography>
+              <IconButton sx={{ color: '#00bcd4', marginTop: 1 }} onClick={handleOpenDialog}>
+                <QrCodeIcon fontSize="large" />
+              </IconButton>
+            </Card>
+          </Grid>
+          <Grid item xs={4}>
+            <Card>
+              <CardContent>
+                <Typography variant="h5">BORROWED BOOKS</Typography>
+                <Typography variant="h4">{borrowedDocCount !== null ? borrowedDocCount : 'Loading...'}</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={4}>
+            <Card>
+              <CardContent>
+                <Typography variant="h5">UNPAID</Typography>
+                <Typography variant="h4">{unpaidFinesCount !== null ? unpaidFinesCount : 'Loading...'}</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
+        <Box mt={4}>
+          <Tabs value={tabIndex} onChange={handleTabChange} indicatorColor="primary" textColor="primary">
+            <Tab label="NEW STUDENTS" />
+            <Tab label="RECENT LOANS" />
+            <Tab label="RECENT SUBSCRIPTIONS" />
+          </Tabs>
+          <Box mt={2}>
+            {tabIndex === 0 && <NewStudentsTable />}
+            {tabIndex === 1 && <RecentLoansTable />}
+            {tabIndex === 2 && <RecentSubscriptionsTable />}
+          </Box>
         </Box>
-    );
+
+        <IconButton onClick={handleOpenDialog} sx={{ position: 'absolute', bottom: 40, right: 40 }}>
+          <QrCodeIcon />
+        </IconButton>
+
+        <Dialog open={openDialog} onClose={handleCloseDialog}>
+          <DialogTitle>Upload QR Code</DialogTitle>
+          <DialogContent>
+            <Typography variant="body1">Please choose a QR image to upload:</Typography>
+            <Input type="file" onChange={handleQrImageChange} />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDialog} color="primary">
+              Cancel
+            </Button>
+            <Button onClick={handleUploadQrImage} color="primary">
+              Upload
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+
+      {/* Snackbar thông báo */}
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={6000}
+        onClose={() => setOpenSnackbar(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert onClose={() => setOpenSnackbar(false)} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+    </Box>
+  );
 };
 
 export default LoanManagerPage;

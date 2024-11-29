@@ -16,6 +16,7 @@ import apiService from '../../untils/api';
 import DoneIcon from '@mui/icons-material/Done';
 import BlockIcon from '@mui/icons-material/Block';
 import ClearIcon from '@mui/icons-material/Clear';
+import useWebSocket from '@/app/services/useWebSocket';
 
 interface Loan {
     transactionId: number;
@@ -34,6 +35,11 @@ const RecentLoansTable: React.FC = () => {
     useEffect(() => {
         fetchLoans();
     }, []);
+    useWebSocket((loan: Loan) => {
+        // Cập nhật danh sách thông báo khi nhận được thông báo mới từ WebSocket
+        setLoans((preLoans) => [loan, ...preLoans]);
+        //setUnreadCount((prevCount) => prevCount + 1);
+    });
 
     const fetchLoans = async () => {
         try {
@@ -132,18 +138,13 @@ const RecentLoansTable: React.FC = () => {
                                                     <BlockIcon />
                                                 </IconButton>
                                             </Tooltip>
-                                        </>)
-                                        :<></>
-                                    }
-                                    {/* <Tooltip title="Cancel">
-                                        <IconButton color="default" onClick={() => handleLoanAction(loan.transactionId, 'CANCEL')}>
-                                            <ClearIcon />
-                                        </IconButton>
-                                    </Tooltip> */}
+                                        </>
+                                    ) : <></>}
                                 </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
+
                 </Table>
             </TableContainer>
             <TablePagination

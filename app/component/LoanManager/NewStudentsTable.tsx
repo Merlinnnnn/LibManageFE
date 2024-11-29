@@ -17,7 +17,9 @@ import {
     DialogContentText,
     DialogTitle,
     TextField,
-    Button
+    Button,
+    Snackbar,
+    Alert
 } from '@mui/material';
 import apiService from '../../untils/api';
 import EmailIcon from '@mui/icons-material/Email';
@@ -43,11 +45,17 @@ const NewStudentsTable: React.FC = () => {
     const [notificationTitle, setNotificationTitle] = useState("");
     const [notificationContent, setNotificationContent] = useState("");
 
+    // Snackbar states
+    const [openSnackbar, setOpenSnackbar] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+
     useEffect(() => {
         fetchStudents();
     }, []);
+
     useEffect(() => {
-        if(selectedUsers.length === 0){
+        if (selectedUsers.length === 0) {
             setOpenNotiDialog(false);
         }
     }, [selectedUsers]);
@@ -56,7 +64,7 @@ const NewStudentsTable: React.FC = () => {
         try {
             const response = await apiService.get<{ result: { content: User[] } }>('/api/v1/users');
             setStudents(response.data.result.content);
-            console.log("ds student", response.data.result.content)
+            console.log("ds student", response.data.result.content);
         } catch (error) {
             console.error("Lỗi khi gọi API danh sách sinh viên:", error);
         }
@@ -85,15 +93,17 @@ const NewStudentsTable: React.FC = () => {
         console.log(userId);
         setOpenDialog(true);
     };
-    const handleCloseOpenNoti = ()=>{
+
+    const handleCloseOpenNoti = () => {
         console.log('user', selectedUsers);
         setOpenNotiDialog(false);
-    }
-    const handleSend = ()=>{
+    };
+
+    const handleSend = () => {
         console.log('user', selectedUsers);
         setDialogUserId(selectedUsers);
         setOpenDialog(true);
-    }
+    };
 
     const handleCloseDialog = () => {
         setOpenDialog(false);
@@ -103,7 +113,7 @@ const NewStudentsTable: React.FC = () => {
     };
 
     const handleSendNotification = async () => {
-        if (dialogUserId.length >0) {
+        if (dialogUserId.length > 0) {
             const payload = {
                 "userIds": dialogUserId,
                 "title": notificationTitle,
@@ -113,10 +123,16 @@ const NewStudentsTable: React.FC = () => {
             try {
                 const response = await apiService.post(`/api/v1/notifications`, payload);
                 console.log(response);
+                setSnackbarMessage('Thông báo đã được gửi thành công!');
+                setSnackbarSeverity('success');
+                setOpenSnackbar(true);
                 handleCloseDialog();
                 setSelectedUsers([]);
             } catch (error) {
                 console.error("Lỗi khi gửi thông báo:", error);
+                setSnackbarMessage('Có lỗi xảy ra khi gửi thông báo');
+                setSnackbarSeverity('error');
+                setOpenSnackbar(true);
             }
         }
     };
@@ -130,17 +146,19 @@ const NewStudentsTable: React.FC = () => {
         setPage(0);
     };
 
+    const handleCloseSnackbar = () => {
+        setOpenSnackbar(false);
+    };
+
     return (
         <Box>
             <TableContainer component={Paper} style={{ maxHeight: '300px', overflow: 'auto' }}>
-                <Table stickyHeader size="small"> {/* Kích thước bảng nhỏ */}
+                <Table stickyHeader size="small">
                     <TableHead>
                         <TableRow>
                             <TableCell padding="checkbox" style={{ padding: '4px 8px' }}>
                                 <Checkbox
-                                    indeterminate={
-                                        selectedUsers.length > 0 && selectedUsers.length < students.length
-                                    }
+                                    indeterminate={selectedUsers.length > 0 && selectedUsers.length < students.length}
                                     checked={selectedUsers.length === students.length && students.length > 0}
                                     onChange={handleSelectAll}
                                 />
@@ -223,6 +241,18 @@ const NewStudentsTable: React.FC = () => {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Snackbar for Notifications */}
+            <Snackbar
+                open={openSnackbar}
+                autoHideDuration={6000}
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{vertical: 'top', horizontal: 'right'}}
+            >
+                <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity}>
+                    {snackbarMessage}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 };

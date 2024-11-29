@@ -25,6 +25,7 @@ import {
 } from '@mui/material';
 import apiService from '../../untils/api';
 import DoneIcon from '@mui/icons-material/Done';
+import useWebSocket from '@/app/services/useWebSocket';
 
 interface ReturnRequest {
     transactionId: number;
@@ -47,6 +48,11 @@ const ReturnRequestsTable: React.FC = () => {
     useEffect(() => {
         fetchReturnRequests();
     }, []);
+    useWebSocket((request: ReturnRequest) => {
+        // Cập nhật danh sách thông báo khi nhận được thông báo mới từ WebSocket
+        setRequests((preRequests) => [request, ...preRequests]);
+        //setUnreadCount((prevCount) => prevCount + 1);
+    });
 
     const fetchReturnRequests = async () => {
         try {

@@ -4,22 +4,30 @@ import { Google as GoogleIcon, Facebook as FacebookIcon, Visibility, VisibilityO
 import { useTheme } from '@mui/material/styles';
 import { useAuth } from '../../component/Context/AuthContext';
 
-const LoginForm: React.FC = () => {
+const SignupForm: React.FC = () => {
   const theme = useTheme();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const { login } = useAuth();
 
   const handleTogglePassword = () => {
     setShowPassword(!showPassword);
   };
 
-  const handleLogin = async () => {
+  const handleSignup = async () => {
+    if (password !== confirmPassword) {
+      alert('Password and Confirm Password must be the same');
+      return;
+    }
     try {
-      await login(email, password);
+      // Call the signup API or logic here
+      console.log('Signup successful');
+      // If successful, you can then log the user in
+      //await login(email, password);
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('Signup failed:', error);
     }
   };
 
@@ -44,13 +52,11 @@ const LoginForm: React.FC = () => {
           textAlign: 'center',
         }}
       >
-        {/* <Typography  > */}
         <Link href="/home" variant="h6" sx={{ marginBottom: '20px', fontWeight: 'bold', color: '#646cff', textDecoration: 'none' }}>
-          LibHub</Link>
-        {/* </Typography> */}
+        LibHub</Link>
 
         <Typography variant="h4" sx={{ marginBottom: '20px', fontWeight: 'bold' }}>
-          Sign in
+          Sign up
         </Typography>
 
         <TextField
@@ -62,7 +68,7 @@ const LoginForm: React.FC = () => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           InputLabelProps={{
-            style: { color: theme.palette.text.primary },
+            style: { color: 'black' },
           }}
         />
 
@@ -81,26 +87,41 @@ const LoginForm: React.FC = () => {
                   onClick={handleTogglePassword}
                   edge="end"
                 >
-                  {showPassword ? <VisibilityOff /> : <Visibility />} {/* Đổi icon */}
+                  {showPassword ? <VisibilityOff /> : <Visibility />}
                 </IconButton>
               </InputAdornment>
             ),
           }}
           InputLabelProps={{
-            style: { color: theme.palette.text.primary },
+            style: { color: 'black' },
           }}
         />
 
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <FormControlLabel
-            control={<Checkbox color="primary" />}
-            label="Remember me"
-            sx={{ color: theme.palette.text.primary }} // Màu chữ từ theme
-          />
-          <Link href="#" variant="body2" sx={{ color: theme.palette.text.primary }}>
-            Forgot your password?
-          </Link>
-        </Box>
+        <TextField
+          fullWidth
+          label="Confirm Password"
+          type={showPassword ? 'text' : 'password'}
+          margin="normal"
+          variant="outlined"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={handleTogglePassword}
+                  edge="end"
+                >
+                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+          InputLabelProps={{
+            style: { color: 'black' },
+          }}
+        />
+
 
         <Button
           variant="contained"
@@ -113,13 +134,13 @@ const LoginForm: React.FC = () => {
             fontWeight: 'bold',
             marginTop: '10px',
           }}
-          onClick={handleLogin}
+          onClick={handleSignup}
         >
-          Sign in
+          Sign up
         </Button>
 
         <Typography variant="body2" sx={{ marginTop: '10px' }}>
-          Don't have an account? <Link href="/signup" sx={{ color: theme.palette.text.primary }}>Sign up</Link>
+          Already have an account? <Link href="/login" sx={{ color: theme.palette.text.primary }}>Sign in</Link>
         </Typography>
 
         <Divider sx={{ margin: '20px 0' }}>or</Divider>
@@ -135,11 +156,11 @@ const LoginForm: React.FC = () => {
             borderColor: 'black',
           }}
         >
-          Sign in with Google
+          Sign up with Google
         </Button>
       </Box>
     </Box>
   );
 };
 
-export default LoginForm;
+export default SignupForm;
