@@ -16,6 +16,7 @@ import {
   Input,
   Snackbar,
   Alert,
+  useTheme,
 } from '@mui/material';
 import Sidebar from '../SideBar';
 import NewStudentsTable from './NewStudentsTable';
@@ -23,6 +24,9 @@ import RecentLoansTable from './RecentLoansTable';
 import RecentSubscriptionsTable from './RecentSubscriptionsTable';
 import apiService from '@/app/untils/api';
 import QrCodeIcon from '@mui/icons-material/QrCode';
+import BookIcon from '@mui/icons-material/Book';
+import MoneyOffIcon from '@mui/icons-material/MoneyOff';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 
 interface DocumentCountResponse {
   result: {
@@ -39,6 +43,8 @@ interface UnreturnedDocumentsCountResponse {
 }
 
 const LoanManagerPage: React.FC = () => {
+  const theme = useTheme();  // Lấy theme hiện tại từ useTheme
+
   const [tabIndex, setTabIndex] = useState(0);
   const [documentCount, setDocumentCount] = useState<number | null>(null);
   const [unpaidFinesCount, setUnpaidFinesCount] = useState<number | null>(null);
@@ -71,9 +77,8 @@ const LoanManagerPage: React.FC = () => {
 
   const fetchDocCount = async () => {
     try {
-      const response = await apiService.get<DocumentCountResponse>('/api/v1/dashboard/documents/count');
+      const response = await apiService.get<DocumentCountResponse>('/api/v1/dashboards/documents/count');
       setDocumentCount(response.data.result.documentCount);
-      showNotification('success', `Số lượng sách: ${response.data.result.documentCount}`);
     } catch (error: any) {
       showNotification('error', error?.response?.data?.message || 'Có lỗi xảy ra khi lấy số lượng sách');
     }
@@ -81,9 +86,8 @@ const LoanManagerPage: React.FC = () => {
 
   const fetchNewUserCount = async () => {
     try {
-      const response = await apiService.get<FinesUnpaidCountResponse>('/api/v1/dashboard/fines/unpaid/count');
+      const response = await apiService.get<FinesUnpaidCountResponse>('/api/v1/dashboards/fines/unpaid/count');
       setUnpaidFinesCount(response.data.result);
-      showNotification('success', `Khoản phạt chưa trả: ${response.data.result}`);
     } catch (error: any) {
       showNotification('error', error?.response?.data?.message || 'Có lỗi xảy ra khi lấy khoản phạt');
     }
@@ -91,9 +95,8 @@ const LoanManagerPage: React.FC = () => {
 
   const fetchBorrowedDocCount = async () => {
     try {
-      const response = await apiService.get<UnreturnedDocumentsCountResponse>('/api/v1/dashboard/documents/unreturned/count');
+      const response = await apiService.get<UnreturnedDocumentsCountResponse>('/api/v1/dashboards/documents/unreturned/count');
       setBorrowedDocCount(response.data.result);
-      showNotification('success', `Số lượng sách đang mượn: ${response.data.result}`);
     } catch (error: any) {
       showNotification('error', error?.response?.data?.message || 'Có lỗi xảy ra khi lấy số lượng sách đang mượn');
     }
@@ -117,7 +120,6 @@ const LoanManagerPage: React.FC = () => {
     if (qrImage) {
       try {
         console.log('Đang tải ảnh lên...', qrImage);
-        
         showNotification('success', 'Tải ảnh QR thành công!');
         handleCloseDialog();
       } catch (error: any) {
@@ -133,7 +135,7 @@ const LoanManagerPage: React.FC = () => {
     <Box display="flex" height="100vh">
       <Sidebar />
       <Box flex={1} p={3} overflow="auto" height="100vh">
-        <Typography variant="h4" gutterBottom>
+        <Typography variant="h4" gutterBottom sx={{ color: theme.palette.text.primary }}>
           Dashboard
         </Typography>
         <Grid container spacing={3}>
@@ -142,33 +144,53 @@ const LoanManagerPage: React.FC = () => {
               sx={{
                 padding: 2,
                 textAlign: 'center',
-                backgroundColor: '#424242',
-                color: '#fff',
+                backgroundColor: theme.palette.background.paper,
+                color: theme.palette.text.primary,
               }}
             >
               <Typography variant="subtitle1">TOTAL BOOKS</Typography>
               <Typography variant="h4">
                 {documentCount !== null ? documentCount : 'Loading...'}
               </Typography>
-              <IconButton sx={{ color: '#00bcd4', marginTop: 1 }} onClick={handleOpenDialog}>
-                <QrCodeIcon fontSize="large" />
+              <IconButton sx={{ color: theme.palette.primary.main, marginTop: 1 }}>
+                <BookIcon fontSize="large" />
               </IconButton>
             </Card>
           </Grid>
           <Grid item xs={4}>
-            <Card>
-              <CardContent>
-                <Typography variant="h5">BORROWED BOOKS</Typography>
-                <Typography variant="h4">{borrowedDocCount !== null ? borrowedDocCount : 'Loading...'}</Typography>
-              </CardContent>
+            <Card
+              sx={{
+                padding: 2,
+                textAlign: 'center',
+                backgroundColor: theme.palette.background.paper,
+                color: theme.palette.text.primary,
+              }}
+            >
+              <Typography variant="subtitle1">BORROWED BOOKS</Typography>
+              <Typography variant="h4">
+                {borrowedDocCount !== null ? borrowedDocCount : 'Loading...'}
+              </Typography>
+              <IconButton sx={{ color: theme.palette.primary.main, marginTop: 1 }}>
+                <SwapHorizIcon fontSize="large" />
+              </IconButton>
             </Card>
           </Grid>
           <Grid item xs={4}>
-            <Card>
-              <CardContent>
-                <Typography variant="h5">UNPAID</Typography>
-                <Typography variant="h4">{unpaidFinesCount !== null ? unpaidFinesCount : 'Loading...'}</Typography>
-              </CardContent>
+            <Card
+              sx={{
+                padding: 2,
+                textAlign: 'center',
+                backgroundColor: theme.palette.background.paper,
+                color: theme.palette.text.primary,
+              }}
+            >
+              <Typography variant="subtitle1">UNPAID</Typography>
+              <Typography variant="h4">
+                {unpaidFinesCount !== null ? unpaidFinesCount : 'Loading...'}
+              </Typography>
+              <IconButton sx={{ color: theme.palette.primary.main, marginTop: 1 }}>
+                <MoneyOffIcon fontSize="large" />
+              </IconButton>
             </Card>
           </Grid>
         </Grid>
@@ -193,7 +215,9 @@ const LoanManagerPage: React.FC = () => {
         <Dialog open={openDialog} onClose={handleCloseDialog}>
           <DialogTitle>Upload QR Code</DialogTitle>
           <DialogContent>
-            <Typography variant="body1">Please choose a QR image to upload:</Typography>
+            <Typography variant="body1" sx={{ color: theme.palette.text.primary }}>
+              Please choose a QR image to upload:
+            </Typography>
             <Input type="file" onChange={handleQrImageChange} />
           </DialogContent>
           <DialogActions>

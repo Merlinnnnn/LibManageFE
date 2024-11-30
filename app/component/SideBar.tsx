@@ -84,10 +84,21 @@ const Sidebar: React.FC = () => {
         }
     }, []);
     useWebSocket((notification: Notification) => {
-        // Cập nhật danh sách thông báo khi nhận được thông báo mới từ WebSocket
-        setNotifications((prevNotifications) => [notification, ...prevNotifications]);
-        setUnreadCount((prevCount) => prevCount + 1);
+        setNotifications((prevNotifications) => {
+            const isNotificationExists = prevNotifications.some(
+                (existingNotification) => existingNotification.username === notification.username
+            );
+            console.log(notification)
+    
+            if (isNotificationExists) {
+                setUnreadCount((prevCount) => prevCount + 1);
+                return [notification, ...prevNotifications]; 
+            }
+    
+            return prevNotifications;
+        });
     });
+    
 
     useEffect(() => {
         const fetchUnreadNotifications = async () => {

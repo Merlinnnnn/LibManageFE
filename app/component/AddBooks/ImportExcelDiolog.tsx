@@ -6,6 +6,8 @@ import {
     DialogTitle,
     Button,
     Box,
+    Snackbar,
+    Alert,
 } from '@mui/material';
 import { DataGrid, GridRowsProp, GridColDef } from '@mui/x-data-grid';
 import * as XLSX from 'xlsx';
@@ -19,6 +21,9 @@ interface ImportExcelDialogProps {
 const ImportExcelDialog: React.FC<ImportExcelDialogProps> = ({ open, onClose }) => {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [excelData, setExcelData] = useState<any[]>([]);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
 
     // Handle file change (selecting an excel file)
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,9 +55,16 @@ const ImportExcelDialog: React.FC<ImportExcelDialogProps> = ({ open, onClose }) 
                 setExcelData(jsonData);
             };
             reader.readAsArrayBuffer(selectedFile);
+
+            // Show success notification
+            setSnackbarMessage('File uploaded and data loaded successfully!');
+            setSnackbarSeverity('success');
+            setSnackbarOpen(true);
         } catch (error) {
             console.error('Failed to upload file:', error);
-            alert('Failed to upload file');
+            setSnackbarMessage('Failed to upload file. Please try again.');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
         }
     };
 
@@ -60,6 +72,11 @@ const ImportExcelDialog: React.FC<ImportExcelDialogProps> = ({ open, onClose }) 
     const columns: GridColDef[] = excelData.length > 0
         ? Object.keys(excelData[0]).map((key) => ({ field: key, headerName: key, width: 150 }))
         : [];
+
+    // Close snackbar
+    const handleSnackbarClose = () => {
+        setSnackbarOpen(false);
+    };
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -85,6 +102,17 @@ const ImportExcelDialog: React.FC<ImportExcelDialogProps> = ({ open, onClose }) 
                     Upload
                 </Button>
             </DialogActions>
+
+            {/* Snackbar for notifications */}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={6000}
+                onClose={handleSnackbarClose}
+            >
+                <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+                    {snackbarMessage}
+                </Alert>
+            </Snackbar>
         </Dialog>
     );
 };

@@ -97,6 +97,7 @@ const ReturnRequestsTable: React.FC = () => {
                 isBookDamaged: isBookDamaged.toString(),
                 fineAmount: fineAmount,
                 fineReason: fineReason,
+                payment_method: '',
                 status: "PAID"
             });
             fetchReturnRequests();

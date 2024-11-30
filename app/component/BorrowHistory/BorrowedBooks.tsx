@@ -7,9 +7,10 @@ import {
   IconButton,
   Dialog,
   DialogTitle,
-  DialogContent
+  DialogContent, Snackbar, Alert
 } from '@mui/material';
 import QrCodeIcon from '@mui/icons-material/QrCode';
+import PaymentIcon from '@mui/icons-material/Payment';
 
 interface BorrowedBook {
   transactionId: number;
@@ -29,6 +30,11 @@ const BorrowedBooks: React.FC = () => {
   const [qrCodeOpen, setQrCodeOpen] = useState<boolean>(false);
   const [qrCodeImage, setQrCodeImage] = useState<string | null>(null);
 
+  // Snackbar state
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info' | 'warning'>('success');
+
   useEffect(() => {
     fetchBorrowedBooks();
   }, []);
@@ -37,6 +43,7 @@ const BorrowedBooks: React.FC = () => {
     try {
       const response = await apiService.get('api/v1/loan-transactions/user/borrowed-books');
       setBooks((response.data as any).result.content);
+      console.log(response)
     } catch (error) {
       setError("Đã xảy ra lỗi khi tải dữ liệu");
     } finally {
@@ -44,59 +51,91 @@ const BorrowedBooks: React.FC = () => {
     }
   };
 
+  const showSnackbar = (message: string, severity: 'success' | 'error' | 'info' | 'warning') => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setOpenSnackbar(true);
+    
+    setTimeout(() => {
+        setOpenSnackbar(false);
+    }, 3000); // Tắt sau 3 giây
+  };
+
   const handleConfirm = async (id: number) => {
-    console.log("ID của sách:", id);
     try {
       const response = await apiService.patch('/api/v1/loan-transactions', {
         transactionId: id,
         action: 'RECEIVE',
       });
       fetchBorrowedBooks();
-      console.log(response);
+      showSnackbar('Xác nhận thành công!', 'success');
     } catch (error) {
-      console.error("Lỗi khi thực hiện hành động:", error);
+      showSnackbar('Có lỗi xảy ra khi xác nhận!', 'error');
     }
   };
 
   const handleReturn = async (id: number) => {
-    console.log("Trả sách với ID:", id);
     try {
       const response = await apiService.patch('/api/v1/loan-transactions', {
         transactionId: id,
         action: 'RETURN_REQUEST',
       });
       fetchBorrowedBooks();
-      console.log(response);
+      showSnackbar('Yêu cầu trả sách thành công!', 'success');
     } catch (error) {
-      console.error("Lỗi khi thực hiện trả sách:", error);
+      showSnackbar('Có lỗi xảy ra khi yêu cầu trả sách!', 'error');
     }
   };
 
   const getStatusStyle = (status: string) => {
     if (status === 'RECEIVED') {
       return {
-        backgroundColor: '#e8f5e9', // Màu nền xanh lá nhạt
-        color: '#388e3c', // Màu chữ xanh lá đậm
-        border: '1px solid #388e3c', // Viền xanh lá đậm
+        backgroundColor: '#e8f5e9',
+        color: '#388e3c',
+        border: '1px solid #388e3c',
         borderRadius: '5px',
         padding: '4px 8px',
         display: 'inline-block',
         fontWeight: 'bold',
-        textTransform: 'none'
+        textTransform: 'none',
+      };
+    } else if (status === 'REJECTED') {
+      return {
+        backgroundColor: '#ffebee', // Light red background
+        color: '#d32f2f',           // Dark red text
+        border: '1px solid #d32f2f', // Red border
+        borderRadius: '5px',
+        padding: '4px 8px',
+        display: 'inline-block',
+        fontWeight: 'bold',
+        textTransform: 'none',
+      };
+    } else if (status === 'PENDING') {
+      return {
+        backgroundColor: '#e3f2fd', // Light blue background
+        color: '#1976d2',           // Blue text
+        border: '1px solid #1976d2',
+        borderRadius: '5px',
+        padding: '4px 8px',
+        display: 'inline-block',
+        fontWeight: 'bold',
+        textTransform: 'none',
       };
     } else {
       return {
-        backgroundColor: '#f5f5f5', // Màu nền xám nhạt
-        color: '#757575', // Màu chữ xám
-        border: '1px solid #bdbdbd', // Viền xám
+        backgroundColor: '#f5f5f5',
+        color: '#757575',
+        border: '1px solid #bdbdbd',
         borderRadius: '5px',
         padding: '4px 8px',
         display: 'inline-block',
         fontWeight: 'bold',
-        textTransform: 'none'
+        textTransform: 'none',
       };
     }
-  };
+};
+
+
   const fetchQrCode = async (id: any) => {
     try {
       const response = await apiService.get(`/api/v1/loan-transactions/${id}/qrcode-image`, {
@@ -107,10 +146,10 @@ const BorrowedBooks: React.FC = () => {
       setQrCodeImage(qrCodeUrl);
       setQrCodeOpen(true);
     } catch (error) {
-      console.error('Error fetching QR code:', error);
+      //console.error('Error fetching QR code:', error);
+      showSnackbar('Có lỗi xảy ra khi mở qr code!', 'error');
     }
   };
-
 
   const handleQrCodeClick = (id: any) => {
     fetchQrCode(id);
@@ -168,7 +207,7 @@ const BorrowedBooks: React.FC = () => {
                     <TableCell>{book.transactionId}</TableCell>
                     <TableCell>{book.documentName}</TableCell>
                     <TableCell>{book.loanDate}</TableCell>
-                    <TableCell>{book.returnDate || 'Chưa trả'}</TableCell>
+                    <TableCell>{book.returnDate || 'Chưa có'}</TableCell>
                     <TableCell>
                       <Box sx={getStatusStyle(book.status)}>
                         {book.status}
@@ -189,12 +228,22 @@ const BorrowedBooks: React.FC = () => {
                           <IconButton
                             edge="end"
                             aria-label="qr code"
-                            onClick={() => handleQrCodeClick(book.transactionId)} // Bọc trong một hàm vô danh
-                            sx={{ color: 'black' }}
+                            onClick={() => handleQrCodeClick(book.transactionId)}
+                            sx={{ color: 'black', padding: '15px' }}
                           >
                             <QrCodeIcon />
                           </IconButton>
                         </Tooltip>
+                        <Tooltip title="Payment">
+                          <IconButton
+                            edge="end"
+                            aria-label="Payment"
+                            sx={{ color: 'black', padding: '15px'  }}
+                          >
+                            <PaymentIcon />
+                          </IconButton>
+                        </Tooltip>
+
                       </>
                     </TableCell>
                   </TableRow>
@@ -212,6 +261,18 @@ const BorrowedBooks: React.FC = () => {
           </Dialog>
         </Grid>
       </Grid>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={3000}
+        onClose={() => setOpenSnackbar(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert onClose={() => setOpenSnackbar(false)} severity={snackbarSeverity}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

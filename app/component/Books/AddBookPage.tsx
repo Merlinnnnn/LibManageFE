@@ -15,6 +15,8 @@ import {
     DialogContent,
     Dialog,
     DialogTitle,
+    Snackbar,
+    Alert,
 } from '@mui/material';
 import Sidebar from '../SideBar';
 import apiService from '../../untils/api';
@@ -93,6 +95,7 @@ const AddBookPage: React.FC = () => {
         courseIds: [],
     });
 
+
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [selectedPdfFile, setSelectedPdfFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
@@ -107,11 +110,23 @@ const AddBookPage: React.FC = () => {
     const [courses, setCourses] = useState<Course[]>([]);
     //const [selectedTypes, setSelectedTypes] = useState<number[]>([]);
     const [selectedCourses, setSelectedCourses] = useState<number[]>([]);
+    const [openSnackbar, setOpenSnackbar] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info' | 'warning'>('success');
 
     useEffect(() => {
         fetchDocumentTypes();
         fetchCourses();
     }, []);
+    const showSnackbar = (message: string, severity: 'success' | 'error' | 'info' | 'warning') => {
+        setSnackbarMessage(message);
+        setSnackbarSeverity(severity);
+        setOpenSnackbar(true);
+
+        setTimeout(() => {
+            setOpenSnackbar(false);
+        }, 3000); // Tắt sau 3 giây
+    };
     const fetchCourses = async () => {
         try {
             const response = await apiService.get<CourseRes>('/api/v1/courses'); // Fetch courses
@@ -197,15 +212,49 @@ const AddBookPage: React.FC = () => {
             if (selectedPdfFile) {
                 formData.append('pdfFile', selectedPdfFile);
             }
+
             const response = await apiService.post('/api/v1/documents', formData);
 
+            // Thông báo thành công
+            showSnackbar('Thêm sách thành công!', 'success');
             console.log('Book added successfully:', response);
-            alert('Book added successfully!');
+
+            // Reset lại các giá trị sau khi thêm thành công
+            setBook({
+                isbn: '',
+                documentName: '',
+                author: '',
+                publisher: '',
+                publishedDate: '',
+                pageCount: 0,
+                language: '',
+                quantity: 0,
+                availableCount: 0,
+                status: 'AVAILABLE',
+                description: '',
+                coverImage: '',
+                documentLink: '',
+                price: 0,
+                size: 'MEDIUM',
+                documentTypeIds: [],
+                warehouseId: 1,
+                courseIds: [],
+            });
+            setSelectedTags([]);
+            setSelectedCourses([]);
+            setSelectedFile(null);
+            setSelectedPdfFile(null);
+            setPreview(null)
+            // Tắt các thông báo (nếu có)
+            setOpenSnackbar(false);
+            showSnackbar('Thêm sách thành công!', 'success');
         } catch (error) {
-            console.error('Failed to add book:', error);
-            alert('Failed to add book');
+            console.log('Failed to add book:', error);
+            // Thông báo lỗi
+            showSnackbar('Thêm sách thất bại!', 'error');
         }
     };
+
 
     const handleOpenAddTypeDialog = () => {
         setOpenAddTypeDialog(true);
@@ -231,15 +280,17 @@ const AddBookPage: React.FC = () => {
         try {
             const response = await apiService.post('/api/v1/document-types', payload);
             console.log('New type added successfully:', response);
-            alert('New type added successfully!');
+            //alert('New type added successfully!');
+            showSnackbar('Thêm loại sách thành công!', 'success');
             handleCloseAddTypeDialog();
             fetchDocumentTypes();
             setNewTypeName('');
             setNewCourseCode('');
             setNewDescription('');
         } catch (error) {
-            console.error('Failed to add new type:', error);
-            alert('Failed to add new type');
+            //console.error('Failed to add new type:', error);
+            showSnackbar('Thêm loại sách thất bại!', 'error');
+            //alert('Failed to add new type');
         }
     };
     const handleAddNewCourse = async () => {
@@ -251,15 +302,17 @@ const AddBookPage: React.FC = () => {
         try {
             const response = await apiService.post('/api/v1/courses', payload);
             console.log('New course added successfully:', response);
-            alert('New course added successfully!');
+            //alert('New course added successfully!');
+            showSnackbar('Thêm khóa học thành công!', 'success');
             handleCloseAddCourseDialog();
             fetchDocumentTypes();
             setNewTypeName('');
             setNewCourseCode('');
             setNewDescription('');
         } catch (error) {
-            console.error('Failed to add new course:', error);
-            alert('Failed to add new course');
+            console.log('Failed to add new course:', error);
+            //alert('Failed to add new course');
+            showSnackbar('Thêm khóa học thất bại!', 'success');
         }
     };
 
@@ -279,7 +332,7 @@ const AddBookPage: React.FC = () => {
     const handleCloseImportDialog = () => {
         setOpenImportDiolog(false);
     };
-    
+
 
 
     return (
@@ -541,12 +594,22 @@ const AddBookPage: React.FC = () => {
                             </Button>
                         </DialogActions>
                     </Dialog>
-                    <ImportExcelDialog 
-                    open={openImportDiolog}
-                    onClose={handleCloseImportDialog}
-                />
+                    <ImportExcelDialog
+                        open={openImportDiolog}
+                        onClose={handleCloseImportDialog}
+                    />
                 </Paper>
             </Box>
+            <Snackbar
+                open={openSnackbar}
+                autoHideDuration={3000}
+                onClose={() => setOpenSnackbar(false)}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Alert onClose={() => setOpenSnackbar(false)} severity={snackbarSeverity}>
+                    {snackbarMessage}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 };

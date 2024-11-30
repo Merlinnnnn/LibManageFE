@@ -11,6 +11,8 @@ import {
     IconButton,
     Typography,
     Chip,
+    Snackbar,
+    Alert
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
@@ -59,6 +61,11 @@ const EditBookDialog: React.FC<EditBookDialogProps> = ({ open, documentId, onClo
     const [courses, setCourses] = useState<Course[]>([]);
     const [selectedCourses, setSelectedCourses] = useState<number[]>([]);
 
+    // Snackbar state
+    const [openSnackbar, setOpenSnackbar] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info' | 'warning'>('success');
+
     useEffect(() => {
         if (documentId) {
             fetchBookDetails(documentId);
@@ -82,9 +89,7 @@ const EditBookDialog: React.FC<EditBookDialogProps> = ({ open, documentId, onClo
 
     const fetchDocumentTypes = async () => {
         try {
-            const response = await apiService.get<{ result: { content: DocumentType[] } }>(
-                '/api/v1/document-types'
-            );
+            const response = await apiService.get<{ result: { content: DocumentType[] } }>( '/api/v1/document-types');
             setDocumentTypes(response.data.result.content || []);
         } catch (error) {
             console.error('Error fetching document types:', error);
@@ -147,7 +152,7 @@ const EditBookDialog: React.FC<EditBookDialogProps> = ({ open, documentId, onClo
             formData.append('availableCount', (book.availableCount || 0).toString());
             formData.append('price', (book.price || 0).toString());
             formData.append('size', book.size || '');
-            formData.append('status','AVAILABLE');
+            formData.append('status', 'AVAILABLE');
 
             selectedTags.forEach((tagId) => formData.append('documentTypeIds', tagId.toString()));
             selectedCourses.forEach((courseId) => formData.append('courseIds', courseId.toString()));
@@ -158,13 +163,23 @@ const EditBookDialog: React.FC<EditBookDialogProps> = ({ open, documentId, onClo
 
             await apiService.put(`/api/v1/documents/${book.documentId}`, formData);
 
-            alert('Book information updated successfully!');
+            showSnackbar('Thông tin sách đã được cập nhật thành công!', 'success');
             onClose();
         } catch (error) {
             console.error('Error updating book:', error);
+            showSnackbar('Có lỗi xảy ra khi cập nhật thông tin sách!', 'error');
         }
     };
 
+    const showSnackbar = (message: string, severity: 'success' | 'error' | 'info' | 'warning') => {
+        setSnackbarMessage(message);
+        setSnackbarSeverity(severity);
+        setOpenSnackbar(true);
+        
+        setTimeout(() => {
+            setOpenSnackbar(false);
+        }, 3000); // Tắt sau 3 giây
+    };
     return (
         <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
             <DialogTitle>
@@ -284,6 +299,16 @@ const EditBookDialog: React.FC<EditBookDialogProps> = ({ open, documentId, onClo
                     </Button>
                 </Box>
             </DialogContent>
+            <Snackbar
+                open={openSnackbar}
+                autoHideDuration={3000}
+                onClose={() => setOpenSnackbar(false)}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Alert onClose={() => setOpenSnackbar(false)} severity={snackbarSeverity}>
+                    {snackbarMessage}
+                </Alert>
+            </Snackbar>
         </Dialog>
     );
 };

@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* :root {
+:root {
   --background-light: #ffffff;
   --foreground-light: #171717;
   --background-dark: #222428;
@@ -18,7 +18,7 @@ body {
 [data-theme='dark'] body {
   color: var(--foreground-dark);
   background: var(--background-dark);
-} */
+}
 
 @layer utilities {
   .text-balance {
