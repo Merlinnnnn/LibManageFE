@@ -12,7 +12,12 @@ import {
     TablePagination,
     Box,
     Snackbar,
-    Alert
+    Alert,
+    MenuItem,
+    Select,
+    InputLabel,
+    FormControl,
+    Grid
 } from '@mui/material';
 import apiService from '../../untils/api';
 import DoneIcon from '@mui/icons-material/Done';
@@ -33,19 +38,42 @@ const RecentLoansTable: React.FC = () => {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [loans, setLoans] = useState<Loan[]>([]);
+    const [filteredLoans, setFilteredLoans] = useState<Loan[]>([]);
 
     // Snackbar state
     const [openSnackbar, setOpenSnackbar] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
     const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
 
+    // Filter state
+    const [filterStatus, setFilterStatus] = useState<string>('ALL');
+
     useEffect(() => {
         fetchLoans();
     }, []);
 
+    useEffect(() => {
+        // Lọc các khoản vay dựa trên trạng thái
+        if (filterStatus === 'ALL') {
+            setFilteredLoans(loans);
+        } else {
+            setFilteredLoans(loans.filter(loan => loan.status === filterStatus));
+        }
+    }, [filterStatus, loans]);
+
     useWebSocket((loan: Loan) => {
-        // Cập nhật danh sách khi nhận được thông báo mới từ WebSocket
-        setLoans((prevLoans) => [loan, ...prevLoans]); // Fix: sử dụng prevLoans thay vì loans
+        setLoans((prevLoans) => {
+            const existingLoanIndex = prevLoans.findIndex(existingLoan => existingLoan.transactionId === loan.transactionId);
+
+            if (existingLoanIndex !== -1) {
+                // Nếu trùng, cập nhật loan cũ
+                const updatedLoans = [...prevLoans];
+                updatedLoans[existingLoanIndex] = loan;  // Thay thế loan cũ bằng loan mới
+                return updatedLoans;
+            } else {
+                return [loan, ...prevLoans];
+            }
+        });
     });
 
     const fetchLoans = async () => {
@@ -53,7 +81,6 @@ const RecentLoansTable: React.FC = () => {
             const response = await apiService.get<{ result: { content: Loan[] } }>('/api/v1/loan-transactions');
             setLoans(response.data.result.content);
         } catch (error: any) {
-            //console.error("Lỗi khi gọi API danh sách khoản vay:", error);
             const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi tải dữ liệu khoản vay';
             setSnackbarMessage(errorMessage);
             setSnackbarSeverity('error');
@@ -83,7 +110,6 @@ const RecentLoansTable: React.FC = () => {
             setSnackbarSeverity('success');
             setOpenSnackbar(true);
         } catch (error: any) {
-            //console.error("Lỗi khi thực hiện hành động:", error);
             const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi thực hiện hành động';
             setSnackbarMessage(errorMessage);
             setSnackbarSeverity('error');
@@ -112,8 +138,7 @@ const RecentLoansTable: React.FC = () => {
                 return { ...style, backgroundColor: '#f3e5f5', color: '#9c27b0', border: '1px solid #9c27b0' }; // Returned (Purple)
             default:
                 return style;
-        }        
-
+        }
     };
 
     return (
@@ -126,22 +151,51 @@ const RecentLoansTable: React.FC = () => {
                             <TableCell style={{ padding: '4px 8px' }}>Document Name</TableCell>
                             <TableCell style={{ padding: '4px 8px' }}>Username</TableCell>
                             <TableCell style={{ padding: '4px 8px' }}>Loan Date</TableCell>
-                            <TableCell style={{ padding: '4px 8px' }}>Status</TableCell>
+
+                            {/* Cột Status */}
+                            <TableCell style={{ padding: '4px 8px' }}>
+                                <Grid container spacing={1} alignItems="center">
+                                    <Grid item>
+                                        Status
+                                    </Grid>
+                                    <Grid item>
+                                        <FormControl fullWidth size="small">
+                                            <Select
+                                                value={filterStatus}
+                                                onChange={(e) => setFilterStatus(e.target.value)}
+                                                label="Status Filter"
+                                            >
+                                                <MenuItem value="ALL">All</MenuItem>
+                                                <MenuItem value="PENDING">Pending</MenuItem>
+                                                <MenuItem value="APPROVED">Approved</MenuItem>
+                                                <MenuItem value="CANCEL">Cancel</MenuItem>
+                                                <MenuItem value="RECEIVED">Received</MenuItem>
+                                                <MenuItem value="RETURNED">Returned</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </Grid>
+                                </Grid>
+                            </TableCell>
+
                             <TableCell style={{ padding: '4px 8px' }}>Action</TableCell>
                         </TableRow>
                     </TableHead>
+
                     <TableBody>
-                        {loans.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((loan) => (
+                        {filteredLoans.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((loan) => (
                             <TableRow key={loan.transactionId}>
                                 <TableCell style={{ padding: '4px 8px' }}>{loan.transactionId}</TableCell>
                                 <TableCell style={{ padding: '4px 8px' }}>{loan.documentName}</TableCell>
                                 <TableCell style={{ padding: '4px 8px' }}>{loan.username}</TableCell>
                                 <TableCell style={{ padding: '4px 8px' }}>{loan.loanDate}</TableCell>
+
+                                {/* Cột Status */}
                                 <TableCell style={{ padding: '4px 8px' }}>
                                     <Box sx={getStatusColor(loan.status)}>
                                         {loan.status}
                                     </Box>
                                 </TableCell>
+
                                 <TableCell style={{ padding: '4px 8px' }}>
                                     {loan.status === 'PENDING' ? (
                                         <>
@@ -155,12 +209,13 @@ const RecentLoansTable: React.FC = () => {
                                                     <BlockIcon />
                                                 </IconButton>
                                             </Tooltip>
-                                            <Tooltip title="Cancel">
-                                                <IconButton color="default" onClick={() => handleLoanAction(loan.transactionId, 'CANCEL')}>
-                                                    <ClearIcon />
-                                                </IconButton>
-                                            </Tooltip>
                                         </>
+                                    ) : loan.status === 'APPROVED' ? (
+                                        <Tooltip title="Cancel">
+                                            <IconButton color="error" onClick={() => handleLoanAction(loan.transactionId, 'CANCEL')}>
+                                                <ClearIcon />
+                                            </IconButton>
+                                        </Tooltip>
                                     ) : null}
                                 </TableCell>
                             </TableRow>
@@ -168,24 +223,19 @@ const RecentLoansTable: React.FC = () => {
                     </TableBody>
                 </Table>
             </TableContainer>
+
             <TablePagination
+                rowsPerPageOptions={[5, 10, 25]}
                 component="div"
-                count={loans.length}
+                count={filteredLoans.length}
+                rowsPerPage={rowsPerPage}
                 page={page}
                 onPageChange={handleChangePage}
-                rowsPerPage={rowsPerPage}
                 onRowsPerPageChange={handleChangeRowsPerPage}
-                rowsPerPageOptions={[5, 10, 25]}
             />
 
-            {/* Snackbar for Notifications */}
-            <Snackbar
-                open={openSnackbar}
-                autoHideDuration={3000}
-                onClose={() => setOpenSnackbar(false)}
-                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-            >
-                <Alert onClose={() => setOpenSnackbar(false)} severity={snackbarSeverity}>
+            <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={() => setOpenSnackbar(false)}>
+                <Alert severity={snackbarSeverity} onClose={() => setOpenSnackbar(false)}>
                     {snackbarMessage}
                 </Alert>
             </Snackbar>

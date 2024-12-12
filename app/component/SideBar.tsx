@@ -84,20 +84,23 @@ const Sidebar: React.FC = () => {
         }
     }, []);
     useWebSocket((notification: Notification) => {
+        console.log('New notification', notification.username);
         setNotifications((prevNotifications) => {
-            const isNotificationExists = prevNotifications.some(
+            const isNotificationExists = notifications.some(
                 (existingNotification) => existingNotification.username === notification.username
             );
-            console.log(notification)
+    
+            console.log('Notification exists:', isNotificationExists);
     
             if (isNotificationExists) {
                 setUnreadCount((prevCount) => prevCount + 1);
-                return [notification, ...prevNotifications]; 
+                return [notification, ...prevNotifications];
             }
     
-            return prevNotifications;
+            return [...prevNotifications];
         });
     });
+    
     
 
     useEffect(() => {
@@ -129,6 +132,7 @@ const Sidebar: React.FC = () => {
         setNotificationAnchor(event.currentTarget);
         try {
             const response: ApiResponse = await apiService.get('/api/v1/notifications/my-notifications');
+            console.log(response)
             setNotifications(response.data.result.content);
         } catch (error) {
             console.error('Failed to fetch notifications:', error);

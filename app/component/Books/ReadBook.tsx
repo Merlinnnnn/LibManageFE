@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, IconButton } from '@mui/material';
+import BookmarkAddIcon from '@mui/icons-material/BookmarkAdd';
 import apiService from '../../untils/api';
 
 interface GenericApiResponse<T> {
     code: number;
     result: T;
     message?: string;
+}
+
+interface StartSessionResponse {
+    sessionId: string;
+    currentPage: number;
 }
 
 const ReadBook: React.FC = () => {
@@ -17,6 +23,7 @@ const ReadBook: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [hasMorePages, setHasMorePages] = useState(true);
     const [isEnd, setIsEnd] = useState(false);
+    const [sessionId, setSessionId] = useState<string | null>(null);
 
     useEffect(() => {
         if (id && !isEnd && hasMorePages && !loading) {
@@ -24,6 +31,53 @@ const ReadBook: React.FC = () => {
         }
     }, [id, currentPage, isEnd, hasMorePages, loading]);
 
+    // Gọi API bắt đầu session
+    const startSession = async () => {
+        try {
+            const response = await apiService.post<GenericApiResponse<StartSessionResponse>>('/api/v1/reading-sessions/start', { documentId: id });
+            console.log(response);
+            if (response.status === 200 && response.data.result) {
+                const { sessionId, currentPage } = response.data.result;
+                setSessionId(sessionId);
+                setCurrentPage(currentPage); // Lấy trang hiện tại từ API
+
+                // Tải các trang từ 1 đến currentPage
+                for (let page = 1; page <= currentPage; page++) {
+                    await loadPage(page);
+                }
+
+                // Cuộn xuống trang hiện tại sau khi tải xong
+                setTimeout(() => {
+                    window.scrollTo({ top: document.getElementById(`page-${currentPage}`)?.offsetTop, behavior: 'smooth' });
+                }, 500); // Một khoảng thời gian ngắn để đảm bảo tất cả trang đã được tải
+            }
+        } catch (error) {
+            console.error('Error starting session:', error);
+        }
+    };
+
+    // Cập nhật currentPage mỗi phút
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (sessionId) {
+                updateCurrentPage(currentPage);
+            }
+        }, 60000); // Gọi API mỗi 1 phút
+
+        return () => clearInterval(interval); // Cleanup khi component unmount
+    }, [currentPage, sessionId]);
+
+    // Cập nhật currentPage qua API
+    const updateCurrentPage = async (currentPage: number) => {
+        try {
+            const response = await apiService.put(`/api/v1/reading-sessions/${sessionId}?currentPage=${currentPage}`);
+            console.log(response);
+        } catch (error) {
+            console.error('Error updating current page:', error);
+        }
+    };
+
+    // Tải trang sách
     const loadPage = async (page: number) => {
         if (loading || pages[page] || isEnd) return;
 
@@ -41,14 +95,29 @@ const ReadBook: React.FC = () => {
                 }));
             } else {
                 setHasMorePages(false);
-                setIsEnd(true); // Không còn trang, đánh dấu là đã đến cuối
+                setIsEnd(true);
             }
         } catch (error) {
             console.error('Error loading page:', error);
             setHasMorePages(false);
-            setIsEnd(true); // Đánh dấu là đã đến cuối do gặp lỗi
+            setIsEnd(true);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Chức năng đánh dấu trang hiện tại
+    const handleBookmark = async () => {
+        if (sessionId) {
+            try {
+                // Gọi API đánh dấu trang hiện tại
+                const response = await apiService.put(`/api/v1/reading-sessions/${sessionId}?currentPage=${currentPage}`);
+                if (response.status === 200) {
+                    alert('Đã đánh dấu trang!');
+                }
+            } catch (error) {
+                console.error('Error bookmarking page:', error);
+            }
         }
     };
 
@@ -69,8 +138,25 @@ const ReadBook: React.FC = () => {
         };
     }, [loading, isEnd, hasMorePages]);
 
+    // Bắt đầu session khi component mount
+    useEffect(() => {
+        if (id) {
+            startSession();
+        }
+    }, [id]);
+
     return (
         <Box sx={{ padding: '20px' }}>
+            <Box sx={{
+                position: 'fixed',
+                bottom: 20,
+                right: 20,
+            }}>
+                <IconButton onClick={handleBookmark}>
+                    <BookmarkAddIcon />
+                </IconButton>
+            </Box>
+
             {Object.keys(pages).length === 0 && (
                 <Typography>Loading book...</Typography>
             )}
@@ -79,12 +165,12 @@ const ReadBook: React.FC = () => {
                 const base64 = pages[page];
 
                 return (
-                    <Box key={page} sx={{ marginBottom: '20px' }}>
+                    <Box key={page} id={`page-${page}`} sx={{ marginBottom: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
                         {base64 ? (
                             <img
                                 src={`data:image/png;base64,${base64}`}
                                 alt={`Page ${page}`}
-                                style={{ width: '100%', objectFit: 'contain' }}
+                                style={{ width: '80%', objectFit: 'contain', alignItems: 'center' }}
                             />
                         ) : (
                             <Typography>End of book reached</Typography>

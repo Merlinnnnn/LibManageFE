@@ -66,7 +66,8 @@ const NewStudentsTable: React.FC = () => {
             setStudents(response.data.result.content);
             console.log("ds student", response.data.result.content);
         } catch (error) {
-            console.error("Lỗi khi gọi API danh sách sinh viên:", error);
+            //console.error("Lỗi khi gọi API danh sách sinh viên:", error);
+            console.log("Lỗi khi gọi API danh sách sinh viên:", error);
         }
     };
 
@@ -129,7 +130,7 @@ const NewStudentsTable: React.FC = () => {
                 handleCloseDialog();
                 setSelectedUsers([]);
             } catch (error) {
-                console.error("Lỗi khi gửi thông báo:", error);
+                //console.error("Lỗi khi gửi thông báo:", error);
                 setSnackbarMessage('Có lỗi xảy ra khi gửi thông báo');
                 setSnackbarSeverity('error');
                 setOpenSnackbar(true);

@@ -220,31 +220,31 @@ const AddBookPage: React.FC = () => {
             console.log('Book added successfully:', response);
 
             // Reset lại các giá trị sau khi thêm thành công
-            setBook({
-                isbn: '',
-                documentName: '',
-                author: '',
-                publisher: '',
-                publishedDate: '',
-                pageCount: 0,
-                language: '',
-                quantity: 0,
-                availableCount: 0,
-                status: 'AVAILABLE',
-                description: '',
-                coverImage: '',
-                documentLink: '',
-                price: 0,
-                size: 'MEDIUM',
-                documentTypeIds: [],
-                warehouseId: 1,
-                courseIds: [],
-            });
-            setSelectedTags([]);
-            setSelectedCourses([]);
-            setSelectedFile(null);
-            setSelectedPdfFile(null);
-            setPreview(null)
+            // setBook({
+            //     isbn: '',
+            //     documentName: '',
+            //     author: '',
+            //     publisher: '',
+            //     publishedDate: '',
+            //     pageCount: 0,
+            //     language: '',
+            //     quantity: 0,
+            //     availableCount: 0,
+            //     status: 'AVAILABLE',
+            //     description: '',
+            //     coverImage: '',
+            //     documentLink: '',
+            //     price: 0,
+            //     size: 'MEDIUM',
+            //     documentTypeIds: [],
+            //     warehouseId: 2,
+            //     courseIds: [],
+            // });
+            // setSelectedTags([]);
+            // setSelectedCourses([]);
+            // setSelectedFile(null);
+            // setSelectedPdfFile(null);
+            // setPreview(null)
             // Tắt các thông báo (nếu có)
             setOpenSnackbar(false);
             showSnackbar('Thêm sách thành công!', 'success');

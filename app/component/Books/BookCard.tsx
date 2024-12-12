@@ -15,11 +15,13 @@ interface BookCardProps {
 
 const BookCardContainer = styled(Card)(({ theme }) => ({
   flex: '0 0 auto',
-  width: '200px',
-  height: '400px', 
-  marginRight: '20px',
+  width: '200px',  // Đảm bảo kích thước cố định cho card
+  height: '400px',
+  marginLeft: 'auto',  // Thêm marginLeft:auto để căn phải nếu cần
+  marginRight: 'auto',  // Thêm margin cả hai bên để các book card không bị sát nhau
   borderRadius: '10px',
-  backgroundColor: theme.palette.background.paper,
+  alignItems: 'center',
+  backgroundColor: '#424242',
   transition: 'transform 0.3s',
   display: 'flex',
   flexDirection: 'column',
@@ -73,7 +75,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, onViewDocument }) => {
     <BookCardContainer>
       <BookCover
         src={book.coverImage || 'https://via.placeholder.com/200x250'}
-        alt='Image not found'
+        alt="Image not found"
       />
       <BookInfo>
         <BookTitle>{book.documentName}</BookTitle>

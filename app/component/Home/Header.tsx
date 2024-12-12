@@ -74,10 +74,19 @@ const Header: React.FC = () => {
     }
   }, [setMode]);
   useWebSocket((notification: Notification) => {
-    // Cập nhật danh sách thông báo khi nhận được thông báo mới từ WebSocket
-    setNotifications((prevNotifications) => [notification, ...prevNotifications]);
-    console.log('set notifications')
-});
+    setNotifications((prevNotifications) => {
+      const isNotificationExists = prevNotifications.some(
+        (existingNotification) => existingNotification.username === notification.username
+      );
+      console.log(notification)
+
+      if (isNotificationExists) {
+        return [notification, ...prevNotifications];
+      }
+
+      return prevNotifications;
+    });
+  });
 
   const handleToggleTheme = () => {
     toggleTheme();
@@ -120,7 +129,7 @@ const Header: React.FC = () => {
       console.error('Error fetching notifications:', error);
     }
   };
-  
+
 
   const openNotifications = Boolean(notificationAnchor);
   const openMenu = Boolean(menuAnchor);
@@ -208,8 +217,8 @@ const Header: React.FC = () => {
               <Typography variant="body1" color="textPrimary">
                 Hello, {username}
               </Typography>
-              
-              
+
+
               <Tooltip title="Notifications">
                 <IconButton
                   edge="end"

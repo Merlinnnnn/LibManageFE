@@ -158,7 +158,7 @@ const EditBookDialog: React.FC<EditBookDialogProps> = ({ open, documentId, onClo
             selectedCourses.forEach((courseId) => formData.append('courseIds', courseId.toString()));
 
             if (selectedFile) {
-                formData.append('coverImage', selectedFile);
+                formData.append('image', selectedFile);
             }
 
             await apiService.put(`/api/v1/documents/${book.documentId}`, formData);

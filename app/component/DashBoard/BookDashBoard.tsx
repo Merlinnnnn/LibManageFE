@@ -17,6 +17,11 @@ interface DocumentStatistics {
     typeName: string;
     count: number;
   }[];
+  documentsByCourseCode: {
+    courseCode: string;
+    count: number;
+    year: number;
+  }[];
 }
 
 interface DocumentStatisticsResponse {
@@ -32,6 +37,7 @@ const BookDashboard: React.FC = () => {
     availableDocuments: 0,
     disabledDocuments: 0,
     documentsByType: [],
+    documentsByCourseCode: [],
   });
 
   // Fetch API
@@ -41,6 +47,7 @@ const BookDashboard: React.FC = () => {
         const response = await apiService.get<DocumentStatisticsResponse>(
           '/api/v1/dashboards/documents/statistics'
         );
+        console.log(response);
         setData(response.data.result);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -50,7 +57,7 @@ const BookDashboard: React.FC = () => {
     fetchData();
   }, []);
 
-  // Dữ liệu cho biểu đồ tròn (Books by Status)
+  // Dữ liệu cho biểu đồ tròn (Documents by Status)
   const pieData = {
     labels: ['Borrowed', 'Available', 'Disabled'],
     datasets: [
@@ -66,8 +73,8 @@ const BookDashboard: React.FC = () => {
     ],
   };
 
-  // Dữ liệu cho biểu đồ cột (Books by Category)
-  const barData = {
+  // Dữ liệu cho biểu đồ cột (Documents by Category)
+  const barDataCategory = {
     labels: data.documentsByType.map((type) => type.typeName),
     datasets: [
       {
@@ -75,6 +82,20 @@ const BookDashboard: React.FC = () => {
         data: data.documentsByType.map((type) => type.count),
         backgroundColor: '#3f51b5',
         borderColor: '#303f9f',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  // Dữ liệu cho biểu đồ cột (Documents by Course)
+  const barDataCourse = {
+    labels: data.documentsByCourseCode?.map((course) => course.courseCode),
+    datasets: [
+      {
+        label: 'Documents by Course',
+        data: data.documentsByCourseCode?.map((course) => course.count),
+        backgroundColor: '#009688',
+        borderColor: '#00796b',
         borderWidth: 1,
       },
     ],
@@ -88,18 +109,16 @@ const BookDashboard: React.FC = () => {
       <Box flex={1} padding={3} bgcolor="#f5f5f5" overflow="auto">
         <Grid container spacing={2}>
           {/* Phần bên trái */}
-          <Grid item xs={12} md={8} >
+          <Grid item xs={12} md={8}>
             <Grid
               container
               direction="column"
               alignItems="stretch"
               sx={{
-                display: 'flex',      
-                flexDirection: 'column', 
-                height: '100%'        
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%',
               }}
-              
-              //spacing={2}
             >
               {/* Card Tổng Số Sách */}
               <Grid item sx={{ height: '50%' }}>
@@ -109,8 +128,7 @@ const BookDashboard: React.FC = () => {
                     textAlign: 'center',
                     backgroundColor: '#424242',
                     color: '#fff',
-                    height:'95%',
-                    
+                    height: '95%',
                   }}
                 >
                   <Typography variant="h6">Total Documents</Typography>
@@ -119,16 +137,15 @@ const BookDashboard: React.FC = () => {
               </Grid>
 
               {/* Các Card Status */}
-              <Grid item container alignItems="stretch"sx={{ height: '50%' }}>
+              <Grid item container alignItems="stretch" sx={{ height: '50%' }}>
                 <Grid item xs={4}>
                   <Card
                     sx={{
-                      
                       textAlign: 'center',
                       backgroundColor: '#ff5722',
                       color: '#fff',
                       height: '100%',
-                      marginRight: 2
+                      marginRight: 2,
                     }}
                   >
                     <Typography variant="h6">Borrowed</Typography>
@@ -138,7 +155,6 @@ const BookDashboard: React.FC = () => {
                 <Grid item xs={4}>
                   <Card
                     sx={{
-
                       textAlign: 'center',
                       backgroundColor: '#4caf50',
                       color: '#fff',
@@ -152,12 +168,11 @@ const BookDashboard: React.FC = () => {
                 <Grid item xs={4}>
                   <Card
                     sx={{
-
                       textAlign: 'center',
                       backgroundColor: '#f44336',
                       color: '#fff',
                       height: '100%',
-                      marginLeft: 2
+                      marginLeft: 2,
                     }}
                   >
                     <Typography variant="h6">Disabled</Typography>
@@ -182,14 +197,14 @@ const BookDashboard: React.FC = () => {
 
         {/* Biểu Đồ Cột và Bảng */}
         <Grid container spacing={2} marginTop={4}>
-          {/* Biểu Đồ Cột */}
+          {/* Biểu Đồ Cột - Books by Category */}
           <Grid item xs={12} md={6}>
             <Card sx={{ padding: 3, height: '400px' }}>
               <Typography variant="h6" gutterBottom>
                 Books by Category (Bar Chart)
               </Typography>
               <Box height="300px">
-                <Bar data={barData} options={{ responsive: true, maintainAspectRatio: false }} />
+                <Bar data={barDataCategory} options={{ responsive: true, maintainAspectRatio: false }} />
               </Box>
             </Card>
           </Grid>
@@ -215,6 +230,51 @@ const BookDashboard: React.FC = () => {
                       <td style={{ textAlign: 'right', padding: '8px' }}>{type.count}</td>
                       <td style={{ textAlign: 'right', padding: '8px' }}>
                         {((type.count / data.totalDocuments) * 100).toFixed(2)}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Card>
+          </Grid>
+        </Grid>
+
+        {/* Biểu Đồ Cột - Documents by Course */}
+        <Grid container spacing={2} marginTop={4}>
+          <Grid item xs={12} md={6}>
+            <Card sx={{ padding: 3, height: '400px' }}>
+              <Typography variant="h6" gutterBottom>
+                Documents by Course (Bar Chart)
+              </Typography>
+              <Box height="300px">
+                <Bar data={barDataCourse} options={{ responsive: true, maintainAspectRatio: false }} />
+              </Box>
+            </Card>
+          </Grid>
+
+          {/* Bảng Thống Kê Theo Khóa Học */}
+          <Grid item xs={12} md={6}>
+            <Card sx={{ padding: 3, height: '400px' }}>
+              <Typography variant="h6" gutterBottom>
+                Documents by Course
+              </Typography>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: 'left', padding: '8px' }}>Course</th>
+                    <th style={{ textAlign: 'right', padding: '8px' }}>Year</th>
+                    <th style={{ textAlign: 'right', padding: '8px' }}>Count</th>
+                    <th style={{ textAlign: 'right', padding: '8px' }}>Percentage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.documentsByCourseCode?.map((course) => (
+                    <tr key={course.courseCode}>
+                      <td style={{ textAlign: 'left', padding: '8px' }}>{course.courseCode}</td>
+                      <td style={{ textAlign: 'right', padding: '8px' }}>{course.year}</td>
+                      <td style={{ textAlign: 'right', padding: '8px' }}>{course.count}</td>
+                      <td style={{ textAlign: 'right', padding: '8px' }}>
+                        {((course.count / data.totalDocuments) * 100).toFixed(2)}%
                       </td>
                     </tr>
                   ))}

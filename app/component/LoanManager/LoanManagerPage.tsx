@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Box,
   Grid,
   Card,
-  CardContent,
   Typography,
   Tabs,
   Tab,
@@ -13,7 +12,6 @@ import {
   DialogContent,
   DialogTitle,
   Button,
-  Input,
   Snackbar,
   Alert,
   useTheme,
@@ -21,12 +19,16 @@ import {
 import Sidebar from '../SideBar';
 import NewStudentsTable from './NewStudentsTable';
 import RecentLoansTable from './RecentLoansTable';
+import FineTable from './FineManagerTable';
 import RecentSubscriptionsTable from './RecentSubscriptionsTable';
 import apiService from '@/app/untils/api';
 import QrCodeIcon from '@mui/icons-material/QrCode';
 import BookIcon from '@mui/icons-material/Book';
 import MoneyOffIcon from '@mui/icons-material/MoneyOff';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+
+// Import html5-qrcode
+import { Html5QrcodeScanner } from 'html5-qrcode';
 
 interface DocumentCountResponse {
   result: {
@@ -43,24 +45,17 @@ interface UnreturnedDocumentsCountResponse {
 }
 
 const LoanManagerPage: React.FC = () => {
-  const theme = useTheme();  // Lấy theme hiện tại từ useTheme
-
+  const theme = useTheme();
   const [tabIndex, setTabIndex] = useState(0);
   const [documentCount, setDocumentCount] = useState<number | null>(null);
   const [unpaidFinesCount, setUnpaidFinesCount] = useState<number | null>(null);
   const [borrowedDocCount, setBorrowedDocCount] = useState<number | null>(null);
-
-  const [openDialog, setOpenDialog] = useState(false); // Trạng thái mở/đóng Dialog
-  const [qrImage, setQrImage] = useState<File | null>(null); // Trạng thái lưu trữ ảnh QR
-
-  // Snackbar state
+  const [openDialog, setOpenDialog] = useState(false); // Để mở Dialog QR Scanner
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTabIndex(newValue);
-  };
+  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
 
   useEffect(() => {
     fetchDocCount();
@@ -68,7 +63,6 @@ const LoanManagerPage: React.FC = () => {
     fetchBorrowedDocCount();
   }, []);
 
-  // Hàm thông báo lỗi và thành công
   const showNotification = (type: 'success' | 'error', message: string) => {
     setSnackbarSeverity(type);
     setSnackbarMessage(message);
@@ -108,29 +102,55 @@ const LoanManagerPage: React.FC = () => {
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
-  };
-
-  const handleQrImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files ? event.target.files[0] : null;
-    if (file) {
-      setQrImage(file);
-    }
-  };
-  const handleUploadQrImage = async () => {
-    if (qrImage) {
-      try {
-        console.log('Đang tải ảnh lên...', qrImage);
-        showNotification('success', 'Tải ảnh QR thành công!');
-        handleCloseDialog();
-      } catch (error: any) {
-        console.error('Lỗi khi tải ảnh lên:', error);
-        showNotification('error', error?.response?.data?.message || 'Có lỗi xảy ra khi tải ảnh');
-      }
-    } else {
-      showNotification('error', 'Vui lòng chọn ảnh QR!');
+    if (scannerRef.current) {
+      scannerRef.current.clear(); // Dừng quét QR khi đóng Dialog
     }
   };
 
+  const handleScan = async (decodedText: string, decodedResult: any) => {
+    //console.log('QR Code data:', decodedText);
+    showNotification('success', `Quét mã thành công: ${decodedText}`);
+    const data = {
+      barcodeData: decodedText
+    }
+    
+    try {
+      const response = await apiService.post('/api/v1/loan-transactions/scan-qrcode', data);
+      console.log(response)
+      //setBorrowedDocCount(response.data.result);
+      handleCloseDialog();
+    } catch (error: any) {
+      showNotification('error', error?.response?.data?.message || 'Có lỗi xảy ra khi lấy số lượng sách đang mượn');
+    }
+  };
+
+  const handleError = (error: string) => {
+    console.log('Lỗi quét QR:', error);
+    showNotification('error', 'Không thể quét mã QR');
+  };
+
+  useEffect(() => {
+    if (openDialog) {
+      // Đảm bảo phần tử "qr-code-scanner" đã có trong DOM khi khởi tạo scanner
+      setTimeout(() => {
+        if (!scannerRef.current) {
+          // Tạo mới Html5QrcodeScanner nếu chưa có
+          const scanner = new Html5QrcodeScanner(
+            'qr-code-scanner',
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            false
+          );
+          scanner.render(handleScan, handleError);
+          scannerRef.current = scanner;
+        }
+      }, 500); // Đợi một chút để phần tử được render
+    } else if (scannerRef.current) {
+      // Clear khi đóng dialog
+      scannerRef.current.clear();
+      scannerRef.current = null;
+    }
+  }, [openDialog]);
+  
   return (
     <Box display="flex" height="100vh">
       <Sidebar />
@@ -196,15 +216,17 @@ const LoanManagerPage: React.FC = () => {
         </Grid>
 
         <Box mt={4}>
-          <Tabs value={tabIndex} onChange={handleTabChange} indicatorColor="primary" textColor="primary">
+          <Tabs value={tabIndex} onChange={(event, newValue) => setTabIndex(newValue)} indicatorColor="primary" textColor="primary">
             <Tab label="NEW STUDENTS" />
             <Tab label="RECENT LOANS" />
-            <Tab label="RECENT SUBSCRIPTIONS" />
+            <Tab label="RETURN REQUEST" />
+            <Tab label="FINES" />
           </Tabs>
           <Box mt={2}>
             {tabIndex === 0 && <NewStudentsTable />}
             {tabIndex === 1 && <RecentLoansTable />}
             {tabIndex === 2 && <RecentSubscriptionsTable />}
+            {tabIndex === 3 && <FineTable />}
           </Box>
         </Box>
 
@@ -212,36 +234,24 @@ const LoanManagerPage: React.FC = () => {
           <QrCodeIcon />
         </IconButton>
 
-        <Dialog open={openDialog} onClose={handleCloseDialog}>
-          <DialogTitle>Upload QR Code</DialogTitle>
+        <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+          <DialogTitle>QR Code Scanner</DialogTitle>
           <DialogContent>
-            <Typography variant="body1" sx={{ color: theme.palette.text.primary }}>
-              Please choose a QR image to upload:
-            </Typography>
-            <Input type="file" onChange={handleQrImageChange} />
+            <div id="qr-code-scanner" style={{ width: '100%', height: '250px' }} />
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseDialog} color="primary">
-              Cancel
-            </Button>
-            <Button onClick={handleUploadQrImage} color="primary">
-              Upload
+              Close
             </Button>
           </DialogActions>
         </Dialog>
-      </Box>
 
-      {/* Snackbar thông báo */}
-      <Snackbar
-        open={openSnackbar}
-        autoHideDuration={6000}
-        onClose={() => setOpenSnackbar(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert onClose={() => setOpenSnackbar(false)} severity={snackbarSeverity} sx={{ width: '100%' }}>
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
+        <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={() => setOpenSnackbar(false)}>
+          <Alert onClose={() => setOpenSnackbar(false)} severity={snackbarSeverity}>
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
+      </Box>
     </Box>
   );
 };

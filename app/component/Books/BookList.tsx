@@ -44,6 +44,7 @@ const BookSlider = styled(Box)({
   '&::-webkit-scrollbar': {
     display: 'none',
   },
+  gap: '20px'
 });
 
 const ArrowButton = styled(IconButton)(({ theme }) => ({

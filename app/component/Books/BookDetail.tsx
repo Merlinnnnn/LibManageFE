@@ -157,7 +157,7 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
                     {/* Ảnh bìa sách */}
                     <Box flex="0 0 200px" marginRight={2}>
                         <img
-                            src={book.documentLink || 'https://via.placeholder.com/200x300'}
+                            src={book.coverImage || 'https://via.placeholder.com/200x300'}
                             alt="cover"
                             style={{ width: '100%', height: '300px', objectFit: 'cover', borderRadius: '4px' }}
                         />
