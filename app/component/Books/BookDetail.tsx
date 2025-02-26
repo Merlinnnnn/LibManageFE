@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogTitle, Typography, Button, Chip, Box, IconButton, DialogActions } from '@mui/material';
+import { Dialog, DialogContent, DialogTitle, Typography, Button, Chip, Box, IconButton, DialogActions, Snackbar, Alert } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import apiService from '../../untils/api';
@@ -47,6 +47,18 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
     const [isFavorite, setIsFavorite] = useState<boolean>(false);
     const [isBorrowed, setIsBorrowed] = useState<boolean>(false);
     const [confirmDialogOpen, setConfirmDialogOpen] = useState<boolean>(false);
+    const [snackbarOpen, setSnackbarOpen] = useState<boolean>(false);
+    const [snackbarMessage, setSnackbarMessage] = useState<string>('');
+    const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+    const showNotification = (type: 'success' | 'error', message: string) => {
+        setSnackbarSeverity(type);
+        setSnackbarMessage(message);
+        setSnackbarOpen(true);
+    };
+
+    const handleSnackbarClose = () => {
+        setSnackbarOpen(false);
+    };
 
     useEffect(() => {
         const fetchBookDetails = async () => {
@@ -56,10 +68,11 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
                     setBook(response.data.result);
                     console.log(response.data.result);
                 } else {
-                    console.error('Error fetching book details:', response.data.message);
+                    showNotification('error', response.data.message || 'Error fetching book details');
                 }
             } catch (error) {
-                console.error('Error fetching book details:', error);
+                const typedError = error as { response?: { data?: { message?: string } } };
+                console.log('Error requesting loan:', typedError.response?.data?.message || 'Unknown error');
             }
         };
 
@@ -71,7 +84,7 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
                     setIsFavorite(response.data.result);
                 }
             } catch (error) {
-                console.error('Error fetching favorite status:', error);
+                console.log('Error fetching favorite status:', error);
             }
         };
 
@@ -82,10 +95,10 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
                     console.log('fetch is borrow', response);
                     setIsBorrowed(response.data.result);
                 } else {
-                    console.error('Error fetching borrowed status');
+                    console.log('Error fetching borrowed status');
                 }
             } catch (error) {
-                console.error('Error fetching borrowed status:', error);
+                console.log('Error fetching borrowed status:', error);
             }
         };
 
@@ -107,11 +120,15 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
 
             if (response.status === 200) {
                 setIsFavorite(!isFavorite);
+                showNotification('success', 'Thêm sách yêu thích thành công');
             } else {
-                console.error('Error updating favorite status');
+                console.log('Lỗi thêm yêu thích');
+                showNotification('error', 'Lỗi thêm yêu thích');
             }
         } catch (error) {
-            console.error('Error updating favorite status:', error);
+            const typedError = error as { response?: { data?: { message?: string } } };
+            console.log('Error requesting loan:', typedError.response?.data?.message || 'Unknown error');
+            showNotification('error', typedError.response?.data?.message || 'Error requesting loan');
         }
     };
 
@@ -127,12 +144,20 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
 
             if (response.status === 200) {
                 setIsBorrowed(true);
-            } else {
-                console.error('Error requesting loan');
+                showNotification('success', 'Đã gửi yêu cầu mượn sách');
+            }
+            else if (response.status === 3005) {
+                console.log('abc')
+            }
+            else {
+                console.log('Error requesting loan');
             }
         } catch (error) {
-            console.error('Error requesting loan:', error);
-        } finally {
+            const typedError = error as { response?: { data?: { message?: string } } };
+            console.log('Error requesting loan:', typedError.response?.data?.message || 'Unknown error');
+            showNotification('error', typedError.response?.data?.message || 'Error requesting loan');
+        }
+        finally {
             setConfirmDialogOpen(false);
         }
     };
@@ -143,7 +168,7 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
 
     const handleReadBookClick = (bookId: number | string) => () => {
         window.open(`http://localhost:3000/read-book?id=${bookId.toString()}`);
-    };    
+    };
 
     if (!book) {
         return <Typography>Loading...</Typography>;
@@ -213,6 +238,16 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
 
                         </Box>
                     </Box>
+                    <Snackbar
+                    open={snackbarOpen}
+                    autoHideDuration={6000}
+                    onClose={handleSnackbarClose}
+                    anchorOrigin={{vertical: 'top', horizontal: 'right'}}
+                >
+                    <Alert onClose={handleSnackbarClose} severity={snackbarSeverity}>
+                        {snackbarMessage}
+                    </Alert>
+                </Snackbar>
                 </Box>
             </DialogContent>
             <Dialog open={confirmDialogOpen} onClose={handleCloseConfirmDialog}>
@@ -228,6 +263,16 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
                         Yes
                     </Button>
                 </DialogActions>
+                <Snackbar
+                    open={snackbarOpen}
+                    autoHideDuration={6000}
+                    onClose={handleSnackbarClose}
+                    anchorOrigin={{vertical: 'top', horizontal: 'right'}}
+                >
+                    <Alert onClose={handleSnackbarClose} severity={snackbarSeverity}>
+                        {snackbarMessage}
+                    </Alert>
+                </Snackbar>
             </Dialog>
         </Dialog>
     );

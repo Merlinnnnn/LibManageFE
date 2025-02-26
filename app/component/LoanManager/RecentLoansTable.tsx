@@ -61,20 +61,20 @@ const RecentLoansTable: React.FC = () => {
         }
     }, [filterStatus, loans]);
 
-    useWebSocket((loan: Loan) => {
-        setLoans((prevLoans) => {
-            const existingLoanIndex = prevLoans.findIndex(existingLoan => existingLoan.transactionId === loan.transactionId);
+    // useWebSocket((loan: Loan) => {
+    //     setLoans((prevLoans) => {
+    //         const existingLoanIndex = prevLoans.findIndex(existingLoan => existingLoan.transactionId === loan.transactionId);
 
-            if (existingLoanIndex !== -1) {
-                // Nếu trùng, cập nhật loan cũ
-                const updatedLoans = [...prevLoans];
-                updatedLoans[existingLoanIndex] = loan;  // Thay thế loan cũ bằng loan mới
-                return updatedLoans;
-            } else {
-                return [loan, ...prevLoans];
-            }
-        });
-    });
+    //         if (existingLoanIndex !== -1) {
+    //             // Nếu trùng, cập nhật loan cũ
+    //             const updatedLoans = [...prevLoans];
+    //             updatedLoans[existingLoanIndex] = loan;  // Thay thế loan cũ bằng loan mới
+    //             return updatedLoans;
+    //         } else {
+    //             return [loan, ...prevLoans];
+    //         }
+    //     });
+    // });
 
     const fetchLoans = async () => {
         try {

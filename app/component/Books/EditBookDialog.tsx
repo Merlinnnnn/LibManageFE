@@ -31,8 +31,8 @@ interface Book {
     availableCount: number;
     price: number;
     size: string;
-    documentTypeIds: number[];
-    courseIds: number[];
+    documentTypes: number[];
+    courses: number[];
     coverImage?: string;
 }
 
@@ -67,32 +67,47 @@ const EditBookDialog: React.FC<EditBookDialogProps> = ({ open, documentId, onClo
     const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info' | 'warning'>('success');
 
     useEffect(() => {
-        if (documentId) {
-            fetchBookDetails(documentId);
-        }
+        fetchBookDetails(documentId);
         fetchDocumentTypes();
         fetchCourses();
     }, [documentId]);
+    useEffect(() => {
+    console.log('dsa',selectedCourses);
+}, [selectedCourses]);
 
-    const fetchBookDetails = async (id: number) => {
-        try {
-            const response = await apiService.get<{ result: Book }>(`/api/v1/documents/${id}`);
-            const bookData = response.data.result;
-            setBook(bookData);
-            setPreview(bookData.coverImage || null);
-            setSelectedTags(bookData.documentTypeIds || []);
-            setSelectedCourses(bookData.courseIds || []);
-        } catch (error) {
-            console.error('Error fetching book details:', error);
-        }
-    };
+const fetchBookDetails = async (id: number) => {
+    try {
+        const response = await apiService.get<{ result: Book }>(`/api/v1/documents/${id}`);
+        console.log(response);
+
+        const bookData = response.data.result;
+
+        // Chuyển đổi `documentTypes` thành mảng các ID
+        const documentTypeIds = Array.isArray(bookData.documentTypes)
+            ? bookData.documentTypes.map((type: any) => type.documentTypeId || type)
+            : [];
+
+        // Chuyển đổi `courses` thành mảng các ID
+        const courseIds = Array.isArray(bookData.courses)
+            ? bookData.courses.map((course: any) => course.courseId || course)
+            : [];
+
+        setBook(bookData);
+        setPreview(bookData.coverImage || null);
+        setSelectedTags(documentTypeIds);
+        setSelectedCourses(courseIds);
+    } catch (error) {
+        console.log('Error fetching book details:', error);
+    }
+};
+
 
     const fetchDocumentTypes = async () => {
         try {
             const response = await apiService.get<{ result: { content: DocumentType[] } }>( '/api/v1/document-types');
             setDocumentTypes(response.data.result.content || []);
         } catch (error) {
-            console.error('Error fetching document types:', error);
+            console.log('Error fetching document types:', error);
         }
     };
 
@@ -101,7 +116,7 @@ const EditBookDialog: React.FC<EditBookDialogProps> = ({ open, documentId, onClo
             const response = await apiService.get<{ result: { content: Course[] } }>('/api/v1/courses');
             setCourses(response.data.result.content || []);
         } catch (error) {
-            console.error('Error fetching courses:', error);
+            console.log('Error fetching courses:', error);
         }
     };
 
@@ -166,11 +181,17 @@ const EditBookDialog: React.FC<EditBookDialogProps> = ({ open, documentId, onClo
             showSnackbar('Thông tin sách đã được cập nhật thành công!', 'success');
             onClose();
         } catch (error) {
-            console.error('Error updating book:', error);
+            console.log('Error updating book:', error);
             showSnackbar('Có lỗi xảy ra khi cập nhật thông tin sách!', 'error');
         }
     };
-
+    // useEffect(() => {
+    //     if (book) {
+    //         setSelectedTags(book.documentTypes || []);
+    //         setSelectedCourses(book.courses || []);
+    //     }
+    // }, [book]);
+    
     const showSnackbar = (message: string, severity: 'success' | 'error' | 'info' | 'warning') => {
         setSnackbarMessage(message);
         setSnackbarSeverity(severity);

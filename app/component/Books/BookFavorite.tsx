@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Grid, Box, Pagination, CircularProgress, Typography, Paper, TextField, InputAdornment, useTheme, Snackbar, Alert } from '@mui/material';
+import { Grid, Box, Pagination, CircularProgress, Typography, Paper, TextField, InputAdornment, useTheme, Snackbar, Alert, IconButton } from '@mui/material';
 import BookCard from './BookCard';
 import apiService from '../../untils/api';
 import Header from '../Home/Header';
 import SearchIcon from '@mui/icons-material/Search';
 import BookDetail from './BookDetail';  // Thêm BookDetail
+import MenuIcon from '@mui/icons-material/Menu';
 
 interface Book {
   documentId: number;
@@ -135,6 +136,10 @@ export default function BookFavorite() {
         {/* Paper container for the book list */}
         <Paper sx={{ padding: '20px', position: 'relative', height:'100%' }}>
           {/* Thanh tìm kiếm */}
+          {/* <IconButton  onClick={toggleDrawer}> */}
+            <IconButton>
+                      <MenuIcon />
+                    </IconButton>
           <Box
             sx={{
               position: 'absolute',
@@ -225,6 +230,7 @@ export default function BookFavorite() {
         open={snackbarOpen}
         autoHideDuration={6000}
         onClose={handleSnackbarClose}
+        anchorOrigin={{vertical: 'top', horizontal: 'right'}}
       >
         <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
           {snackbarMessage}

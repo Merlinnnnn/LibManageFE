@@ -196,11 +196,11 @@ const BorrowedBooks: React.FC = () => {
 
           showSnackbar('Thanh toán online thành công!', 'success');
         } else {
-          console.error('Không có URL thanh toán hợp lệ');
+          console.log('Không có URL thanh toán hợp lệ');
           showSnackbar('Có lỗi xảy ra khi nhận URL thanh toán.', 'error');
         }
       } catch (error) {
-        console.error('Lỗi trong quá trình thanh toán:', error);
+        console.log('Lỗi trong quá trình thanh toán:', error);
         showSnackbar('Có lỗi xảy ra khi thanh toán online!', 'error');
       }
     }

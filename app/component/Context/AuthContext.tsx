@@ -15,6 +15,7 @@ interface LoginResponse {
 interface AuthContextType {
   token: string | null;
   login: (username: string, password: string) => Promise<void>;
+  signup: (username: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -54,28 +55,56 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         router.push('/home');
     }
     } catch (error) {
-      console.error('Đăng nhập thất bại:', error);
+      console.log('Đăng nhập thất bại:', error);
       alert('Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập.');
     }
   };
 
   const logout = async () => {
     try {
-      await apiService.post('/api/v1/auth/logout', token);
-
+      await apiService.post('/api/v1/auth/logout', { token }, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+  
       sessionStorage.removeItem('access_token');
       sessionStorage.removeItem('fullname');
+      sessionStorage.removeItem('role');
       setToken(null);
-
+  
       router.push('/login');
     } catch (error) {
-      console.error('Đăng xuất thất bại:', error);
+      console.log('Đăng xuất thất bại:', error);
       alert('Đăng xuất thất bại. Vui lòng thử lại.');
     }
   };
 
+  const signup = async (username: string, password: string) => {
+    try {
+      const fixedData = {
+        username,
+        password,
+        firstName: 'John',
+        lastName: 'Doe',
+        dob: '1990-01-01',
+        phoneNumber: '1234567890',
+        address: '123 Main St',
+      };
+
+      const response = await apiService.post('/api/v1/users', fixedData);
+      console.log('Đăng ký thành công:', response);
+      alert('Đăng ký thành công! Vui lòng đăng nhập.');
+      router.push('/login');
+    } catch (error) {
+      console.log('Đăng ký thất bại:', error);
+      alert('Đăng ký thất bại. Vui lòng thử lại.');
+    }
+  };
+  
+
   return (
-    <AuthContext.Provider value={{ token, login, logout }}>
+    <AuthContext.Provider value={{ token, login, logout , signup}}>
       {children}
     </AuthContext.Provider>
   );

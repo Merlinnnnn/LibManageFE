@@ -55,7 +55,7 @@ export default function BookShelf() {
                     setTotalPages(1);
                 }
             } catch (error) {
-                console.error('Không thể tải sách:', error);
+                console.log('Không thể tải sách:', error);
                 setBooks([]);
             } finally {
                 setLoading(false);

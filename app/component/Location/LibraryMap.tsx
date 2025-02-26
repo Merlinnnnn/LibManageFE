@@ -46,7 +46,7 @@ const LibraryMap = () => {
             const response = await apiService.get<{ result: { content: Shelf[] } }>('/api/v1/shelves');
             setShelves(response.data.result.content);
         } catch (error) {
-            console.error('Error fetching shelves:', error);
+            console.log('Error fetching shelves:', error);
         }
     };
 
@@ -55,7 +55,7 @@ const LibraryMap = () => {
             const response = await apiService.get<{ result: { content: Rack[] } }>('/api/v1/racks');
             setRacks(response.data.result.content);
         } catch (error) {
-            console.error('Error fetching racks:', error);
+            console.log('Error fetching racks:', error);
         }
     };
 
@@ -71,7 +71,7 @@ const LibraryMap = () => {
             setNewRack({ rackNumber: '', capacity: '', shelfId: '' });
             fetchRacks();
         } catch (error) {
-            console.error('Error adding rack:', error);
+            console.log('Error adding rack:', error);
             alert('Failed to add rack');
         }
     };
@@ -87,7 +87,7 @@ const LibraryMap = () => {
             setNewShelf({ shelfNumber: '', zoneId: '' });
             fetchShelves();
         } catch (error) {
-            console.error('Error adding shelf:', error);
+            console.log('Error adding shelf:', error);
             alert('Failed to add shelf');
         }
     };

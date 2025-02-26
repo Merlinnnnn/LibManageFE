@@ -72,7 +72,7 @@ const BorrowReturnDashboard: React.FC = () => {
         borrowReturnByMonth: monthlyData,
       }));
     } catch (error) {
-      console.error('Error fetching borrow/return data by year:', error);
+      console.log('Error fetching borrow/return data by year:', error);
     }
   };
 
@@ -88,7 +88,7 @@ const BorrowReturnDashboard: React.FC = () => {
       }>(`/api/v1/dashboards/loans/activities?startDate=${startDate}&endDate=${endDate}`);
       setStatusSummary(response.data.result.statusSummary);
     } catch (error) {
-      console.error('Error fetching activities data:', error);
+      console.log('Error fetching activities data:', error);
     }
   };
 
@@ -105,7 +105,7 @@ const BorrowReturnDashboard: React.FC = () => {
       const totalLoanCount = loansByMonth.reduce((sum, item) => sum + item.loanCount, 0);
       setTotalLoans(totalLoanCount);
     } catch (error) {
-      console.error('Error fetching loan statistics:', error);
+      console.log('Error fetching loan statistics:', error);
     }
   };
 

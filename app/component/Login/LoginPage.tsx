@@ -19,7 +19,7 @@ const LoginForm: React.FC = () => {
     try {
       await login(email, password);
     } catch (error) {
-      console.error('Login failed:', error);
+      console.log('Login failed:', error);
     }
   };
 

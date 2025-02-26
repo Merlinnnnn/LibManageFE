@@ -66,7 +66,7 @@ const NewStudentsTable: React.FC = () => {
             setStudents(response.data.result.content);
             console.log("ds student", response.data.result.content);
         } catch (error) {
-            //console.error("Lỗi khi gọi API danh sách sinh viên:", error);
+
             console.log("Lỗi khi gọi API danh sách sinh viên:", error);
         }
     };

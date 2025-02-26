@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Dialog,
     DialogActions,
@@ -25,18 +25,52 @@ const ImportExcelDialog: React.FC<ImportExcelDialogProps> = ({ open, onClose }) 
     const [snackbarMessage, setSnackbarMessage] = useState('');
     const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
 
-    // Handle file change (selecting an excel file)
+    // Reset state when dialog is opened
+    useEffect(() => {
+        if (open) {
+            setSelectedFile(null);
+            setExcelData([]);
+        }
+    }, [open]);
+
+    // Handle file change: Read file and display its content on the interface
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-            setSelectedFile(e.target.files[0]);
+            const file = e.target.files[0];
+            setSelectedFile(file);
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = new Uint8Array(event.target?.result as ArrayBuffer);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                    setExcelData(jsonData);
+
+                    setSnackbarMessage('File loaded successfully!');
+                    setSnackbarSeverity('success');
+                    setSnackbarOpen(true);
+                } catch (error) {
+                    console.log('Error reading file:', error);
+                    setSnackbarMessage('Failed to load file. Please check the file format.');
+                    setSnackbarSeverity('error');
+                    setSnackbarOpen(true);
+                }
+            };
+            reader.readAsArrayBuffer(file);
         }
     };
 
-    // Handle file upload to the server and reading data
+    // Handle file upload to the server
     const handleFileUpload = async () => {
-        if (!selectedFile) return;
-
-        // Send request to upload the file
+        if (!selectedFile) {
+            setSnackbarMessage('No file selected to upload!');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
+            return;
+        }
         const formData = new FormData();
         formData.append('file', selectedFile);
 
@@ -44,24 +78,11 @@ const ImportExcelDialog: React.FC<ImportExcelDialogProps> = ({ open, onClose }) 
             const response = await apiService.post('/api/v1/program-classes/upload', formData);
             console.log('File uploaded successfully:', response);
 
-            // Read file data using xlsx
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const data = new Uint8Array(e.target?.result as ArrayBuffer);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-                const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                setExcelData(jsonData);
-            };
-            reader.readAsArrayBuffer(selectedFile);
-
-            // Show success notification
-            setSnackbarMessage('File uploaded and data loaded successfully!');
+            setSnackbarMessage('File uploaded successfully!');
             setSnackbarSeverity('success');
             setSnackbarOpen(true);
         } catch (error) {
-            console.error('Failed to upload file:', error);
+            console.log('Failed to upload file:', error);
             setSnackbarMessage('Failed to upload file. Please try again.');
             setSnackbarSeverity('error');
             setSnackbarOpen(true);
@@ -73,7 +94,6 @@ const ImportExcelDialog: React.FC<ImportExcelDialogProps> = ({ open, onClose }) 
         ? Object.keys(excelData[0]).map((key) => ({ field: key, headerName: key, width: 150 }))
         : [];
 
-    // Close snackbar
     const handleSnackbarClose = () => {
         setSnackbarOpen(false);
     };

@@ -126,7 +126,7 @@ const Header: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      console.log('Error fetching notifications:', error);
     }
   };
 
@@ -182,7 +182,7 @@ const Header: React.FC = () => {
 
         {/* Search Bar */}
         <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
-          <TextField
+          {/* <TextField
             variant="outlined"
             placeholder="Search..."
             size="small"
@@ -207,7 +207,7 @@ const Header: React.FC = () => {
                 </InputAdornment>
               ),
             }}
-          />
+          /> */}
         </Box>
 
         {/* User Info and Notifications */}

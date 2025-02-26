@@ -85,34 +85,44 @@ const Sidebar: React.FC = () => {
     }, []);
     useWebSocket((notification: Notification) => {
         console.log('New notification', notification.username);
+        console.log('fullname', fullName);
+    
         setNotifications((prevNotifications) => {
-            const isNotificationExists = notifications.some(
-                (existingNotification) => existingNotification.username === notification.username
+            // Kiểm tra nếu thông báo đã tồn tại trong danh sách dựa trên id
+            const isNotificationExists = prevNotifications.some(
+                (existingNotification) => existingNotification.id === notification.id
             );
+            console.log('isnotifi',isNotificationExists);
+            console.log('prenotifi',prevNotifications);
+            console.log('new noti',notification);
+            
     
-            console.log('Notification exists:', isNotificationExists);
-    
-            if (isNotificationExists) {
-                setUnreadCount((prevCount) => prevCount + 1);
-                return [notification, ...prevNotifications];
+            // Nếu thông báo chưa tồn tại và thuộc về bản thân (so sánh với fullName)
+            if (notification.username === fullName.toLowerCase() && !isNotificationExists) {
+                console.log('Thông báo mới, chưa tồn tại trong danh sách');
+                fetchUnreadNotifications();
+                return [notification, ...prevNotifications]; // Thêm notification vào danh sách
             }
     
-            return [...prevNotifications];
+            // Nếu thông báo đã tồn tại hoặc không phải của bản thân, không làm gì
+            console.log('Thông báo đã tồn tại hoặc không phải của bản thân');
+            return prevNotifications;
         });
     });
     
     
+    const fetchUnreadNotifications = async () => {
+        try {
+            const response = await apiService.get<Res>('/api/v1/notifications/unread-count');
+            setUnreadCount(response.data.result);
+        } catch (error) {
+            console.log('Failed to fetch unread notifications:', error);
+        }
+    };
+
+    
 
     useEffect(() => {
-        const fetchUnreadNotifications = async () => {
-            try {
-                const response = await apiService.get<Res>('/api/v1/notifications/unread-count');
-                setUnreadCount(response.data.result);
-            } catch (error) {
-                console.error('Failed to fetch unread notifications:', error);
-            }
-        };
-
         fetchUnreadNotifications();
     }, []);
 
@@ -135,7 +145,7 @@ const Sidebar: React.FC = () => {
             console.log(response)
             setNotifications(response.data.result.content);
         } catch (error) {
-            console.error('Failed to fetch notifications:', error);
+            console.log('Failed to fetch notifications:', error);
         }
     };
 

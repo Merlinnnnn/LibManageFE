@@ -132,7 +132,7 @@ const AddBookPage: React.FC = () => {
             const response = await apiService.get<CourseRes>('/api/v1/courses'); // Fetch courses
             setCourses(response.data.result.content || []);
         } catch (error) {
-            console.error('Error fetching courses:', error);
+            console.log('Error fetching courses:', error);
             setCourses([]);
         }
     };
@@ -143,7 +143,7 @@ const AddBookPage: React.FC = () => {
             setDocumentTypes(response.data.result.content || []);
             console.log(response);
         } catch (error) {
-            console.error('Error fetching document types:', error);
+            console.log('Error fetching document types:', error);
             setDocumentTypes([]);
         }
     };
@@ -220,31 +220,31 @@ const AddBookPage: React.FC = () => {
             console.log('Book added successfully:', response);
 
             // Reset lại các giá trị sau khi thêm thành công
-            // setBook({
-            //     isbn: '',
-            //     documentName: '',
-            //     author: '',
-            //     publisher: '',
-            //     publishedDate: '',
-            //     pageCount: 0,
-            //     language: '',
-            //     quantity: 0,
-            //     availableCount: 0,
-            //     status: 'AVAILABLE',
-            //     description: '',
-            //     coverImage: '',
-            //     documentLink: '',
-            //     price: 0,
-            //     size: 'MEDIUM',
-            //     documentTypeIds: [],
-            //     warehouseId: 2,
-            //     courseIds: [],
-            // });
-            // setSelectedTags([]);
-            // setSelectedCourses([]);
-            // setSelectedFile(null);
-            // setSelectedPdfFile(null);
-            // setPreview(null)
+            setBook({
+                isbn: '',
+                documentName: '',
+                author: '',
+                publisher: '',
+                publishedDate: '',
+                pageCount: 0,
+                language: '',
+                quantity: 0,
+                availableCount: 0,
+                status: 'AVAILABLE',
+                description: '',
+                coverImage: '',
+                documentLink: '',
+                price: 0,
+                size: 'MEDIUM',
+                documentTypeIds: [],
+                warehouseId: 2,
+                courseIds: [],
+            });
+            setSelectedTags([]);
+            setSelectedCourses([]);
+            setSelectedFile(null);
+            setSelectedPdfFile(null);
+            setPreview(null)
             // Tắt các thông báo (nếu có)
             setOpenSnackbar(false);
             showSnackbar('Thêm sách thành công!', 'success');
@@ -288,7 +288,7 @@ const AddBookPage: React.FC = () => {
             setNewCourseCode('');
             setNewDescription('');
         } catch (error) {
-            //console.error('Failed to add new type:', error);
+            console.log('Failed to add new type:', error);
             showSnackbar('Thêm loại sách thất bại!', 'error');
             //alert('Failed to add new type');
         }
@@ -331,6 +331,7 @@ const AddBookPage: React.FC = () => {
     // Handle closing the import dialog
     const handleCloseImportDialog = () => {
         setOpenImportDiolog(false);
+        showSnackbar('Thêm khóa học thành công!', 'success');
     };
 
 

@@ -52,7 +52,7 @@ const ReadBook: React.FC = () => {
                 }, 500); // Một khoảng thời gian ngắn để đảm bảo tất cả trang đã được tải
             }
         } catch (error) {
-            console.error('Error starting session:', error);
+            console.log('Error starting session:', error);
         }
     };
 
@@ -73,7 +73,7 @@ const ReadBook: React.FC = () => {
             const response = await apiService.put(`/api/v1/reading-sessions/${sessionId}?currentPage=${currentPage}`);
             console.log(response);
         } catch (error) {
-            console.error('Error updating current page:', error);
+            console.log('Error updating current page:', error);
         }
     };
 
@@ -98,7 +98,7 @@ const ReadBook: React.FC = () => {
                 setIsEnd(true);
             }
         } catch (error) {
-            console.error('Error loading page:', error);
+            console.log('Error loading page:', error);
             setHasMorePages(false);
             setIsEnd(true);
         } finally {
@@ -116,7 +116,7 @@ const ReadBook: React.FC = () => {
                     alert('Đã đánh dấu trang!');
                 }
             } catch (error) {
-                console.error('Error bookmarking page:', error);
+                console.log('Error bookmarking page:', error);
             }
         }
     };

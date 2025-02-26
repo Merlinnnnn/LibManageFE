@@ -50,7 +50,7 @@ const BookDashboard: React.FC = () => {
         console.log(response);
         setData(response.data.result);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.log('Error fetching data:', error);
       }
     };
 

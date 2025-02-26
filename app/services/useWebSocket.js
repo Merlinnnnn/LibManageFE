@@ -6,44 +6,45 @@ const useWebSocket = (onMessageReceived) => {
   const stompClientRef = useRef(null);
 
   useEffect(() => {
-    // Lấy token từ localStorage
-    const token = sessionStorage.getItem('access_token')
-    console.log('abc')
+    // Lấy token từ sessionStorage
+    const token = sessionStorage.getItem('access_token');
     if (!token) {
-      console.log('No token found in localStorage');
+      console.log('No token found in sessionStorage');
       return;
     }
 
-    // Tạo client STOMP với header Authorization chứa token
+    // Tạo client STOMP
     const stompClient = new Client({
       webSocketFactory: () => new SockJS('http://localhost:8009/ws'),
       connectHeaders: {
         Authorization: `Bearer ${token}`,
       },
-      reconnectDelay: 5000,
+      reconnectDelay: 5000, // Đảm bảo tự động reconnect
     });
 
+    // Hàm đăng ký và xử lý thông báo
+    const subscribeToChannel = (channel, onMessage) => {
+      stompClient.subscribe(channel, (message) => {
+        const notification = JSON.parse(message.body);
+        onMessage(notification);
+      });
+    };
+
+    // Hàm xử lý kết nối thành công
     stompClient.onConnect = (frame) => {
-      console.log('Connected: ' + frame);
-      // Đăng ký nhận thông báo
-      stompClient.subscribe('/user/queue/notifications', (message) => {
-        console.log('Recieved: ' + message.body);
-        const notification = JSON.parse(message.body);
-        onMessageReceived(notification);
-      });
-      stompClient.subscribe('/user/queue/loans', (message) => {
-        console.log('Recieved: ' + message.body);
-        const notification = JSON.parse(message.body);
-        onMessageReceived(notification);
-      });
+      console.log('Connected:', frame);
+      // Đăng ký nhận thông báo từ nhiều kênh khác nhau
+      subscribeToChannel('/user/queue/notifications', onMessageReceived);
+      subscribeToChannel('/user/queue/loans', onMessageReceived);
     };
 
+    // Hàm xử lý lỗi của broker
     stompClient.onStompError = (frame) => {
-      console.error('Broker reported error: ' + frame.headers['message']);
-      console.error('Additional details: ' + frame.body);
+      console.log('Broker error:', frame.headers['message']);
+      console.log('Details:', frame.body);
     };
 
-    // Kích hoạt kết nối WebSocket
+    // Kích hoạt kết nối
     stompClient.activate();
     stompClientRef.current = stompClient;
 
@@ -53,7 +54,7 @@ const useWebSocket = (onMessageReceived) => {
         stompClientRef.current.deactivate();
       }
     };
-  }, [onMessageReceived]);
+  }, [onMessageReceived]); // Chỉ gọi lại effect nếu `onMessageReceived` thay đổi
 
   return stompClientRef.current;
 };

@@ -27,7 +27,7 @@ const FineTable: React.FC = () => {
       const response = await apiService.get<{ result: { content: Fine[] } }>('/api/v1/fines');
       setFines(response.data.result.content);
     } catch (error) {
-      console.error('Lỗi khi lấy dữ liệu phạt:', error);
+      console.log('Lỗi khi lấy dữ liệu phạt:', error);
     }
   };
 

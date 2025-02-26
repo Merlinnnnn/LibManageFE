@@ -44,7 +44,7 @@ const Dashboard: React.FC = () => {
                 const responseData: UserRoleData = response.data.result;
                 setData(responseData);
             } catch (error) {
-                console.error('Error fetching data:', error);
+                console.log('Error fetching data:', error);
             }
         };
 

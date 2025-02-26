@@ -10,7 +10,7 @@ const SignupForm: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const { login } = useAuth();
+  const { signup  } = useAuth();
 
   const handleTogglePassword = () => {
     setShowPassword(!showPassword);
@@ -22,12 +22,12 @@ const SignupForm: React.FC = () => {
       return;
     }
     try {
-      // Call the signup API or logic here
-      console.log('Signup successful');
-      // If successful, you can then log the user in
-      //await login(email, password);
+      // Gọi hàm signup từ AuthContext
+      await signup(email, password);
+      //alert('Signup successful! You can now log in.');
     } catch (error) {
-      console.error('Signup failed:', error);
+      console.log('Signup failed:', error);
+      alert('Signup failed. Please try again.');
     }
   };
 

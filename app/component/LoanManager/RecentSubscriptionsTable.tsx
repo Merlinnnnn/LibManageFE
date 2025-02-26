@@ -48,11 +48,11 @@ const ReturnRequestsTable: React.FC = () => {
     useEffect(() => {
         fetchReturnRequests();
     }, []);
-    useWebSocket((request: ReturnRequest) => {
-        // Cập nhật danh sách thông báo khi nhận được thông báo mới từ WebSocket
-        setRequests((preRequests) => [request, ...preRequests]);
-        //setUnreadCount((prevCount) => prevCount + 1);
-    });
+    // useWebSocket((request: ReturnRequest) => {
+    //     // Cập nhật danh sách thông báo khi nhận được thông báo mới từ WebSocket
+    //     setRequests((preRequests) => [request, ...preRequests]);
+    //     //setUnreadCount((prevCount) => prevCount + 1);
+    // });
 
     const fetchReturnRequests = async () => {
         try {
@@ -62,7 +62,7 @@ const ReturnRequestsTable: React.FC = () => {
             );
             setRequests(filteredRequests);
         } catch (error) {
-            console.error("Lỗi khi gọi API danh sách yêu cầu trả:", error);
+            console.log("Lỗi khi gọi API danh sách yêu cầu trả:", error);
         }
     };
 
@@ -103,7 +103,7 @@ const ReturnRequestsTable: React.FC = () => {
             fetchReturnRequests();
             handleDialogClose();
         } catch (error) {
-            console.error("Lỗi khi thực hiện xác nhận:", error);
+            console.log("Lỗi khi thực hiện xác nhận:", error);
         }
     };
 
