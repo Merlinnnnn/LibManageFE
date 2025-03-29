@@ -15,4 +15,4 @@ const BookDashBoardPage: React.FC = () => {
     );
 };
 
-export default RoleContext(BookDashBoardPage,['ROLE_ADMIN']);
+export default RoleContext(BookDashBoardPage,['ADMIN']);

@@ -55,15 +55,32 @@ const BorrowedBooks: React.FC = () => {
 
   const fetchBorrowedBooks = async () => {
     try {
-      const response = await apiService.get('api/v1/loan-transactions/user/borrowed-books');
-      setBooks((response.data as any).result.content);
-      console.log(response);
+      const infoRaw = localStorage.getItem('info');
+      if (!infoRaw) throw new Error('Không tìm thấy thông tin người dùng');
+  
+      const userInfo = JSON.parse(infoRaw);
+      const userId = userInfo.userId;
+  
+      // Gọi API có gắn đúng userId
+      const response = await apiService.get(`/api/v1/loans/user/borrowed-books`, {
+        params: {
+          userId,
+          page: 0,
+          size: 10,
+        },
+      });
+  
+      const content = response?.data?.data?.content;
+      setBooks(Array.isArray(content) ? content : []);
+      console.log('📚 Borrowed books:', content);
     } catch (error) {
+      console.error('❌ Error fetching borrowed books:', error);
       setError('Đã xảy ra lỗi khi tải dữ liệu');
     } finally {
       setLoading(false);
     }
   };
+  
 
   const showSnackbar = (message: string, severity: 'success' | 'error' | 'info' | 'warning') => {
     setSnackbarMessage(message);

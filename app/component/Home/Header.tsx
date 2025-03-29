@@ -65,8 +65,13 @@ const Header: React.FC = () => {
 
 
   useEffect(() => {
-    const storedUsername = sessionStorage.getItem('fullname');
-    setUsername(storedUsername);
+    const infoString = localStorage.getItem('info');
+    if(infoString != null) {
+      const info = JSON.parse(infoString); // Chuyển chuỗi thành object
+      const username = info.firstName +" " +  info.lastName;
+      setUsername( username);
+    }
+   
 
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'light' || savedTheme === 'dark') {

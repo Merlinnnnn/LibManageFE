@@ -11,7 +11,7 @@ const HomePage: React.FC = () => {
     useEffect(() => {
         setIsClient(true);
     }, []);
-
+    console.log('isClient' + isClient)
     if (!isClient) {
         return (
             <Box sx={{ width: '100%', padding: 3 }}>

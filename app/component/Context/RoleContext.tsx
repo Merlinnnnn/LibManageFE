@@ -8,10 +8,16 @@ const withAuth = (WrappedComponent: any, allowedRoles: string[]) => {
 
     useEffect(() => {
       // Lấy role từ session storage
-      const role = sessionStorage.getItem('role');
-
+      const infoString = localStorage.getItem('info');
+      if(infoString === null) {
+        router.replace('/home');
+        return;
+      }
+      const info = JSON.parse(infoString); // Chuyển chuỗi thành object
+      const role = info.roles; // Truy cập thuộc tính roles
+      const hasPermission = role.some(r => allowedRoles.includes(r));
       // Nếu không có role hoặc role không nằm trong danh sách allowedRoles
-      if (!role || !allowedRoles.includes(role)) {
+      if (!role ||  !hasPermission) {
         // Redirect người dùng về trang chủ và không render WrappedComponent
         router.replace('/home');
       } else {

@@ -73,8 +73,11 @@ const TrendingBooks: React.FC = () => {
   const fetchAllBooks = async () => {
     try {
       const response: ApiResponse = await apiService.get(`/api/v1/recommendations/users?size=20`);
-      if (response.data && response.data.result && response.data.result.content.length > 0) {
-        setBooks(response.data.result.content);
+  
+      const content = response?.data?.data?.content;
+  
+      if (Array.isArray(content) && content.length > 0) {
+        setBooks(content); // Đây là mảng các tài liệu đã được API trả về
       } else {
         console.log('No books found:', response);
         setBooks([]);
