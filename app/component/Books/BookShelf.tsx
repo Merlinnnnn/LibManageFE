@@ -1,30 +1,105 @@
 import React, { useState, useEffect } from 'react';
-import { Grid, Box, Pagination, CircularProgress, Typography, Paper, TextField, InputAdornment, useTheme, Drawer, Chip, Button, IconButton } from '@mui/material';
-import BookCard from './BookCard';
+import { 
+  Grid, 
+  Box, 
+  Pagination, 
+  CircularProgress, 
+  Typography, 
+  Paper, 
+  TextField, 
+  InputAdornment, 
+  useTheme, 
+  Drawer, 
+  Chip, 
+  Button, 
+  IconButton,
+  Avatar,
+  Container,
+  Divider,
+  Badge
+} from '@mui/material';
+import Skeleton from '../Skeleton/Skeleton';
 import apiService from '../../untils/api';
 import Header from '../Home/Header';
 import BookDetail from './BookDetail';
 import SearchIcon from '@mui/icons-material/Search';
 import MenuIcon from '@mui/icons-material/Menu';
+import BookInfo from './BookInfo';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
+import StarIcon from '@mui/icons-material/Star';
+import LocalLibraryIcon from '@mui/icons-material/LocalLibrary';
+import CategoryIcon from '@mui/icons-material/Category';
+import SchoolIcon from '@mui/icons-material/School';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+
+// Custom theme with vibrant colors
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#6a1b9a',
+    },
+    secondary: {
+      main: '#ff8f00',
+    },
+    background: {
+      default: '#f5f5f5',
+      paper: '#ffffff',
+    },
+  },
+  typography: {
+    fontFamily: '"Poppins", "Helvetica", "Arial", sans-serif',
+    h4: {
+      fontWeight: 600,
+    },
+    h5: {
+      fontWeight: 500,
+    },
+  },
+});
 
 interface Book {
   documentId: number;
   documentName: string;
-  cover?: string;
-  author?: string;
-  publisher?: string;
-  isbn?: string;
-  documentLink: string;
+  author: string;
+  publisher: string;
+  publishedDate: string | null;
+  pageCount: number;
+  language: string | null;
+  availableCount: number;
+  description: string;
+  coverImage: string;
+  documentCategory: string;
+  digitalDocuments: DigitalDocument[];
 }
+
+interface Upload {
+  uploadId: number;
+  fileName: string;
+  fileType: string;
+  filePath: string;
+  uploadedAt: string;
+}
+
+interface DigitalDocument {
+  digitalDocumentId: number;
+  documentName: string;
+  author: string;
+  publisher: string;
+  description: string;
+  coverImage: string | null;
+  uploads: Upload[];
+}
+
 interface Course {
-  courseId: number; // Changed to courseId
+  courseId: number;
   courseName: string;
 }
 
 interface BooksApiResponse {
   code: number;
   message: string;
-  result: {
+  data: {
     content: Book[];
     pageNumber: number;
     pageSize: number;
@@ -33,6 +108,7 @@ interface BooksApiResponse {
     last: boolean;
   };
 }
+
 interface DocumentType {
   documentTypeId: number;
   typeName: string;
@@ -41,14 +117,15 @@ interface DocumentType {
 interface DocumentTypeRes {
   code: number;
   message: string;
-  result: {
+  data: {
     content: DocumentType[]
   };
 }
+
 interface CourseRes {
   code: number;
   message: string;
-  result: {
+  data: {
     content: Course[];
   };
 }
@@ -57,58 +134,51 @@ export default function BookShelf() {
   const [books, setBooks] = useState<Book[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string>('');  // searchQuery để thao tác với API
-  const [searchString, setSearchString] = useState<string>(''); // searchString để theo dõi chuỗi tìm kiếm
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchString, setSearchString] = useState<string>('');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedTypes, setSelectedTypes] = useState<number[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<number[]>([]);
   const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [featuredBooks, setFeaturedBooks] = useState<Book[]>([]);
 
-  const booksPerPage = 20;
-  const theme = useTheme();
+  const booksPerPage = 5;
+  const muiTheme = useTheme();
+
   const handleTypeToggle = (typeId: number) => {
     setSelectedTypes((prev) =>
       prev.includes(typeId) ? prev.filter((id) => id !== typeId) : [...prev, typeId]
     );
   };
-  // Sử dụng async/await để fetch Courses và Document Types
+
   const fetchCoursesAndTypes = async () => {
+    setLoading(true);
     try {
       const [coursesResponse, typesResponse] = await Promise.all([
         apiService.get<CourseRes>('/api/v1/courses'),
         apiService.get<DocumentTypeRes>('/api/v1/document-types'),
       ]);
 
-      // Xử lý Courses
-      if (coursesResponse?.data?.result?.content) {
-        setCourses(coursesResponse.data.result.content);
-      } else {
-        setCourses([]); // Reset nếu không có dữ liệu
-        console.warn('Courses data is empty or invalid.');
+      if (coursesResponse?.data?.data?.content) {
+        setCourses(coursesResponse.data.data.content);
       }
 
-      // Xử lý Document Types
-      if (typesResponse?.data?.result?.content) {
-        setDocumentTypes(typesResponse.data.result.content || []);
-      } else {
-        setDocumentTypes([]); // Reset nếu không có dữ liệu
-        console.warn('Document types data is empty or invalid.');
+      if (typesResponse?.data?.data?.content) {
+        setDocumentTypes(typesResponse.data.data.content || []);
       }
     } catch (error) {
-      console.log('Error fetching courses or document types:', error);
-      setCourses([]); // Reset dữ liệu khi có lỗi
-      setDocumentTypes([]);
+      console.log('Error fetching data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Gọi hàm fetchCoursesAndTypes trong useEffect
   useEffect(() => {
     fetchCoursesAndTypes();
   }, []);
-
 
   const handleCourseToggle = (courseId: number) => {
     setSelectedCourses((prev) =>
@@ -120,42 +190,29 @@ export default function BookShelf() {
     setDrawerOpen(!drawerOpen);
   };
 
-
-  // Fetch books when page changes or search query changes
   const fetchBooks = async () => {
     setLoading(true);
+    setBooks([]);
     try {
-      const params: Record<string, any> = {};
+      const params: Record<string, any> = {
+        size: booksPerPage,
+        page: currentPage
+      };
 
-      if (searchString) {
-        params.documentName = searchString;
-      }
-      if (selectedTypes?.length) {
-        params.documentTypeIds = selectedTypes.join(',');
-      }
-      if (selectedCourses?.length) {
-        params.courseIds = selectedCourses.join(',');
-      }
-      if (booksPerPage) {
-        params.size = booksPerPage;
-      }
-      if (currentPage) {
-        params.page = currentPage;
-      }
-      const response = await apiService.get<BooksApiResponse>('/api/v1/documents/search', {
-        params,
-      });
+      if (searchString) params.documentName = searchString;
+      if (selectedTypes?.length) params.documentTypeIds = selectedTypes.join(',');
+      if (selectedCourses?.length) params.courseIds = selectedCourses.join(',');
 
-      if (response.data && response.data.result) {
-        setBooks(response.data.result.content);
-        setTotalPages(response.data.result.totalPages);
-      } else {
-        setBooks([]);
-        setTotalPages(1);
+      const response = await apiService.get<BooksApiResponse>('/api/v1/documents', { params });
+      
+      if (response.data?.data) {
+        setBooks(response.data.data.content);
+        setTotalPages(response.data.data.totalPages);
+        // Set first 3 books as featured
+        setFeaturedBooks(response.data.data.content.slice(0, 3));
       }
     } catch (error) {
-      console.log('Không thể tải sách:', error);
-      setBooks([]);
+      console.log('Error loading books:', error);
     } finally {
       setLoading(false);
     }
@@ -163,9 +220,10 @@ export default function BookShelf() {
 
   useEffect(() => {
     fetchBooks();
-  }, [currentPage, searchString]);  // Thêm searchString vào dependency array để re-fetch khi searchString thay đổi
+    window.scrollTo(0, 0);
+  }, [currentPage, searchString]);
 
-  const handleViewDocument = (id: string, imgLink: string) => {
+  const handleViewDocument = (id: string) => {
     setSelectedBookId(id);
   };
 
@@ -179,212 +237,315 @@ export default function BookShelf() {
 
   const handleSearchKeyPress = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter') {
-      setSearchString(searchQuery); // Cập nhật searchString khi nhấn Enter
+      setSearchString(searchQuery);
     }
   };
-  const handleSearchButton = (searchString: string) => {
-    setSearchString(searchString);
-    fetchBooks();
-    console.log(selectedCourses);
-    console.log(selectedTypes);
-  }
+
+  const handleSearchButton = () => {
+    setSearchString(searchQuery);
+  };
 
   const handleSearchIconClick = () => {
-    setSearchString(searchQuery); // Cập nhật searchString khi nhấn vào biểu tượng tìm kiếm
+    setSearchString(searchQuery);
   };
 
   const handleCloseDialog = () => {
     setSelectedBookId(null);
   };
-  interface DocumentType {
-    documentTypeId: number;
-    typeName: string;
-  }
+
   return (
-    <Box>
+    <ThemeProvider theme={theme}>
       <Header />
-      <Box sx={{ padding: '20px' }}>
-        {/* Paper container for the book list */}
-        <Paper sx={{ padding: '20px', position: 'relative' }}>
-        <IconButton  onClick={toggleDrawer}>
-                      <MenuIcon />
-                    </IconButton>
-          {/* Thanh tìm kiếm */}
-          <Box
-            sx={{
-              position: 'absolute',
-              top: '20px',
-              left: '20px',
-              right: '20px',
-              display: 'flex',
-              justifyContent: 'flex-start',
-              marginLeft: '40px',
-              zIndex: 1,
-            }}
-          >
-          {/* <IconButton onClick={toggleDrawer}>
-                      <MenuIcon />
-                    </IconButton> */}
-            <TextField
-              variant="outlined"
-              placeholder="Search..."
-              size="small"
-              value={searchQuery}
-              onChange={handleSearchChange} // Cập nhật searchQuery khi nhập liệu
-              onKeyDown={handleSearchKeyPress} // Xử lý sự kiện nhấn phím Enter
-              sx={{
-                width: '100%',
-                maxWidth: '400px',  // Max width for larger screens
-                backgroundColor: theme.palette.background.default,
-                borderRadius: '20px',
-                '& fieldset': {
-                  borderRadius: '20px',
-                },
-                '& input': {
-                  color: theme.palette.text.primary,
-                },
-                '& .MuiSvgIcon-root': {
-                  color: theme.palette.text.primary,
-                },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    {/* <IconButton onClick={toggleDrawer}>
-                      <MenuIcon />
-                    </IconButton> */}
-                    <SearchIcon onClick={handleSearchIconClick} /> {/* Xử lý sự kiện khi click vào SearchIcon */}
-                  </InputAdornment>
-                ),
-              }}
-            />
+      <Box sx={{ 
+        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+        minHeight: '100vh',
+        py: 4
+      }}>
+        <Container maxWidth="xl">
+          {/* Hero Section */}
+          <Box sx={{
+            bgcolor: 'primary.main',
+            color: 'white',
+            borderRadius: 4,
+            p: 4,
+            mb: 4,
+            textAlign: 'center',
+            boxShadow: 3,
+            background: 'linear-gradient(45deg, #6a1b9a 30%, #9c27b0 90%)'
+          }}>
+            <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
+              Explore Our Digital Library
+            </Typography>
+            <Typography variant="h6" sx={{ mb: 3 }}>
+              Discover thousands of books, articles and resources
+            </Typography>
+            
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'center',
+              maxWidth: 600,
+              mx: 'auto'
+            }}>
+              <TextField
+                fullWidth
+                variant="outlined"
+                placeholder="Search books, authors, courses..."
+                size="medium"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onKeyDown={handleSearchKeyPress}
+                sx={{
+                  bgcolor: 'background.paper',
+                  borderRadius: 2,
+                  '& fieldset': {
+                    borderRadius: 2,
+                    border: 'none'
+                  },
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon color="primary" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <Button 
+                      variant="contained" 
+                      color="secondary"
+                      onClick={handleSearchButton}
+                      sx={{
+                        borderRadius: 2,
+                        px: 3,
+                        textTransform: 'none',
+                        boxShadow: 'none'
+                      }}
+                    >
+                      Search
+                    </Button>
+                  )
+                }}
+              />
+            </Box>
           </Box>
-          {/* <Drawer anchor="right" open={drawerOpen} onClose={toggleDrawer}>
-            <Box width={300} p={2}>
-              <Typography variant="h6">Select Type</Typography>
-              <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
-                {documentTypes.map((type) => (
-                  <Chip
-                    key={type.documentTypeId}
-                    label={type.typeName}
-                    clickable
-                    color={selectedTypes.includes(type.documentTypeId) ? 'primary' : 'default'}
-                    onClick={() => handleTypeToggle(type.documentTypeId)}
-                  />
-                ))}
-              </Box>
 
-              <Typography variant="h6" mt={2}>Select Courses</Typography>
-              <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
-                {courses.map((course) => (
-                  <Chip
-                    key={course.courseId}
-                    label={course.courseName}
-                    clickable
-                    color={selectedCourses.includes(course.courseId) ? 'primary' : 'default'}
-                    onClick={() => handleCourseToggle(course.courseId)}
-                  />
-                ))}
-              </Box>
-
-              <Box mt={3} textAlign="center">
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => {
-                    setSearchString(searchQuery); // Gửi search query kèm type và course
-                    toggleDrawer();
-                  }}
-                >
-                  Apply Filters
-                </Button>
-              </Box>
-            </Box>
-          </Drawer> */}
-          {drawerOpen && (
-            <Box style={{ width: '100%', marginTop: 30 }}>
-              <Box p={2}>
-                <Typography variant="h6">Select Type</Typography>
-                <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
-                  {documentTypes.map((type) => (
-                    <Chip
-                      key={type.documentTypeId}
-                      label={type.typeName}
-                      clickable
-                      color={selectedTypes.includes(type.documentTypeId) ? 'primary' : 'default'}
-                      onClick={() => handleTypeToggle(type.documentTypeId)}
-                    />
-                  ))}
-                </Box>
-
-                <Typography variant="h6" mt={2}>Select Courses</Typography>
-                <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
-                  {courses.map((course) => (
-                    <Chip
-                      key={course.courseId}
-                      label={course.courseName}
-                      clickable
-                      color={selectedCourses.includes(course.courseId) ? 'primary' : 'default'}
-                      onClick={() => handleCourseToggle(course.courseId)}
-                    />
-                  ))}
-                </Box>
-
-                <Box mt={3} textAlign="center">
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={() => {
-                      handleSearchButton(searchQuery);
-                    }}
-                  >
-                    Search
-                  </Button>
-                </Box>
-              </Box>
-            </Box>
-
-          )}
-
-
-          {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
-              <CircularProgress />
-            </Box>
-          ) : books.length > 0 ? (
-            <>
-              <Grid container spacing={2} justifyContent="flex-start" sx={{ marginTop: '60px' }}>
-                {/* Map over books to display them in rows */}
-                {books.map((book) => (
-                  <Grid item key={book.documentId} justifyContent="center" xs={6} sm={4} md={3} lg={2}>
-                    <BookCard
-                      book={book}
-                      onViewDocument={() => handleViewDocument(book.documentId.toString(), book.documentLink)}
-                    />
+          {/* Featured Books Carousel */}
+          {featuredBooks.length > 0 && (
+            <Box sx={{ mb: 6 }}>
+              <Typography variant="h5" sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
+                <StarIcon color="secondary" sx={{ mr: 1 }} />
+                Featured Books
+              </Typography>
+              <Grid container spacing={3}>
+                {featuredBooks.map((book) => (
+                  <Grid item xs={12} md={4} key={book.documentId}>
+                    <Paper 
+                      sx={{ 
+                        p: 2, 
+                        borderRadius: 3,
+                        height: '100%',
+                        transition: 'transform 0.3s',
+                        '&:hover': {
+                          transform: 'translateY(-5px)',
+                          boxShadow: 6
+                        },
+                        background: 'linear-gradient(to bottom right, #ffffff, #f3e5f5)'
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', mb: 2 }}>
+                        <Avatar 
+                          src={book.coverImage} 
+                          variant="rounded"
+                          sx={{ 
+                            width: 80, 
+                            height: 120,
+                            mr: 2,
+                            boxShadow: 3
+                          }}
+                        />
+                        <Box>
+                          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            {book.documentName}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            by {book.author}
+                          </Typography>
+                          <Chip 
+                            label={book.documentCategory} 
+                            size="small" 
+                            color="primary"
+                            sx={{ mt: 1 }}
+                          />
+                        </Box>
+                      </Box>
+                      <Typography variant="body2" sx={{ mb: 2 }}>
+                        {book.description.length > 100 
+                          ? `${book.description.substring(0, 100)}...` 
+                          : book.description}
+                      </Typography>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        fullWidth
+                        onClick={() => handleViewDocument(book.documentId.toString())}
+                        sx={{ borderRadius: 2 }}
+                      >
+                        View Details
+                      </Button>
+                    </Paper>
                   </Grid>
                 ))}
               </Grid>
+            </Box>
+          )}
 
-              {/* Pagination */}
-              <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-                <Pagination
-                  count={totalPages}
-                  page={currentPage + 1}
-                  onChange={handlePageChange}
-                  color="primary"
-                />
-              </Box>
-            </>
-          ) : (
-            <Typography variant="h6" align="center" sx={{ marginTop: '20px' }}>
-              Không tìm thấy dữ liệu.
-            </Typography>
-          )}
-          {selectedBookId && (
-            <BookDetail id={selectedBookId} open={!!selectedBookId} onClose={handleCloseDialog} />
-          )}
-        </Paper>
+          {/* Main Content */}
+          <Grid container spacing={4}>
+            {/* Filters Sidebar */}
+            <Grid item xs={12} md={3}>
+              <Paper sx={{ 
+                p: 3, 
+                borderRadius: 3,
+                position: 'sticky',
+                top: 20,
+                boxShadow: 3
+              }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                  <FilterListIcon color="primary" sx={{ mr: 1 }} />
+                  <Typography variant="h6">Filters</Typography>
+                </Box>
+
+                <Box sx={{ mb: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <CategoryIcon color="action" sx={{ mr: 1, fontSize: 20 }} />
+                    <Typography variant="subtitle1">Document Types</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {documentTypes.map((type) => (
+                      <Chip
+                        key={type.documentTypeId}
+                        label={type.typeName}
+                        clickable
+                        variant={selectedTypes.includes(type.documentTypeId) ? 'filled' : 'outlined'}
+                        color={selectedTypes.includes(type.documentTypeId) ? 'primary' : 'default'}
+                        onClick={() => handleTypeToggle(type.documentTypeId)}
+                        sx={{ mb: 1 }}
+                      />
+                    ))}
+                  </Box>
+                </Box>
+
+                <Divider sx={{ my: 2 }} />
+
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <SchoolIcon color="action" sx={{ mr: 1, fontSize: 20 }} />
+                    <Typography variant="subtitle1">Courses</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {courses.map((course) => (
+                      <Chip
+                        key={course.courseId}
+                        label={course.courseName}
+                        clickable
+                        variant={selectedCourses.includes(course.courseId) ? 'filled' : 'outlined'}
+                        color={selectedCourses.includes(course.courseId) ? 'primary' : 'default'}
+                        onClick={() => handleCourseToggle(course.courseId)}
+                        sx={{ mb: 1 }}
+                      />
+                    ))}
+                  </Box>
+                </Box>
+
+                <Button
+                  fullWidth
+                  variant="contained"
+                  color="secondary"
+                  sx={{ mt: 3, borderRadius: 2 }}
+                  onClick={handleSearchButton}
+                >
+                  Apply Filters
+                </Button>
+              </Paper>
+            </Grid>
+
+            {/* Books List */}
+            <Grid item xs={12} md={9}>
+              <Paper sx={{ 
+                p: 3, 
+                borderRadius: 3,
+                minHeight: '60vh',
+                boxShadow: 3
+              }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                  <Typography variant="h5" sx={{ display: 'flex', alignItems: 'center' }}>
+                    <LocalLibraryIcon color="primary" sx={{ mr: 1 }} />
+                    {searchString ? `Search Results for "${searchString}"` : 'All Books'}
+                  </Typography>
+                  <Typography color="text.secondary">
+                    {books.length} {books.length === 1 ? 'book' : 'books'} found
+                  </Typography>
+                </Box>
+
+                {loading ? (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {[...Array(3)].map((_, index) => (
+                      <Skeleton key={index} />
+                    ))}
+                  </Box>
+                ) : books.length > 0 ? (
+                  <>
+                    <Box sx={{ mb: 4 }}>
+                      {books.map((book) => (
+                        <Box key={book.documentId} mb={3}>
+                          <BookInfo id={book.documentId.toString()} books={books} />
+                        </Box>
+                      ))}
+                    </Box>
+
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                      <Pagination
+                        count={totalPages}
+                        page={currentPage + 1}
+                        onChange={handlePageChange}
+                        color="primary"
+                        shape="rounded"
+                        size="large"
+                      />
+                    </Box>
+                  </>
+                ) : (
+                  <Box sx={{ 
+                    textAlign: 'center', 
+                    py: 10,
+                    background: 'linear-gradient(to bottom right, #f5f5f5, #e0e0e0)',
+                    borderRadius: 3
+                  }}>
+                    <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+                      No books found matching your criteria
+                    </Typography>
+                    <Button 
+                      variant="outlined" 
+                      color="primary"
+                      onClick={() => {
+                        setSearchString('');
+                        setSearchQuery('');
+                        setSelectedTypes([]);
+                        setSelectedCourses([]);
+                      }}
+                    >
+                      Clear Filters
+                    </Button>
+                  </Box>
+                )}
+              </Paper>
+            </Grid>
+          </Grid>
+        </Container>
+
+        {selectedBookId && (
+          <BookDetail id={selectedBookId} open={!!selectedBookId} onClose={handleCloseDialog} />
+        )}
       </Box>
-    </Box>
+    </ThemeProvider>
   );
 }

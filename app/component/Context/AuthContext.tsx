@@ -6,11 +6,22 @@ import {jwtDecode} from 'jwt-decode';  // Import thư viện jwt-decode
 // Định nghĩa interface cho response của API
 interface LoginResponse {
   code: number;
-  result: {
+  data: {
     authenticated: boolean;
     token: string;
   };
 }
+interface UserInfoResponse {
+  code: number;
+  success: boolean;
+  data: {
+    roles: string[];
+    fullName: string;
+    username: string;
+  };
+}
+
+
 
 interface AuthContextType {
   token: string | null;
@@ -26,7 +37,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
 
   useEffect(() => {
-    const savedToken = sessionStorage.getItem('access_token');
+    const savedToken = localStorage.getItem('access_token');
     if (savedToken) {
       setToken(savedToken);
     }
@@ -39,21 +50,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         password,
       });
       console.log(response)
-      const authToken = response.data.result.token;
-
-      const decodedToken: any = jwtDecode(authToken);
-      const fullName = decodedToken.fullName;
-      const role = decodedToken.scope
-      sessionStorage.setItem('access_token', authToken);
-      sessionStorage.setItem('fullname', fullName);
-      sessionStorage.setItem('role', role);
+      const authToken = response.data.data.token;
+      localStorage.setItem('access_token', authToken);
       setToken(authToken);
 
-      if (role === 'ROLE_ADMIN') {
+
+      const userInfoResponse = await apiService.get<UserInfoResponse>('/api/v1/users/info', {
+        headers: { Authorization: `Bearer ${authToken}` }
+      });
+      
+      const userInfo = userInfoResponse.data.data; // ✅ Đúng: Vì interface đã có `data`
+      localStorage.setItem("info", JSON.stringify(userInfo));
+      console.log(userInfo);
+      
+      const roles = userInfo.roles;
+      const isAdmin = roles.includes('ADMIN');
+      if (isAdmin) {
         router.push('/user_dashboard');
-    } else {
-        router.push('/home');
-    }
+      } else {
+          router.push('/home');
+      }
     } catch (error) {
       console.log('Đăng nhập thất bại:', error);
       alert('Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập.');
@@ -61,23 +77,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = async () => {
+    sessionStorage.clear(); // Xóa tất cả dữ liệu phiên
+    localStorage.clear(); // Xóa token khỏi localStorage
+    router.push('/login');
     try {
-      await apiService.post('/api/v1/auth/logout', { token }, {
+      await apiService.post('/api/v1/auth/logout', {
         headers: {
+          'Authorization': `Bearer ${token}`, // Gửi token trong header
           'Content-Type': 'application/json',
         },
       });
-  
-      sessionStorage.removeItem('access_token');
-      sessionStorage.removeItem('fullname');
-      sessionStorage.removeItem('role');
-      setToken(null);
-  
-      router.push('/login');
     } catch (error) {
       console.log('Đăng xuất thất bại:', error);
-      alert('Đăng xuất thất bại. Vui lòng thử lại.');
+      //alert('Đăng xuất thất bại. Vui lòng thử lại.');
     }
+    setToken(null);
   };
 
   const signup = async (username: string, password: string) => {

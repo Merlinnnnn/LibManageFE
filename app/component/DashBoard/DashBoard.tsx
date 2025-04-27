@@ -86,7 +86,7 @@ const Dashboard: React.FC = () => {
             {/* Sidebar */}
             <Sidebar />
 
-            <Box flex={1} padding={3} bgcolor="#f5f5f5" overflow="auto">
+            <Box flex={1} padding={3} bgcolor="#ffffff" overflow="auto">
                 <Grid container spacing={2}>
                     {/* Total Users Card */}
                     <Grid item xs={12}>
@@ -94,8 +94,8 @@ const Dashboard: React.FC = () => {
                             sx={{
                                 padding: 3,
                                 textAlign: 'center',
-                                backgroundColor: '#424242',
-                                color: '#fff',
+                                backgroundColor: '#f5f5f5',
+                                color: '#000000',
                             }}
                         >
                             <Typography variant="h6">Total Users</Typography>
@@ -110,8 +110,8 @@ const Dashboard: React.FC = () => {
                                 sx={{
                                     padding: 2,
                                     textAlign: 'center',
-                                    backgroundColor: '#424242',
-                                    color: '#fff',
+                                    backgroundColor: '#f5f5f5',
+                                    color: '#000000',
                                 }}
                             >
                                 <Typography variant="subtitle1">Admin</Typography>
@@ -138,8 +138,8 @@ const Dashboard: React.FC = () => {
                                 sx={{
                                     padding: 2,
                                     textAlign: 'center',
-                                    backgroundColor: '#424242',
-                                    color: '#fff',
+                                    backgroundColor: '#f5f5f5',
+                                    color: '#000000',
                                 }}
                             >
                                 <Typography variant="subtitle1">Manager</Typography>
@@ -166,8 +166,8 @@ const Dashboard: React.FC = () => {
                                 sx={{
                                     padding: 2,
                                     textAlign: 'center',
-                                    backgroundColor: '#424242',
-                                    color: '#fff',
+                                    backgroundColor: '#f5f5f5',
+                                    color: '#000000',
                                 }}
                             >
                                 <Typography variant="subtitle1">User</Typography>
@@ -191,7 +191,7 @@ const Dashboard: React.FC = () => {
 
                     {/* Pie Chart */}
                     <Grid item xs={12}>
-                        <Card sx={{ padding: 2, marginTop: 2 }}>
+                        <Card sx={{ padding: 2, marginTop: 2, backgroundColor: '#f5f5f5' }}>
                             <Typography variant="h6" gutterBottom>
                                 User Role Distribution
                             </Typography>

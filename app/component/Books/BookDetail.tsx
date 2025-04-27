@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogTitle, Typography, Button, Chip, Box, IconButton, DialogActions, Snackbar, Alert } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import CloseIcon from '@mui/icons-material/Close';
 import apiService from '../../untils/api';
 
 interface BookDetailProps {
@@ -175,8 +176,23 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
     }
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-            <DialogTitle>{book.documentName}</DialogTitle>
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="md"
+            PaperProps={{
+                sx: { borderRadius: '20px' }
+            }}>
+            <DialogTitle>
+                <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Typography variant="h6">{book.documentName}</Typography>
+                    <IconButton onClick={onClose}>
+                        <CloseIcon />
+                    </IconButton>
+                </Box>
+            </DialogTitle>
+
             <DialogContent>
                 <Box display="flex" alignItems="flex-start">
                     {/* Ảnh bìa sách */}
@@ -222,7 +238,7 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
                                 variant="contained"
                                 color="primary"
                                 onClick={handleViewDocumentClick}
-                                style={{ flex: 1 }}
+                                style={{ flex: 1, borderRadius: '20px' }}
                                 disabled={isBorrowed}
                             >
                                 Borrow Book
@@ -231,7 +247,7 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
                                 variant="outlined"
                                 color="secondary"
                                 onClick={handleReadBookClick(book.documentId.toString())} // Ép kiểu thành chuỗi
-                                style={{ flex: 1 }}
+                                style={{ flex: 1, borderRadius: '20px' }}
                             >
                                 Read Book
                             </Button>
@@ -239,15 +255,15 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
                         </Box>
                     </Box>
                     <Snackbar
-                    open={snackbarOpen}
-                    autoHideDuration={6000}
-                    onClose={handleSnackbarClose}
-                    anchorOrigin={{vertical: 'top', horizontal: 'right'}}
-                >
-                    <Alert onClose={handleSnackbarClose} severity={snackbarSeverity}>
-                        {snackbarMessage}
-                    </Alert>
-                </Snackbar>
+                        open={snackbarOpen}
+                        autoHideDuration={6000}
+                        onClose={handleSnackbarClose}
+                        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                    >
+                        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity}>
+                            {snackbarMessage}
+                        </Alert>
+                    </Snackbar>
                 </Box>
             </DialogContent>
             <Dialog open={confirmDialogOpen} onClose={handleCloseConfirmDialog}>
@@ -267,7 +283,7 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
                     open={snackbarOpen}
                     autoHideDuration={6000}
                     onClose={handleSnackbarClose}
-                    anchorOrigin={{vertical: 'top', horizontal: 'right'}}
+                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
                 >
                     <Alert onClose={handleSnackbarClose} severity={snackbarSeverity}>
                         {snackbarMessage}

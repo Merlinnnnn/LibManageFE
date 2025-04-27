@@ -128,6 +128,9 @@ const Sidebar: React.FC = () => {
 
     useEffect(() => {
         sessionStorage.setItem("selectedIndex", selectedIndex.toString());
+        if(menuItems[selectedIndex].text === "Logout"){
+            logout();
+        }
     }, [selectedIndex]);
 
     const handleListItemClick = (index: number) => {
@@ -221,7 +224,7 @@ const Sidebar: React.FC = () => {
         {
             text: "Logout",
             icon: <ExitToApp />,
-            path: "/logout"
+            onclick: logout
         }
     ];
 
@@ -274,6 +277,7 @@ const Sidebar: React.FC = () => {
                     <div key={item.text}>
                         <ListItemButton
                             onClick={() => {
+                                
                                 setSelectedIndex(index);
                                 if (item.subItems) {
                                     item.text === "Dashboard" ? handleDashboardClick() :

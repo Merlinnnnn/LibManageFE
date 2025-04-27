@@ -61,14 +61,14 @@ interface Course {
 interface DocumentTypeRes {
     code: number;
     message: string;
-    result: {
+    data: {
         content: DocumentType[]
     };
 }
 interface CourseRes {
     code: number;
     message: string;
-    result: {
+    data: {
         content: Course[];
     };
 }
@@ -130,7 +130,7 @@ const AddBookPage: React.FC = () => {
     const fetchCourses = async () => {
         try {
             const response = await apiService.get<CourseRes>('/api/v1/courses'); // Fetch courses
-            setCourses(response.data.result.content || []);
+            setCourses(response.data.data.content || []);
         } catch (error) {
             console.log('Error fetching courses:', error);
             setCourses([]);
@@ -140,7 +140,7 @@ const AddBookPage: React.FC = () => {
     const fetchDocumentTypes = async () => {
         try {
             const response = await apiService.get<DocumentTypeRes>('/api/v1/document-types');
-            setDocumentTypes(response.data.result.content || []);
+            setDocumentTypes(response.data.data.content || []);
             console.log(response);
         } catch (error) {
             console.log('Error fetching document types:', error);

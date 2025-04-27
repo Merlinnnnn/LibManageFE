@@ -19,16 +19,16 @@ interface Book {
 
 interface ApiResponse {
   data: {
-    result: {
-      content: Book[];
-    };
+    content: Book[];
   };
 }
 
+
 const Container = styled(Box)(({ theme }) => ({
   padding: '20px',
-  backgroundColor: theme.palette.background.default,
+  backgroundColor: '#9c9997',
   color: theme.palette.text.primary,
+  borderRadius: '20px'
 }));
 
 const BookSliderContainer = styled(Box)({
@@ -72,9 +72,11 @@ const TrendingBooks: React.FC = () => {
 
   const fetchAllBooks = async () => {
     try {
-      const response: ApiResponse = await apiService.get(`/api/v1/recommendations/users?size=20`);
-      if (response.data && response.data.result && response.data.result.content.length > 0) {
-        setBooks(response.data.result.content);
+      const response = await apiService.get<ApiResponse>(`/api/v1/documents?size=20`);
+      const content = response.data.data.content;
+
+      if (Array.isArray(content) && content.length > 0) {
+        setBooks(content);
       } else {
         console.log('No books found:', response);
         setBooks([]);
@@ -113,7 +115,7 @@ const TrendingBooks: React.FC = () => {
   }, []);
 
   return (
-    <Container>
+    <Container id='book-list' >
       <Typography variant="h4" gutterBottom>Recoment Books</Typography>
       {books.length > 0 ? (
         <BookSliderContainer>
@@ -122,10 +124,10 @@ const TrendingBooks: React.FC = () => {
           </LeftArrowButton>
           <BookSlider id="book-slider">
             {books.map((book) => (
-              <BookCard 
-                key={book.documentId} 
-                book={book} 
-                onViewDocument={() => handleViewDocument(book.documentId.toString(), book.documentLink)} 
+              <BookCard
+                key={book.documentId}
+                book={book}
+                onViewDocument={() => handleViewDocument(book.documentId.toString(), book.documentLink)}
               />
             ))}
           </BookSlider>

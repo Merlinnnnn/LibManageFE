@@ -21,7 +21,7 @@ const BookCardContainer = styled(Card)(({ theme }) => ({
   marginRight: 'auto',  // Thêm margin cả hai bên để các book card không bị sát nhau
   borderRadius: '10px',
   alignItems: 'center',
-  backgroundColor: '#424242',
+  backgroundColor: '#f5f5f5',
   transition: 'transform 0.3s',
   display: 'flex',
   flexDirection: 'column',
@@ -68,6 +68,7 @@ const ViewDocumentButton = styled(Button)({
   '&:hover': {
     backgroundColor: '#1565c0',
   },
+  borderRadius: '20px',
 });
 
 const BookCard: React.FC<BookCardProps> = ({ book, onViewDocument }) => {

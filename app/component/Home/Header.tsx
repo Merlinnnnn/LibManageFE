@@ -21,11 +21,19 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  Avatar,
+  Badge,
+  styled,
+  alpha
 } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import MenuIcon from '@mui/icons-material/Menu';
+import { driver } from "driver.js";
+import "driver.js/dist/driver.css";
+import PersonIcon from '@mui/icons-material/Person';
 import NotificationsIcon from '@mui/icons-material/Notifications';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import HistoryIcon from '@mui/icons-material/History';
 import LogoutIcon from '@mui/icons-material/Logout';
+import AddIcon from '@mui/icons-material/Add';
 import Link from 'next/link';
 import { useTheme } from '@mui/material/styles';
 import { useThemeContext } from '../Context/ThemeContext';
@@ -34,6 +42,7 @@ import apiService from '../../untils/api';
 import dayjs from 'dayjs';
 import { Brightness4, Brightness7 } from '@mui/icons-material';
 import useWebSocket from '../../services/useWebSocket';
+import SearchIcon from '@mui/icons-material/Search';
 
 interface Notification {
   id: string;
@@ -53,6 +62,68 @@ interface ApiResponse {
   };
 }
 
+const StyledBadge = styled(Badge)(({ theme }) => ({
+  '& .MuiBadge-badge': {
+    right: -3,
+    top: 13,
+    border: `2px solid ${theme.palette.background.paper}`,
+    padding: '0 4px',
+    backgroundColor: theme.palette.error.main,
+    color: theme.palette.error.contrastText,
+  },
+}));
+
+const Search = styled('div')(({ theme }) => ({
+  position: 'relative',
+  borderRadius: theme.shape.borderRadius,
+  backgroundColor: alpha(theme.palette.common.white, 0.15),
+  '&:hover': {
+    backgroundColor: alpha(theme.palette.common.white, 0.25),
+  },
+  marginLeft: 0,
+  width: '100%',
+  [theme.breakpoints.up('sm')]: {
+    marginLeft: theme.spacing(1),
+    width: 'auto',
+  },
+}));
+
+const SearchIconWrapper = styled('div')(({ theme }) => ({
+  padding: theme.spacing(0, 2),
+  height: '100%',
+  position: 'absolute',
+  pointerEvents: 'none',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+}));
+
+const StyledInputBase = styled(TextField)(({ theme }) => ({
+  color: 'inherit',
+  '& .MuiInputBase-input': {
+    padding: theme.spacing(1, 1, 1, 0),
+    paddingLeft: `calc(1em + ${theme.spacing(4)})`,
+    transition: theme.transitions.create('width'),
+    width: '100%',
+    [theme.breakpoints.up('sm')]: {
+      width: '20ch',
+      '&:focus': {
+        width: '30ch',
+      },
+    },
+  },
+  '& .MuiOutlinedInput-root': {
+    borderRadius: 25,
+    backgroundColor: alpha(theme.palette.common.white, 0.15),
+    '&:hover': {
+      backgroundColor: alpha(theme.palette.common.white, 0.25),
+    },
+    '& fieldset': {
+      border: 'none',
+    },
+  },
+}));
+
 const Header: React.FC = () => {
   const { toggleTheme, mode, setMode } = useThemeContext();
   const theme = useTheme();
@@ -62,28 +133,46 @@ const Header: React.FC = () => {
   const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
   const [expandedNotificationId, setExpandedNotificationId] = useState<string | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
+  const startTour = () => {
+    const driverObj = driver({
+      showProgress: true,
+      steps: [
+        { element: '#sign-up-btn', popover: { title: 'Animated Tour Example', description: 'This button for sign up Let\'s walk you through it.', side: "left", align: 'start' } },
+        { element: '#sign-in-btn', popover: { title: 'Animated Tour Example', description: 'This button for login. Let\'s walk you through it.', side: "left", align: 'start' } },
+        { element: '#get-book', popover: { title: 'Animated Tour Example', description: 'This to go to book shelf. Let\'s walk you through it.', side: "left", align: 'start' } },
+        { element: '#book-list', popover: { title: 'Animated Tour Example', description: 'This is recommend book . Let\'s walk you through it.', side: "left", align: 'start' } },
+        { popover: { title: 'Happy Coding', description: 'And that is all, go ahead and start adding tours to your applications.' } }
+      ]
+    });
+    driverObj.drive();
+  };
 
   useEffect(() => {
-    const storedUsername = sessionStorage.getItem('fullname');
-    setUsername(storedUsername);
+    const infoString = localStorage.getItem('info');
+    if (infoString != null) {
+      const info = JSON.parse(infoString);
+      const username = info.firstName + " " + info.lastName;
+      setUsername(username);
+    }
 
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'light' || savedTheme === 'dark') {
       setMode(savedTheme as 'light' | 'dark');
     }
   }, [setMode]);
+
   useWebSocket((notification: Notification) => {
     setNotifications((prevNotifications) => {
       const isNotificationExists = prevNotifications.some(
         (existingNotification) => existingNotification.username === notification.username
       );
-      console.log(notification)
 
-      if (isNotificationExists) {
+      if (!isNotificationExists) {
+        setUnreadCount(prev => prev + 1);
         return [notification, ...prevNotifications];
       }
-
       return prevNotifications;
     });
   });
@@ -105,6 +194,7 @@ const Header: React.FC = () => {
   const handleNotificationClick = (event: React.MouseEvent<HTMLElement>) => {
     fetchNotifications();
     setNotificationAnchor(event.currentTarget);
+    setUnreadCount(0);
   };
 
   const handleNotificationClose = () => {
@@ -114,22 +204,13 @@ const Header: React.FC = () => {
   const fetchNotifications = async () => {
     try {
       const response: ApiResponse = await apiService.get('/api/v1/notifications/my-notifications');
-      if (response.data && response.data.result && response.data.result.content) {
-        setNotifications((prevNotifications) => {
-          // Hợp nhất thông báo mới từ API với các thông báo hiện có
-          const newNotifications = response.data.result.content;
-          const mergedNotifications = [
-            ...newNotifications.filter(newNotif => !prevNotifications.find(oldNotif => oldNotif.id === newNotif.id)),
-            ...prevNotifications
-          ];
-          return mergedNotifications;
-        });
+      if (response.data?.result?.content) {
+        setNotifications(response.data.result.content);
       }
     } catch (error) {
       console.log('Error fetching notifications:', error);
     }
   };
-
 
   const openNotifications = Boolean(notificationAnchor);
   const openMenu = Boolean(menuAnchor);
@@ -138,97 +219,132 @@ const Header: React.FC = () => {
     setExpandedNotificationId(id === expandedNotificationId ? null : id);
   };
 
-
   return (
     <AppBar
-      position="static"
+      position="sticky"
       sx={{
-        backgroundColor: theme.palette.background.paper,
-        boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-        zIndex: 10,
-        width: '100%',
+        background: mode === 'dark' 
+          ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)' 
+          : 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)',
+        boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.15)',
+        backdropFilter: 'blur(10px)',
+        zIndex: 1200,
+        transition: 'all 0.3s ease',
       }}
     >
-      <Toolbar>
-        {/* Menu Icon */}
-        <IconButton
-          size="large"
-          edge="start"
-          color="inherit"
-          aria-label="menu"
-          sx={{ marginLeft: '10px' }}
-          onClick={handleMenuClick}
-        >
-          <MenuIcon sx={{ color: theme.palette.text.primary }} />
-        </IconButton>
-        <Menu
-          anchorEl={menuAnchor}
-          open={openMenu}
-          onClose={handleMenuClose}
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'left',
-          }}
-          transformOrigin={{
-            vertical: 'top',
-            horizontal: 'left',
-          }}
-        >
-          <MenuItem component={Link} href="/home" onClick={handleMenuClose}>Home</MenuItem>
-          <MenuItem component={Link} href="/bookshelf" onClick={handleMenuClose}>Bookshelf</MenuItem>
-          <MenuItem component={Link} href="/bookfavo" onClick={handleMenuClose}>Favorite</MenuItem>
-          <MenuItem component={Link} href="/borrowed-book" onClick={handleMenuClose}>Borrowed Books</MenuItem>
-        </Menu>
+      <Toolbar sx={{ justifyContent: 'space-between', py: 1 }}>
+        {/* Left Side - Logo and Navigation */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+          <Link href="/home" passHref>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                cursor: 'pointer',
+                '&:hover': {
+                  transform: 'scale(1.02)',
+                },
+                transition: 'transform 0.2s',
+              }}
+            >
+              <Avatar
+                src="/logo.png"
+                alt="Logo"
+                sx={{
+                  width: 42,
+                  height: 42,
+                  bgcolor: 'primary.main',
+                  boxShadow: 3,
+                }}
+              />
+              <Typography
+                variant="h6"
+                noWrap
+                sx={{
+                  fontWeight: 700,
+                  letterSpacing: '.2rem',
+                  color: 'white',
+                  textDecoration: 'none',
+                  display: { xs: 'none', md: 'block' },
+                }}
+              >
+                LIBHUB
+              </Typography>
+            </Box>
+          </Link>
 
-        {/* Search Bar */}
-        <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
-          {/* <TextField
+          <Button
+            onClick={startTour}
             variant="outlined"
-            placeholder="Search..."
-            size="small"
             sx={{
-              width: '400px',
-              backgroundColor: theme.palette.background.default,
-              borderRadius: '20px',
-              '& fieldset': {
-                borderRadius: '20px',
-              },
-              '& input': {
-                color: theme.palette.text.primary,
-              },
-              '& .MuiSvgIcon-root': {
-                color: theme.palette.text.primary,
+              borderRadius: 20,
+              color: 'white',
+              borderColor: 'white',
+              '&:hover': {
+                backgroundColor: alpha(theme.palette.common.white, 0.1),
+                borderColor: 'white',
               },
             }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-          /> */}
+          >
+            Take a Tour
+          </Button>
         </Box>
 
-        {/* User Info and Notifications */}
-        <Box sx={{ display: 'flex', alignItems: 'center', marginRight: '30px', gap: '20px' }}>
+        {/* Center - Search Bar */}
+        {/* <Box sx={{ 
+          flexGrow: 1, 
+          display: 'flex', 
+          justifyContent: 'center',
+          px: 2,
+          maxWidth: 600
+        }}>
+          <Search>
+            <SearchIconWrapper>
+              <SearchIcon sx={{ color: 'white' }} />
+            </SearchIconWrapper>
+            <StyledInputBase
+              placeholder="Search books, authors..."
+              inputProps={{ 'aria-label': 'search' }}
+              sx={{
+                '& .MuiInputBase-input': {
+                  color: 'white',
+                  '&::placeholder': {
+                    color: alpha(theme.palette.common.white, 0.8),
+                  },
+                },
+              }}
+            />
+          </Search>
+        </Box> */}
+
+        {/* Right Side - User Controls */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {/* Theme Toggle */}
+          <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
+            <IconButton
+              onClick={handleToggleTheme}
+              sx={{ color: 'white' }}
+            >
+              {mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
+            </IconButton>
+          </Tooltip>
+
           {username ? (
             <>
-              <Typography variant="body1" color="textPrimary">
-                Hello, {username}
-              </Typography>
-
-
+              {/* Notifications */}
               <Tooltip title="Notifications">
                 <IconButton
-                  edge="end"
-                  aria-label="notifications"
                   onClick={handleNotificationClick}
-                  sx={{ color: theme.palette.text.primary }}
+                  sx={{ color: 'white' }}
                 >
-                  <NotificationsIcon />
+                  <StyledBadge badgeContent={unreadCount} max={9}>
+                    <NotificationsIcon />
+                  </StyledBadge>
                 </IconButton>
               </Tooltip>
+
+              {/* Notifications Popover */}
               <Popover
                 open={openNotifications}
                 anchorEl={notificationAnchor}
@@ -241,91 +357,178 @@ const Header: React.FC = () => {
                   vertical: 'top',
                   horizontal: 'right',
                 }}
+                PaperProps={{
+                  sx: {
+                    width: 400,
+                    maxHeight: 500,
+                    borderRadius: 3,
+                    boxShadow: '0px 10px 30px rgba(0, 0, 0, 0.2)',
+                    overflow: 'hidden',
+                  },
+                }}
               >
-                <Box p={2} width={400}>
-                  <Typography variant="h6" gutterBottom>
-                    Notifications
-                  </Typography>
-                  <List>
-                    {notifications.map((notification) => (
-                      <Box key={notification.id} mb={2}>
-                        <ListItem disablePadding>
-                          <ListItemButton onClick={() => handleExpandNotification(notification.id)}>
-                            <ListItemText
-                              primary={notification.title}
-                              secondary={dayjs(notification.createdAt).format('DD/MM/YYYY HH:mm:ss')}
-                            />
-                          </ListItemButton>
-                        </ListItem>
-                        {expandedNotificationId === notification.id && (
-                          <Typography variant="body2" color="textSecondary" sx={{ ml: 2, mt: 1 }}>
-                            {notification.content}
-                          </Typography>
-                        )}
-                        <Divider sx={{ mt: 2, mb: 2 }} />
-                      </Box>
-                    ))}
-                  </List>
+                <Box sx={{ p: 2, bgcolor: 'primary.main', color: 'white' }}>
+                  <Typography variant="h6">Notifications</Typography>
+                </Box>
+                <Box sx={{ overflow: 'auto', maxHeight: 400 }}>
+                  {notifications.length > 0 ? (
+                    <List>
+                      {notifications.map((notification) => (
+                        <React.Fragment key={notification.id}>
+                          <ListItem disablePadding>
+                            <ListItemButton 
+                              onClick={() => handleExpandNotification(notification.id)}
+                              sx={{
+                                '&:hover': {
+                                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                },
+                              }}
+                            >
+                              <ListItemText
+                                primary={
+                                  <Typography fontWeight={notification.status === 'UNREAD' ? 600 : 400}>
+                                    {notification.title}
+                                  </Typography>
+                                }
+                                secondary={dayjs(notification.createdAt).format('DD/MM/YYYY HH:mm')}
+                              />
+                            </ListItemButton>
+                          </ListItem>
+                          {expandedNotificationId === notification.id && (
+                            <Box sx={{ px: 3, py: 1, bgcolor: alpha(theme.palette.primary.main, 0.05) }}>
+                              <Typography variant="body2">
+                                {notification.content}
+                              </Typography>
+                            </Box>
+                          )}
+                          <Divider sx={{ my: 0.5 }} />
+                        </React.Fragment>
+                      ))}
+                    </List>
+                  ) : (
+                    <Box sx={{ p: 3, textAlign: 'center' }}>
+                      <Typography variant="body2" color="text.secondary">
+                        No notifications yet
+                      </Typography>
+                    </Box>
+                  )}
                 </Box>
               </Popover>
-              <Tooltip title="Log out">
+
+              {/* User Menu */}
+              <Tooltip title="Account settings">
                 <IconButton
-                  edge="end"
-                  aria-label="logout"
-                  onClick={logout}
-                  sx={{ color: theme.palette.text.primary }}
+                  onClick={handleMenuClick}
+                  sx={{ p: 0, ml: 1 }}
                 >
-                  <LogoutIcon />
+                  <Avatar 
+                    sx={{ 
+                      bgcolor: 'secondary.main',
+                      width: 40,
+                      height: 40,
+                      boxShadow: 2,
+                    }}
+                  >
+                    {username?.charAt(0).toUpperCase()}
+                  </Avatar>
                 </IconButton>
               </Tooltip>
+
+              <Menu
+                anchorEl={menuAnchor}
+                open={openMenu}
+                onClose={handleMenuClose}
+                PaperProps={{
+                  sx: {
+                    width: 250,
+                    borderRadius: 3,
+                    boxShadow: '0px 10px 30px rgba(0, 0, 0, 0.2)',
+                    overflow: 'hidden',
+                    mt: 1.5,
+                  },
+                }}
+                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+              >
+                <Box sx={{ p: 2, bgcolor: 'primary.main', color: 'white' , borderRadius: 3}}>
+                  <Typography fontWeight={600}>{username}</Typography>
+                  <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                    Member
+                  </Typography>
+                </Box>
+                <Divider />
+                <MenuItem 
+                  component={Link}
+                  href="/bookfavo"
+                  onClick={handleMenuClose}
+                  sx={{ py: 1.5 }}
+                >
+                  <FavoriteBorderIcon sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  Favorites
+                </MenuItem>
+                <MenuItem 
+                  component={Link}
+                  href="/borrowed-book"
+                  onClick={handleMenuClose}
+                  sx={{ py: 1.5 }}
+                >
+                  <HistoryIcon sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  Borrowed Books
+                </MenuItem>
+                <MenuItem 
+                  component={Link}
+                  href="/my-bookshelf"
+                  onClick={handleMenuClose}
+                  sx={{ py: 1.5 }}
+                >
+                  <AddIcon sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  Add Virtual Book
+                </MenuItem>
+                <Divider />
+                <MenuItem 
+                  onClick={logout}
+                  sx={{ py: 1.5, color: 'error.main' }}
+                >
+                  <LogoutIcon sx={{ mr: 1.5 }} />
+                  Logout
+                </MenuItem>
+              </Menu>
             </>
           ) : (
             <>
-              <Button color="primary" variant="outlined" href="/signup">
+              <Button 
+                id="sign-up-btn" 
+                variant="outlined" 
+                href="/signup" 
+                sx={{ 
+                  borderRadius: 20,
+                  color: 'white',
+                  borderColor: 'white',
+                  '&:hover': {
+                    backgroundColor: alpha(theme.palette.common.white, 0.1),
+                    borderColor: 'white',
+                  },
+                }}
+              >
                 Sign Up
               </Button>
-              <Button color="primary" variant="contained" href="/login">
+              <Button 
+                id="sign-in-btn" 
+                variant="contained" 
+                href="/login" 
+                sx={{ 
+                  borderRadius: 20,
+                  backgroundColor: 'white',
+                  color: 'primary.main',
+                  '&:hover': {
+                    backgroundColor: alpha(theme.palette.common.white, 0.9),
+                  },
+                }}
+              >
                 Sign In
               </Button>
             </>
           )}
-        </Box>
-
-        {/* Theme Toggle */}
-        <Box sx={{ display: 'flex', alignItems: 'center', marginRight: '20px' }}>
-          <Typography
-            variant="body1"
-            style={{
-              marginRight: '10px',
-              color: theme.palette.text.primary,
-            }}
-          >
-            {mode === 'light' ? 'Light Mode' : 'Dark Mode'}
-          </Typography>
-          <Brightness7
-            style={{
-              color: mode === 'light' ? theme.palette.warning.main : theme.palette.grey[500],
-              marginRight: '5px',
-            }}
-          />
-          <Switch
-            checked={mode === 'dark'}
-            onChange={handleToggleTheme}
-            sx={{
-              '& .MuiSwitch-thumb': {
-                backgroundColor: mode === 'dark' ? theme.palette.warning.main : theme.palette.grey[300],
-              },
-              '& .MuiSwitch-track': {
-                backgroundColor: mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[300],
-              },
-            }}
-          />
-          <Brightness4
-            style={{
-              color: mode === 'dark' ? theme.palette.warning.main : theme.palette.grey[500],
-              marginLeft: '5px',
-            }}
-          />
         </Box>
       </Toolbar>
     </AppBar>
