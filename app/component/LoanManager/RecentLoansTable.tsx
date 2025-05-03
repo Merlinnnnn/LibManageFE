@@ -78,8 +78,9 @@ const RecentLoansTable: React.FC = () => {
 
     const fetchLoans = async () => {
         try {
-            const response = await apiService.get<{ result: { content: Loan[] } }>('/api/v1/loan-transactions');
-            setLoans(response.data.result.content);
+            const response = await apiService.get<{ data: { content: Loan[] } }>('/api/v1/loans');
+            console.log(response);
+            setLoans(response.data.data.content);
         } catch (error: any) {
             const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi tải dữ liệu khoản vay';
             setSnackbarMessage(errorMessage);

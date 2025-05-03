@@ -62,9 +62,9 @@ const NewStudentsTable: React.FC = () => {
 
     const fetchStudents = async () => {
         try {
-            const response = await apiService.get<{ result: { content: User[] } }>('/api/v1/users');
-            setStudents(response.data.result.content);
-            console.log("ds student", response.data.result.content);
+            const response = await apiService.get<{ data: { content: User[] } }>('/api/v1/users');
+            setStudents(response.data.data.content);
+            console.log("ds student", response.data.data.content);
         } catch (error) {
 
             console.log("Lỗi khi gọi API danh sách sinh viên:", error);

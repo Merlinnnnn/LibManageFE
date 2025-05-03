@@ -144,6 +144,7 @@ export default function BookShelf() {
   const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [featuredBooks, setFeaturedBooks] = useState<Book[]>([]);
+  const [openDetailDiolog, setOpenDetailDiolog] = useState(false)
 
   const booksPerPage = 5;
   const muiTheme = useTheme();
@@ -224,6 +225,7 @@ export default function BookShelf() {
   }, [currentPage, searchString]);
 
   const handleViewDocument = (id: string) => {
+    setOpenDetailDiolog(true);
     setSelectedBookId(id);
   };
 
@@ -540,11 +542,10 @@ export default function BookShelf() {
               </Paper>
             </Grid>
           </Grid>
+        <BookDetail id={selectedBookId as string} open={openDetailDiolog} onClose={() => setOpenDetailDiolog(false)} />
+
         </Container>
 
-        {selectedBookId && (
-          <BookDetail id={selectedBookId} open={!!selectedBookId} onClose={handleCloseDialog} />
-        )}
       </Box>
     </ThemeProvider>
   );

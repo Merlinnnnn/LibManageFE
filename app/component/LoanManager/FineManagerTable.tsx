@@ -24,8 +24,8 @@ const FineTable: React.FC = () => {
   // Fetch fines from API
   const fetchFines = async () => {
     try {
-      const response = await apiService.get<{ result: { content: Fine[] } }>('/api/v1/fines');
-      setFines(response.data.result.content);
+      const response = await apiService.get<{ data: { content: Fine[] } }>('/api/v1/fines');
+      setFines(response.data.data.content);
     } catch (error) {
       console.log('Lỗi khi lấy dữ liệu phạt:', error);
     }

@@ -115,7 +115,7 @@ const LoanManagerPage: React.FC = () => {
     }
     
     try {
-      const response = await apiService.post('/api/v1/loan-transactions/scan-qrcode', data);
+      const response = await apiService.post('/api/v1/loans/scan-qrcode', data);
       console.log(response)
       //setBorrowedDocCount(response.data.result);
       handleCloseDialog();

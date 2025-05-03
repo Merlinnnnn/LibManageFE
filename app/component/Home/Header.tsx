@@ -203,7 +203,7 @@ const Header: React.FC = () => {
 
   const fetchNotifications = async () => {
     try {
-      const response: ApiResponse = await apiService.get('/api/v1/notifications/my-notifications');
+      const response: ApiResponse = await apiService.get('/api/v1/notifications');
       if (response.data?.result?.content) {
         setNotifications(response.data.result.content);
       }

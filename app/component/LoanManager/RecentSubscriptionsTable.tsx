@@ -56,8 +56,8 @@ const ReturnRequestsTable: React.FC = () => {
 
     const fetchReturnRequests = async () => {
         try {
-            const response = await apiService.get<{ result: { content: ReturnRequest[] } }>('/api/v1/loan-transactions');
-            const filteredRequests = response.data.result.content.filter(
+            const response = await apiService.get<{ data: { content: ReturnRequest[] } }>('/api/v1/loan-transactions');
+            const filteredRequests = response.data.data.content.filter(
                 (request) => request.status === 'RETURN_REQUESTED'
             );
             setRequests(filteredRequests);

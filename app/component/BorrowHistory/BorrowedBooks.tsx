@@ -60,7 +60,7 @@ const MaterialBorrowedBooks = () => {
 
   // Fetch books on component mount
   useEffect(() => {
-    //fetchBorrowedBooks();
+    fetchBorrowedBooks();
   }, []);
 
   // Mock API call to fetch borrowed books
@@ -77,7 +77,7 @@ const MaterialBorrowedBooks = () => {
       const response = await apiService.get<ApiResponse>('/api/v1/loans/user/borrowed-books', {
         params: { userId, page: 0, size: 10 },
       });
-
+      console.log(response);
       // Kiểm tra dữ liệu trước khi sử dụng
       const content = response.data.data?.content;
       if (!Array.isArray(content)) throw new Error('Dữ liệu trả về không hợp lệ');

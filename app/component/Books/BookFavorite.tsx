@@ -19,7 +19,7 @@ interface Book {
 interface BooksApiResponse {
   code: number;
   message: string;
-  result: {
+  data: {
     content: Book[];
     pageNumber: number;
     pageSize: number;
@@ -53,16 +53,17 @@ export default function BookFavorite() {
   const fetchBooks = async () => {
     setLoading(true);
     try {
-      const response = await apiService.get<BooksApiResponse>('/api/v1/documents/favorites', {
+      const response = await apiService.get<BooksApiResponse>('/api/v1/favorites', {
         params: {
           size: booksPerPage,
           page: currentPage,
         },
       });
-      if (response.data && response.data.result) {
-        setBooks(response.data.result.content);
-        setTotalPages(response.data.result.totalPages);
-        setDisplayedBooks(response.data.result.content); // Hiển thị tất cả sách ban đầu
+      if (response.data && response.data.data) {
+        setBooks(response.data.data.content);
+        console.log(response.data.data.content);
+        setTotalPages(response.data.data.totalPages);
+        setDisplayedBooks(response.data.data.content); // Hiển thị tất cả sách ban đầu
       } else {
         setBooks([]);
         setTotalPages(1);

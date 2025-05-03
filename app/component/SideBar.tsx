@@ -144,7 +144,7 @@ const Sidebar: React.FC = () => {
     const handleNotificationClick = async (event: React.MouseEvent<HTMLElement>) => {
         setNotificationAnchor(event.currentTarget);
         try {
-            const response: ApiResponse = await apiService.get('/api/v1/notifications/my-notifications');
+            const response: ApiResponse = await apiService.get('/api/v1/notifications');
             console.log(response)
             setNotifications(response.data.result.content);
         } catch (error) {

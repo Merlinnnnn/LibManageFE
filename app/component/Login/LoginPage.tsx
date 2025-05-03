@@ -1,142 +1,201 @@
 import React, { useState } from 'react';
-import { TextField, Button, Checkbox, FormControlLabel, Link, Typography, Box, Divider, IconButton, InputAdornment } from '@mui/material';
-import { Google as GoogleIcon, Facebook as FacebookIcon, Visibility, VisibilityOff } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
+import { Box, Button, Checkbox, Divider, FormControlLabel, IconButton, Link, TextField, Typography } from '@mui/material';
+import { Visibility, VisibilityOff, Google as GoogleIcon, Home } from '@mui/icons-material';
 import { useAuth } from '../../component/Context/AuthContext';
 
+// Đưa LeftImage và RightForm ra ngoài
+
+const LeftImage = () => (
+  <Box
+    sx={{
+      width: '50%',
+      height: '100%',
+      backgroundImage: 'url(https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=900&q=80)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+    }}
+  />
+);
+
+interface RightFormProps {
+  email: string;
+  setEmail: (value: string) => void;
+  password: string;
+  setPassword: (value: string) => void;
+  showPassword: boolean;
+  toggleShowPassword: () => void;
+  handleLogin: () => void;
+}
+
+const RightForm: React.FC<RightFormProps> = ({
+  email,
+  setEmail,
+  password,
+  setPassword,
+  showPassword,
+  toggleShowPassword,
+  handleLogin,
+}) => (
+  <Box
+    sx={{
+      position: 'relative',
+      width: '50%',
+      height: '100%',
+      padding: { xs: 3, md: 6 },
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      color: 'white',
+      backgroundColor: '#1F1F1F',
+    }}
+  >
+    <IconButton
+  href="/home"
+  sx={{
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    color: '#fff',
+    backgroundColor: '#2c2c2c',
+    '&:hover': {
+      backgroundColor: '#8B5CF6',
+    },
+    zIndex: 10,
+  }}
+>
+  <Home />
+</IconButton>
+
+    <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
+      Welcome Back
+    </Typography>
+    <Typography variant="body2" sx={{ color: '#aaa', mb: 3 }}>
+      Don't have an account?{' '}
+      <Link href="/signup" underline="hover" color="primary">
+        Sign up
+      </Link>
+    </Typography>
+
+    <TextField
+      fullWidth
+      label="Email"
+      variant="filled"
+      margin="normal"
+      value={email}
+      onChange={(e) => setEmail(e.target.value)}
+      InputProps={{
+        sx: { backgroundColor: '#2c2c2c', color: 'white' },
+      }}
+      InputLabelProps={{ sx: { color: '#888' } }}
+    />
+
+    <TextField
+      fullWidth
+      label="Password"
+      type={showPassword ? 'text' : 'password'}
+      variant="filled"
+      margin="normal"
+      value={password}
+      onChange={(e) => setPassword(e.target.value)}
+      InputProps={{
+        sx: { backgroundColor: '#2c2c2c', color: 'white' },
+        endAdornment: (
+          <IconButton onClick={toggleShowPassword} edge="end" sx={{ color: '#888' }}>
+            {showPassword ? <VisibilityOff /> : <Visibility />}
+          </IconButton>
+        ),
+      }}
+      InputLabelProps={{ sx: { color: '#888' } }}
+    />
+
+    <FormControlLabel
+      control={<Checkbox sx={{ color: '#888' }} />}
+      label={<Typography variant="body2" sx={{ color: '#aaa' }}>Remember me</Typography>}
+      sx={{ my: 1 }}
+    />
+
+    <Button
+      fullWidth
+      variant="contained"
+      onClick={handleLogin}
+      sx={{
+        mt: 2,
+        py: 1.5,
+        fontWeight: 'bold',
+        backgroundColor: '#8B5CF6',
+        '&:hover': { backgroundColor: '#7C3AED' },
+      }}
+    >
+      Sign In
+    </Button>
+
+    <Divider sx={{ my: 3, borderColor: '#444' }}>OR</Divider>
+
+    <Button
+      fullWidth
+      variant="outlined"
+      startIcon={<GoogleIcon />}
+      sx={{
+        py: 1.5,
+        color: 'white',
+        borderColor: '#555',
+        '&:hover': { borderColor: '#888' },
+      }}
+    >
+      Sign in with Google
+    </Button>
+  </Box>
+);
+
 const LoginForm: React.FC = () => {
-  const theme = useTheme();
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login } = useAuth();
 
-  const handleTogglePassword = () => {
-    setShowPassword(!showPassword);
-  };
+  const handleTogglePassword = () => setShowPassword(!showPassword);
 
   const handleLogin = async () => {
     try {
       await login(email, password);
     } catch (error) {
-      console.log('Login failed:', error);
+      console.error('Login failed:', error);
     }
   };
 
   return (
     <Box
       sx={{
+        minHeight: '100vh',
+        backgroundColor: '#FFFFFF',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        height: '100vh',
-        backgroundColor: theme.palette.background.default,
+        padding: 2,
       }}
     >
       <Box
         sx={{
-          width: '400px',
-          padding: '20px',
-          borderRadius: '10px',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-          backgroundColor: theme.palette.background.paper,
-          color: theme.palette.text.primary,
-          textAlign: 'center',
+          width: { xs: '100%', md: '900px' },
+          height: { xs: '100%', md: '600px' },
+          display: 'flex',
+          flexDirection: 'row',
+          backgroundColor: '#1F1F1F',
+          borderRadius: 4,
+          overflow: 'hidden',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
         }}
       >
-        {/* <Typography  > */}
-        <Link href="/home" variant="h6" sx={{ marginBottom: '20px', fontWeight: 'bold', color: '#646cff', textDecoration: 'none' }}>
-          LibHub</Link>
-        {/* </Typography> */}
-
-        <Typography variant="h4" sx={{ marginBottom: '20px', fontWeight: 'bold' }}>
-          Sign in
-        </Typography>
-
-        <TextField
-          fullWidth
-          label="Email"
-          placeholder="your@email.com"
-          margin="normal"
-          variant="outlined"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          InputLabelProps={{
-            style: { color: theme.palette.text.primary },
-          }}
+        <LeftImage />
+        <RightForm
+          email={email}
+          setEmail={setEmail}
+          password={password}
+          setPassword={setPassword}
+          showPassword={showPassword}
+          toggleShowPassword={handleTogglePassword}
+          handleLogin={handleLogin}
         />
-
-        <TextField
-          fullWidth
-          label="Password"
-          type={showPassword ? 'text' : 'password'}
-          margin="normal"
-          variant="outlined"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton
-                  onClick={handleTogglePassword}
-                  edge="end"
-                >
-                  {showPassword ? <VisibilityOff /> : <Visibility />} {/* Đổi icon */}
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-          InputLabelProps={{
-            style: { color: theme.palette.text.primary },
-          }}
-        />
-
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <FormControlLabel
-            control={<Checkbox color="primary" />}
-            label="Remember me"
-            sx={{ color: theme.palette.text.primary }} // Màu chữ từ theme
-          />
-          <Link href="#" variant="body2" sx={{ color: theme.palette.text.primary }}>
-            Forgot your password?
-          </Link>
-        </Box>
-
-        <Button
-          variant="contained"
-          color="primary"
-          fullWidth
-          sx={{
-            padding: '10px',
-            backgroundColor: '#000000',
-            color: 'white',
-            fontWeight: 'bold',
-            marginTop: '10px',
-          }}
-          onClick={handleLogin}
-        >
-          Sign in
-        </Button>
-
-        <Typography variant="body2" sx={{ marginTop: '10px' }}>
-          Don't have an account? <Link href="/signup" sx={{ color: theme.palette.text.primary }}>Sign up</Link>
-        </Typography>
-
-        <Divider sx={{ margin: '20px 0' }}>or</Divider>
-
-        <Button
-          variant="outlined"
-          fullWidth
-          startIcon={<GoogleIcon />}
-          sx={{
-            marginBottom: '10px',
-            padding: '10px',
-            color: 'black',
-            borderColor: 'black',
-          }}
-        >
-          Sign in with Google
-        </Button>
       </Box>
     </Box>
   );

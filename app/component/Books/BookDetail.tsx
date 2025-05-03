@@ -13,7 +13,7 @@ interface BookDetailProps {
 
 interface GenericApiResponse<T> {
     code: number;
-    result: T;
+    data: T;
     message?: string;
 }
 
@@ -62,12 +62,14 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
     };
 
     useEffect(() => {
+        console.log("open = ", open);
         const fetchBookDetails = async () => {
             try {
                 const response = await apiService.get<GenericApiResponse<Book>>(`/api/v1/documents/${id}`);
+                console.log(response);
                 if (response.data.code === 1000) {
-                    setBook(response.data.result);
-                    console.log(response.data.result);
+                    setBook(response.data.data);
+                    console.log(response.data.data);
                 } else {
                     showNotification('error', response.data.message || 'Error fetching book details');
                 }
@@ -82,7 +84,7 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
                 const response = await apiService.get<GenericApiResponse<boolean>>(`/api/v1/documents/${id}/is-favorite`);
                 if (response.status === 200) {
                     console.log('fetch is favo', response);
-                    setIsFavorite(response.data.result);
+                    setIsFavorite(response.data.data);
                 }
             } catch (error) {
                 console.log('Error fetching favorite status:', error);
@@ -91,10 +93,11 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
 
         const fetchIsBorrowed = async () => {
             try {
-                const response = await apiService.get<GenericApiResponse<boolean>>(`/api/v1/loan-transactions/user/check-user-borrowing/${id}`);
+                const response = await apiService.get<GenericApiResponse<boolean>>(`/api/v1/loans/user/check-user-borrowing/${id}`);
                 if (response.status === 200) {
                     console.log('fetch is borrow', response);
-                    setIsBorrowed(response.data.result);
+                    setIsBorrowed(response.data.data);
+                    console.log('res', response.data.data);
                 } else {
                     console.log('Error fetching borrowed status');
                 }
@@ -139,7 +142,7 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
 
     const handleConfirmLoan = async () => {
         try {
-            const response = await apiService.post(`/api/v1/loan-transactions`, {
+            const response = await apiService.post(`/api/v1/loans`, {
                 documentId: id,
             });
 
@@ -172,6 +175,8 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
     };
 
     if (!book) {
+        console.log("Book in render:", book);
+
         return <Typography>Loading...</Typography>;
     }
 
@@ -194,77 +199,80 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
             </DialogTitle>
 
             <DialogContent>
-                <Box display="flex" alignItems="flex-start">
-                    {/* Ảnh bìa sách */}
-                    <Box flex="0 0 200px" marginRight={2}>
-                        <img
-                            src={book.coverImage || 'https://via.placeholder.com/200x300'}
-                            alt="cover"
-                            style={{ width: '100%', height: '300px', objectFit: 'cover', borderRadius: '4px' }}
-                        />
-                    </Box>
-
-                    {/* Thông tin sách */}
-                    <Box flex="1">
-                        <Typography color="textSecondary" gutterBottom>
-                            by {book.author}
-                        </Typography>
-                        <Typography variant="body2" style={{ marginTop: 8, marginBottom: 16 }}>
-                            {book.description}
-                        </Typography>
-
-                        <Box marginBottom={2}>
-                            <Typography variant="body2">Publisher: {book.publisher}</Typography>
-                            <Typography variant="body2">Published Date: {book.publishedDate}</Typography>
-                            <Typography variant="body2">Page Count: {book.pageCount}</Typography>
-                            <Typography variant="body2">Language: {book.language || 'N/A'}</Typography>
-                            <Typography variant="body2">Available: {book.availableCount} copies</Typography>
+                {!book ? (
+                    <Typography>Loading...</Typography>
+                ) : (
+                    <Box display="flex" alignItems="flex-start">
+                        {/* Ảnh bìa sách */}
+                        <Box flex="0 0 200px" marginRight={2}>
+                            <img
+                                src={book.coverImage || 'https://via.placeholder.com/200x300'}
+                                alt="cover"
+                                style={{ width: '100%', height: '300px', objectFit: 'cover', borderRadius: '4px' }}
+                            />
                         </Box>
-                        <Box display="flex" gap={1} marginTop={1} flexWrap="wrap">
-                            {book.documentTypes.map((type) => (
-                                <Chip key={type.documentTypeId} label={type.typeName} />
-                            ))}
-                            <Chip label={book.status} color="primary" />
-                        </Box>
-                        <Box display="flex" alignItems="center" gap={2} marginTop={2}>
-                            <IconButton aria-label="favorite" onClick={handleAddFavo}>
-                                {isFavorite ? (
-                                    <FavoriteIcon sx={{ color: 'red' }} />
-                                ) : (
-                                    <FavoriteBorderIcon />
-                                )}
-                            </IconButton>
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                onClick={handleViewDocumentClick}
-                                style={{ flex: 1, borderRadius: '20px' }}
-                                disabled={isBorrowed}
-                            >
-                                Borrow Book
-                            </Button>
-                            <Button
-                                variant="outlined"
-                                color="secondary"
-                                onClick={handleReadBookClick(book.documentId.toString())} // Ép kiểu thành chuỗi
-                                style={{ flex: 1, borderRadius: '20px' }}
-                            >
-                                Read Book
-                            </Button>
 
+                        {/* Thông tin sách */}
+                        <Box flex="1">
+                            <Typography color="textSecondary" gutterBottom>
+                                by {book.author}
+                            </Typography>
+                            <Typography variant="body2" style={{ marginTop: 8, marginBottom: 16 }}>
+                                {book.description}
+                            </Typography>
+
+                            <Box marginBottom={2}>
+                                <Typography variant="body2">Publisher: {book.publisher}</Typography>
+                                <Typography variant="body2">Published Date: {book.publishedDate}</Typography>
+                                <Typography variant="body2">Page Count: {book.pageCount}</Typography>
+                                <Typography variant="body2">Language: {book.language || 'N/A'}</Typography>
+                                <Typography variant="body2">Available: {book.availableCount} copies</Typography>
+                            </Box>
+                            <Box display="flex" gap={1} marginTop={1} flexWrap="wrap">
+                                {book.documentTypes.map((type) => (
+                                    <Chip key={type.documentTypeId} label={type.typeName} />
+                                ))}
+                                {/* <Chip label={book.status} color="primary" /> */}
+                            </Box>
+                            <Box display="flex" alignItems="center" gap={2} marginTop={2}>
+                                <IconButton aria-label="favorite" onClick={handleAddFavo}>
+                                    {isFavorite ? (
+                                        <FavoriteIcon sx={{ color: 'red' }} />
+                                    ) : (
+                                        <FavoriteBorderIcon />
+                                    )}
+                                </IconButton>
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    onClick={handleViewDocumentClick}
+                                    style={{ flex: 1, borderRadius: '20px' }}
+                                    disabled={isBorrowed}
+                                >
+                                    Borrow Book
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    color="secondary"
+                                    onClick={handleReadBookClick(book.documentId.toString())} // Ép kiểu thành chuỗi
+                                    style={{ flex: 1, borderRadius: '20px' }}
+                                >
+                                    Read Book
+                                </Button>
+
+                            </Box>
                         </Box>
-                    </Box>
-                    <Snackbar
-                        open={snackbarOpen}
-                        autoHideDuration={6000}
-                        onClose={handleSnackbarClose}
-                        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-                    >
-                        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity}>
-                            {snackbarMessage}
-                        </Alert>
-                    </Snackbar>
-                </Box>
+                        <Snackbar
+                            open={snackbarOpen}
+                            autoHideDuration={6000}
+                            onClose={handleSnackbarClose}
+                            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                        >
+                            <Alert onClose={handleSnackbarClose} severity={snackbarSeverity}>
+                                {snackbarMessage}
+                            </Alert>
+                        </Snackbar>
+                    </Box>)}
             </DialogContent>
             <Dialog open={confirmDialogOpen} onClose={handleCloseConfirmDialog}>
                 <DialogTitle>Confirm Loan Request</DialogTitle>
