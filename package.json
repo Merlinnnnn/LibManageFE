@@ -11,6 +11,7 @@
   "dependencies": {
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
+    "@google-cloud/dialogflow": "^7.0.1",
     "@mui/icons-material": "^6.1.1",
     "@mui/material": "^6.1.8",
     "@mui/x-data-grid": "^7.22.2",
@@ -24,7 +25,7 @@
     "html5-qrcode": "^2.3.8",
     "jwt-decode": "^4.0.0",
     "library_manager": "file:",
-    "next": "^15.0.4-canary.19",
+    "next": "^15.3.1",
     "react": "^19.0.0",
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^19.0.0",

@@ -26,8 +26,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const isClient = typeof window !== 'undefined';
+  const htmlClass = 'mdl-js'; // <-- nếu cần có class này
   return (
-    <html lang="en">
+    <html lang="en" className={htmlClass}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

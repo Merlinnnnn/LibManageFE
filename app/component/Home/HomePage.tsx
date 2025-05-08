@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import Header from './Header';
 import { keyframes } from '@emotion/react';
+import FloatingChat from './FloatingChat';
 
 // Type definitions
 interface LibraryServiceCardProps {
@@ -354,6 +355,7 @@ const Home: React.FC = () => {
           </Grid>
         </Container>
       </Box>
+      <FloatingChat/>
     </Box>
   );
 };
