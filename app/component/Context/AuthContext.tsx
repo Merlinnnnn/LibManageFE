@@ -99,11 +99,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const fixedData = {
         username,
         password,
-        // firstName: 'John',
-        // lastName: 'Doe',
-        // dob: '1990-01-01',
-        // phoneNumber: '1234567890',
-        // address: '123 Main St',
+        firstName: 'John',
+        lastName: 'Doe',
+        dob: '1990-01-01',
+        phoneNumber: '1234567890',
+        address: '123 Main St',
       };
 
       const response = await apiService.post('/api/v1/users', fixedData);

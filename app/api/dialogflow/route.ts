@@ -28,7 +28,10 @@ export async function POST(req: NextRequest) {
     });
 
     const result = response.queryResult;
-    console.log('Full Dialogflow response:', JSON.stringify(response, null, 2));
+    console.log("ccccccccccccccccccccccccccccccccc", response.queryResult?.diagnosticInfo);
+    // console.log("result", result)
+    // console.log("================================================")
+    // console.log('Full Dialogflow response:', JSON.stringify(response, null, 2));
 
     if (!result) {
       return NextResponse.json({ error: 'No query result returned' }, { status: 500 });
