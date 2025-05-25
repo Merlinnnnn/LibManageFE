@@ -32,6 +32,8 @@ import LocalLibraryIcon from '@mui/icons-material/LocalLibrary';
 import CategoryIcon from '@mui/icons-material/Category';
 import SchoolIcon from '@mui/icons-material/School';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import DescriptionIcon from '@mui/icons-material/Description';
 
 // Custom theme with vibrant colors
 const theme = createTheme({
@@ -58,19 +60,56 @@ const theme = createTheme({
   },
 });
 
+interface DocumentType {
+  documentTypeId: number;
+  typeName: string;
+  description: string;
+}
+
+interface Course {
+  courseId: number;
+  courseCode: string;
+  courseName: string;
+  description: string;
+}
+
+interface PhysicalDocument {
+  physicalDocumentId: number;
+  documentName: string;
+  author: string;
+  publisher: string;
+  description: string;
+  coverImage: string | null;
+  isbn: string;
+  quantity: number;
+  borrowedCount: number;
+  unavailableCount: number;
+  availableCopies: number;
+}
+
 interface Book {
   documentId: number;
   documentName: string;
   author: string;
   publisher: string;
   publishedDate: string | null;
-  pageCount: number;
   language: string | null;
-  availableCount: number;
+  quantity: number;
   description: string;
-  coverImage: string;
+  coverImage: string | null;
   documentCategory: string;
-  digitalDocuments: DigitalDocument[];
+  documentTypes: DocumentType[];
+  courses: Course[];
+  physicalDocument: PhysicalDocument | null;
+  digitalDocument: {
+    digitalDocumentId: number;
+    documentName: string;
+    author: string;
+    publisher: string;
+    description: string;
+    coverImage: string | null;
+    uploads: Upload[];
+  } | null;
 }
 
 interface Upload {
@@ -91,11 +130,6 @@ interface DigitalDocument {
   uploads: Upload[];
 }
 
-interface Course {
-  courseId: number;
-  courseName: string;
-}
-
 interface BooksApiResponse {
   code: number;
   message: string;
@@ -107,11 +141,6 @@ interface BooksApiResponse {
     totalPages: number;
     last: boolean;
   };
-}
-
-interface DocumentType {
-  documentTypeId: number;
-  typeName: string;
 }
 
 interface DocumentTypeRes {
@@ -255,6 +284,48 @@ export default function BookShelf() {
     setSelectedBookId(null);
   };
 
+  const handleFileOpen = (fileUrl: string) => {
+    // Convert backslash to forward slash for URLs
+    const formattedUrl = fileUrl.replace(/\\/g, '/');
+    window.open(`/${formattedUrl}`, '_blank');
+  };
+
+  const renderFileButtons = (book: Book) => {
+    if (book.documentCategory === 'DIGITAL' && book.digitalDocument?.uploads) {
+      return book.digitalDocument.uploads.map((upload: Upload) => {
+        if (upload.fileType === 'application/pdf' || upload.fileType === 'pdf') {
+          return (
+            <Button
+              key={upload.uploadId}
+              variant="contained"
+              startIcon={<PictureAsPdfIcon />}
+              onClick={() => handleFileOpen(upload.filePath)}
+              sx={{ textTransform: 'none', mr: 1 }}
+            >
+              Read PDF
+            </Button>
+          );
+        } else if (upload.fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || 
+                  upload.fileType === 'application/msword' || 
+                  upload.fileType === 'docx') {
+          return (
+            <Button
+              key={upload.uploadId}
+              variant="contained"
+              startIcon={<DescriptionIcon />}
+              onClick={() => handleFileOpen(upload.filePath)}
+              sx={{ textTransform: 'none', mr: 1 }}
+            >
+              Read Word
+            </Button>
+          );
+        }
+        return null;
+      });
+    }
+    return null;
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <Header />
@@ -355,7 +426,7 @@ export default function BookShelf() {
                     >
                       <Box sx={{ display: 'flex', mb: 2 }}>
                         <Avatar 
-                          src={book.coverImage} 
+                          src={book.coverImage || ''} 
                           variant="rounded"
                           sx={{ 
                             width: 80, 

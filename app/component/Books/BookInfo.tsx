@@ -61,19 +61,57 @@ interface FavoriteRes {
     };
     status: boolean;
 }
+
+interface DocumentType {
+    documentTypeId: number;
+    typeName: string;
+    description: string;
+}
+
+interface Course {
+    courseId: number;
+    courseCode: string;
+    courseName: string;
+    description: string;
+}
+
+interface PhysicalDocument {
+    physicalDocumentId: number;
+    documentName: string;
+    author: string;
+    publisher: string;
+    description: string;
+    coverImage: string | null;
+    isbn: string;
+    quantity: number;
+    borrowedCount: number;
+    unavailableCount: number;
+    availableCopies: number;
+}
+
 interface Book {
     documentId: number;
     documentName: string;
     author: string;
     publisher: string;
     publishedDate: string | null;
-    pageCount: number;
     language: string | null;
-    availableCount: number;
+    quantity: number;
     description: string;
-    coverImage: string;
+    coverImage: string | null;
     documentCategory: string;
-    digitalDocuments: DigitalDocument[];
+    documentTypes: DocumentType[];
+    courses: Course[];
+    physicalDocument: PhysicalDocument | null;
+    digitalDocument: {
+        digitalDocumentId: number;
+        documentName: string;
+        author: string;
+        publisher: string;
+        description: string;
+        coverImage: string | null;
+        uploads: Upload[];
+    } | null;
 }
 
 const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
@@ -98,20 +136,21 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
             setBook(foundBook);
             
             // Check for file types if it's a digital document
-            if (foundBook.documentCategory === 'DIGITAL' && foundBook.digitalDocuments?.length > 0) {
-                const digitalDoc = foundBook.digitalDocuments[0];
-                digitalDoc.uploads.forEach((upload) => {
-                    if (upload.fileType === 'pdf') {
-                        setHasPdf(true);
-                        setPdfUrl(upload.filePath);
-                    } else if (upload.fileType === 'word' || upload.fileName.endsWith('.docx')) {
-                        setHasWord(true);
-                        setWordUrl(upload.filePath);
-                    } else if (upload.fileType === 'mp4') {
-                        setHasMp4(true);
-                        setMp4Url(upload.filePath);
-                    }
-                });
+            if (foundBook.documentCategory === 'DIGITAL' && foundBook.digitalDocument?.uploads) {
+                const digitalDoc = foundBook.digitalDocument;
+                if (digitalDoc) {
+                    digitalDoc.uploads.forEach((upload) => {
+                        if (upload.fileType === 'application/pdf' || upload.fileType === 'pdf') {
+                            setHasPdf(true);
+                            setPdfUrl(upload.filePath);
+                        } else if (upload.fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || 
+                                 upload.fileType === 'application/msword' || 
+                                 upload.fileType === 'docx') {
+                            setHasWord(true);
+                            setWordUrl(upload.filePath);
+                        }
+                    });
+                }
             }
         }
     }, [id, books]);
@@ -164,11 +203,22 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
     const handleBorrowConfirm = async () => {
         try {
             console.log(`Mượn sách thành công với id sách: ${id}`);
-            const payload = {
-                physicalDocId: id,
-            };
-            const res = await apiService.post('/api/v1/loans', payload);
-            console.log('Response:', res.data);
+            
+            if (book?.documentCategory === 'DIGITAL' && book.digitalDocument?.uploads?.[0]) {
+                // For digital books, use the access-requests API with uploadId
+                const payload = {
+                    uploadId: book.digitalDocument.uploads[0].uploadId
+                };
+                const res = await apiService.post('/api/v1/access-requests', payload);
+                console.log('Response:', res.data);
+            } else {
+                // For physical books, use the loans API
+                const payload = {
+                    physicalDocId: id,
+                };
+                const res = await apiService.post('/api/v1/loans', payload);
+                console.log('Response:', res.data);
+            }
             setBorrowDialogOpen(false);
         } catch (error) {
             console.error('Lỗi khi mượn sách:', error);
@@ -195,7 +245,7 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
 
     return (
         <>
-            <Card sx={{ display: 'flex', boxShadow: 3, p: 2, width: '100%', borderRadius: '20px' }}>
+            <Card sx={{ display: 'flex', boxShadow: 3, p: 2, width: '100%', borderRadius: '20px', overflow: 'hidden', position: 'relative'}}>
                 {/* Ảnh bìa */}
                 <CardMedia
                     component="img"
@@ -204,7 +254,7 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
                         height: 200, 
                         objectFit: 'cover', 
                         bgcolor: '#f5f5f5',
-                        border: '1px solid black',
+                        //border: '1px solid black',
                         borderRadius: '20px'
                     }}
                     image={book.coverImage || '/no-cover.png'}
@@ -230,9 +280,8 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
                     </Typography>
                     <Typography variant="body2">Publisher: {book.publisher}</Typography>
                     <Typography variant="body2">Published: {book.publishedDate || 'N/A'}</Typography>
-                    <Typography variant="body2">Pages: {book.pageCount}</Typography>
                     <Typography variant="body2">Language: {book.language || 'N/A'}</Typography>
-                    <Typography variant="body2">Available: {book.availableCount} copies</Typography>
+                    <Typography variant="body2">Available: {book.quantity} copies</Typography>
                     
                     {/* Mô tả sách */}
                     <Box mt={1}>
@@ -248,13 +297,13 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
                             startIcon={<LocalLibraryIcon />}
                             onClick={handleBorrowClick}
                             sx={{ textTransform: 'none' }}
-                            disabled={book.availableCount <= 0}
+                            //disabled={book.quantity <= 0}
                         >
                             Borrow Book
                         </Button>
 
                         {/* File action buttons - only for DIGITAL documents */}
-                        {book.documentCategory === 'DIGITAL' && (
+                        {book.documentCategory === 'DIGITAL' && book.digitalDocument?.uploads && (
                             <>
                                 {hasPdf && (
                                     <Button
@@ -274,16 +323,6 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
                                         sx={{ textTransform: 'none' }}
                                     >
                                         Read Word
-                                    </Button>
-                                )}
-                                {hasMp4 && (
-                                    <Button
-                                        variant="contained"
-                                        startIcon={<PlayCircleIcon />}
-                                        onClick={() => handleFileOpen(mp4Url)}
-                                        sx={{ textTransform: 'none' }}
-                                    >
-                                        Play Video
                                     </Button>
                                 )}
                             </>

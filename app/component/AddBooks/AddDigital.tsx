@@ -12,13 +12,18 @@ import {
     Chip,
     Avatar,
     CircularProgress,
-    InputAdornment
+    InputAdornment,
+    List,
+    ListItem,
+    ListItemText,
+    ListItemIcon
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DescriptionIcon from '@mui/icons-material/Description';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ArticleIcon from '@mui/icons-material/Article';
 import { styled } from '@mui/material/styles';
 import apiService from '@/app/untils/api';
 
@@ -55,7 +60,10 @@ interface BookFormData {
     courseIds: number[];
 }
 
-
+interface SelectedFile {
+    file: File;
+    type: 'pdf' | 'word';
+}
 
 const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -90,11 +98,11 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
         courseIds: []
     });
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [selectedPdfFile, setSelectedPdfFile] = useState<File | null>(null);
+    const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
     const [preview, setPreview] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [fileError, setFileError] = useState<string>('');
-    const [pdfError, setPdfError] = useState<string>('');
+    const [filesError, setFilesError] = useState<string>('');
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -110,13 +118,31 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
       }
   };
 
-  const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-        const pdfFile = e.target.files[0];
-        setPdfError('');
-        setSelectedPdfFile(pdfFile);
+  const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+        const newFiles: SelectedFile[] = Array.from(e.target.files)
+            .map(file => {
+                if (file.type === 'application/pdf') {
+                    return { file, type: 'pdf' as const };
+                } else if (
+                    file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+                    file.type === 'application/msword'
+                ) {
+                    return { file, type: 'word' as const };
+                }
+                return null;
+            })
+            .filter((f): f is SelectedFile => f !== null);
+
+        setFilesError('');
+        setSelectedFiles(prev => [...prev, ...newFiles]);
     }
 };
+
+    const removeFile = (index: number) => {
+        setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
     const handleTagToggle = (tagId: number) => {
         setBook(prev => ({
             ...prev,
@@ -141,8 +167,8 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
             setFileError('Cover image is required');
             return;
         }
-        if (!selectedPdfFile) {
-            setPdfError('PDF file is required');
+        if (selectedFiles.length === 0) {
+            setFilesError('At least one document file is required');
             return;
         }
         if (!book.title.trim()) {
@@ -159,8 +185,13 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
             formData.append('documentName', book.title);
             formData.append('author', book.author);
             formData.append('description', book.description);
-            if (selectedFile) formData.append('image', selectedFile);
-            if (selectedPdfFile) formData.append('files', selectedPdfFile);
+            if (selectedFile) formData.append('coverImage', selectedFile);
+            
+            // Append all selected files
+            selectedFiles.forEach((selectedFile) => {
+                formData.append('files', selectedFile.file);
+            });
+            
             formData.append('publisher', 'abc');
             
             book.documentTypeIds.forEach(id => 
@@ -172,8 +203,9 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
             );
             const res = await apiService.post('/api/v1/digital-documents', formData);
             console.log('res', res);
-            if(res.status === 200){
+            if(res.status === 201){
                 onUploadSuccess();
+                console.log('thêm thành công');
             }
             handleClose();
         } catch (error) {
@@ -192,10 +224,10 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
             courseIds: []
         });
         setSelectedFile(null);
-        setSelectedPdfFile(null);
+        setSelectedFiles([]);
         setPreview(null);
         setFileError('');
-        setPdfError('');
+        setFilesError('');
         onClose();
     };
 
@@ -282,7 +314,7 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
 
                         <Box>
                             <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                                PDF File *
+                                Document Files *
                             </Typography>
                             <Button
                                 component="label"
@@ -293,38 +325,48 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
                                     height: '56px',
                                     justifyContent: 'flex-start',
                                     textTransform: 'none',
-                                    borderColor: pdfError ? '#f44336' : undefined
+                                    borderColor: filesError ? '#f44336' : undefined,
+                                    mb: 2
                                 }}
                             >
-                                {selectedPdfFile ? (
-                                    <Box display="flex" alignItems="center" width="100%">
-                                        <PictureAsPdfIcon color="primary" sx={{ mr: 1 }} />
-                                        <Typography noWrap flexGrow={1} textAlign="left">
-                                            {selectedPdfFile.name}
-                                        </Typography>
-                                        <IconButton
-                                            size="small"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setSelectedPdfFile(null);
-                                            }}
-                                        >
-                                            <CloseIcon fontSize="small" />
-                                        </IconButton>
-                                    </Box>
-                                ) : (
-                                    'Upload PDF (max 10MB)'
-                                )}
+                                Upload Documents (PDF, Word)
                                 <VisuallyHiddenInput
                                     type="file"
-                                    accept="application/pdf"
-                                    onChange={handlePdfChange}
+                                    accept=".pdf,.doc,.docx"
+                                    multiple
+                                    onChange={handleFilesChange}
                                 />
                             </Button>
-                            {pdfError && (
+                            {filesError && (
                                 <Typography color="error" variant="caption" sx={{ mt: 1 }}>
-                                    {pdfError}
+                                    {filesError}
                                 </Typography>
+                            )}
+                            {selectedFiles.length > 0 && (
+                                <List>
+                                    {selectedFiles.map((selectedFile, index) => (
+                                        <ListItem
+                                            key={index}
+                                            secondaryAction={
+                                                <IconButton edge="end" onClick={() => removeFile(index)}>
+                                                    <CloseIcon />
+                                                </IconButton>
+                                            }
+                                        >
+                                            <ListItemIcon>
+                                                {selectedFile.type === 'pdf' ? (
+                                                    <PictureAsPdfIcon color="primary" />
+                                                ) : (
+                                                    <ArticleIcon color="primary" />
+                                                )}
+                                            </ListItemIcon>
+                                            <ListItemText
+                                                primary={selectedFile.file.name}
+                                                secondary={`${(selectedFile.file.size / 1024 / 1024).toFixed(2)} MB`}
+                                            />
+                                        </ListItem>
+                                    ))}
+                                </List>
                             )}
                         </Box>
                     </Box>
@@ -440,7 +482,7 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
                         onClick={handleSubmit}
                         color="primary"
                         variant="contained"
-                        disabled={isSubmitting || !selectedFile || !selectedPdfFile || !book.title.trim() || !book.author.trim()}
+                        disabled={isSubmitting || !selectedFile || selectedFiles.length === 0 || !book.title.trim() || !book.author.trim()}
                         startIcon={isSubmitting ? <CircularProgress size={20} /> : undefined}
                     >
                         {isSubmitting ? 'Adding...' : 'Add Book'}

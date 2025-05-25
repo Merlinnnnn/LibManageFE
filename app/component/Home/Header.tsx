@@ -26,8 +26,6 @@ import {
   styled,
   alpha
 } from '@mui/material';
-import { driver } from "driver.js";
-import "driver.js/dist/driver.css";
 import PersonIcon from '@mui/icons-material/Person';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
@@ -43,6 +41,7 @@ import dayjs from 'dayjs';
 import { Brightness4, Brightness7 } from '@mui/icons-material';
 import useWebSocket from '../../services/useWebSocket';
 import SearchIcon from '@mui/icons-material/Search';
+import { startHomeTour, startHomeTourLoggedIn } from '../Tutorial/tutorial';
 
 interface Notification {
   id: string;
@@ -135,18 +134,12 @@ const Header: React.FC = () => {
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const startTour = () => {
-    const driverObj = driver({
-      showProgress: true,
-      steps: [
-        { element: '#sign-up-btn', popover: { title: 'Animated Tour Example', description: 'This button for sign up Let\'s walk you through it.', side: "left", align: 'start' } },
-        { element: '#sign-in-btn', popover: { title: 'Animated Tour Example', description: 'This button for login. Let\'s walk you through it.', side: "left", align: 'start' } },
-        { element: '#get-book', popover: { title: 'Animated Tour Example', description: 'This to go to book shelf. Let\'s walk you through it.', side: "left", align: 'start' } },
-        { element: '#book-list', popover: { title: 'Animated Tour Example', description: 'This is recommend book . Let\'s walk you through it.', side: "left", align: 'start' } },
-        { popover: { title: 'Happy Coding', description: 'And that is all, go ahead and start adding tours to your applications.' } }
-      ]
-    });
-    driverObj.drive();
+  const handleStartTour = () => {
+    if(username) {
+      startHomeTourLoggedIn();
+    } else {
+      startHomeTour();
+    }
   };
 
   useEffect(() => {
@@ -275,7 +268,7 @@ const Header: React.FC = () => {
           </Link>
 
           <Button
-            onClick={startTour}
+            onClick={handleStartTour}
             variant="outlined"
             sx={{
               borderRadius: 20,
@@ -418,6 +411,7 @@ const Header: React.FC = () => {
               {/* User Menu */}
               <Tooltip title="Account settings">
                 <IconButton
+                  id="user-info"
                   onClick={handleMenuClick}
                   sx={{ p: 0, ml: 1 }}
                 >
@@ -435,6 +429,7 @@ const Header: React.FC = () => {
               </Tooltip>
 
               <Menu
+                id="user-menu"
                 anchorEl={menuAnchor}
                 open={openMenu}
                 onClose={handleMenuClose}
@@ -467,6 +462,7 @@ const Header: React.FC = () => {
                   Favorites
                 </MenuItem>
                 <MenuItem 
+                  id="info"
                   component={Link}
                   href="/borrowed-book"
                   onClick={handleMenuClose}
@@ -476,6 +472,7 @@ const Header: React.FC = () => {
                   Borrowed Books
                 </MenuItem>
                 <MenuItem 
+                  id="virtual-book"
                   component={Link}
                   href="/my-bookshelf"
                   onClick={handleMenuClose}
@@ -486,6 +483,7 @@ const Header: React.FC = () => {
                 </MenuItem>
                 <Divider />
                 <MenuItem 
+                  id="logout"
                   onClick={logout}
                   sx={{ py: 1.5, color: 'error.main' }}
                 >

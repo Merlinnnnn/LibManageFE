@@ -1,17 +1,15 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { useEffect, useState, useRef, useLayoutEffect } from 'react';
+import { Box, CircularProgress, Typography, IconButton, Slider, Paper } from '@mui/material';
+import { NavigateNext, NavigateBefore, ZoomIn, ZoomOut } from '@mui/icons-material';
 import apiService from '@/app/untils/api';
 import { Document, Page, pdfjs } from 'react-pdf';
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import 'react-pdf/dist/Page/TextLayer.css';
+import * as mammoth from 'mammoth';
 
-// Cấu hình worker của react-pdf với phiên bản chính xác
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
-// ArrayBuffer -> Base64
 const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
   const bytes = new Uint8Array(buffer);
   let binary = '';
@@ -21,7 +19,6 @@ const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
   return btoa(binary);
 };
 
-// Base64 -> ArrayBuffer
 const base64ToArrayBuffer = (base64: string): ArrayBuffer => {
   const binaryString = atob(base64);
   const len = binaryString.length;
@@ -32,7 +29,6 @@ const base64ToArrayBuffer = (base64: string): ArrayBuffer => {
   return bytes.buffer;
 };
 
-// Tạo cặp khóa RSA
 const generateRSAKeysInBrowser = async (): Promise<{
   publicKey: string;
   privateKey: string;
@@ -65,7 +61,6 @@ interface LicenseResponse {
   };
 }
 
-// Tạo key AES từ content key và salt
 async function deriveAesKey(contentKey: string, salt: ArrayBuffer | Uint8Array): Promise<CryptoKey> {
   const enc = new TextEncoder();
   const keyMaterial = await window.crypto.subtle.importKey(
@@ -76,7 +71,7 @@ async function deriveAesKey(contentKey: string, salt: ArrayBuffer | Uint8Array):
     ['deriveKey']
   );
 
-  const saltUint8 = salt instanceof Uint8Array ? salt : new Uint8Array(salt);
+  const saltUint8 = new Uint8Array(salt as ArrayBuffer);
 
   return await window.crypto.subtle.deriveKey(
     {
@@ -92,7 +87,6 @@ async function deriveAesKey(contentKey: string, salt: ArrayBuffer | Uint8Array):
   );
 }
 
-// Giải mã nội dung PDF
 async function decryptContentBufferToBuffer(encryptedBuffer: ArrayBuffer, contentKey: string): Promise<ArrayBuffer> {
   const salt = new Uint8Array(encryptedBuffer.slice(0, 16));
   const iv = new Uint8Array(encryptedBuffer.slice(16, 28));
@@ -106,6 +100,8 @@ async function decryptContentBufferToBuffer(encryptedBuffer: ArrayBuffer, conten
   );
 }
 
+const DEFAULT_PDF_WIDTH = 800;
+
 const ReadBookPage = () => {
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
@@ -117,9 +113,17 @@ const ReadBookPage = () => {
   } | null>(null);
   const [bookContentUrl, setBookContentUrl] = useState<string | null>(null);
   const [numPages, setNumPages] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [scale, setScale] = useState(1);
+  const [maxScale, setMaxScale] = useState(2);
+  const [minScale, setMinScale] = useState(0.5);
   const [pdfVersion, setPdfVersion] = useState<string>('');
+  const [decryptedBuffer, setDecryptedBuffer] = useState<ArrayBuffer | null>(null);
+  const [fileType, setFileType] = useState<string>('');
+  const [docxHtml, setDocxHtml] = useState<string>('');
+  const [pdfPageWidth, setPdfPageWidth] = useState(DEFAULT_PDF_WIDTH);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Log version khi component mount
   useEffect(() => {
     console.log('PDF.js version:', pdfjs.version);
     setPdfVersion(pdfjs.version);
@@ -130,21 +134,18 @@ const ReadBookPage = () => {
       try {
         const generatedKeys = await generateRSAKeysInBrowser();
         setKeys(generatedKeys);
-        console.log('✅ Generated RSA Keys:', generatedKeys);
       } catch (error) {
         console.error('❌ Error generating RSA keys:', error);
       } finally {
         setLoading(false);
       }
     };
-
     if (id) initKeys();
   }, [id]);
 
   useEffect(() => {
     const fetchLicense = async () => {
       if (!keys || !id) return;
-
       try {
         const licenseResponse = await apiService.post<LicenseResponse>('/api/drm/license', {
           uploadId: id,
@@ -153,7 +154,6 @@ const ReadBookPage = () => {
         });
 
         const encryptedContentKey = licenseResponse.data.data.encryptedContentKey;
-
         const decryptedKeyBuffer = await window.crypto.subtle.decrypt(
           { name: 'RSA-OAEP' },
           keys.privateKeyRaw,
@@ -161,83 +161,418 @@ const ReadBookPage = () => {
         );
         const contentKey = new TextDecoder().decode(decryptedKeyBuffer);
 
-        const contentResponse = await apiService.get(`/api/drm/content/${id}`, { responseType: 'arraybuffer' });
-        const encryptedContentBuffer = contentResponse.data as ArrayBuffer;
+        const contentResponse = await apiService.get(`/api/drm/content/${id}`, {
+          responseType: 'arraybuffer',
+        });
 
+        const contentType = contentResponse.headers['content-type'];
+        const encryptedContentBuffer = contentResponse.data as ArrayBuffer;
         const decryptedContentBuffer = await decryptContentBufferToBuffer(encryptedContentBuffer, contentKey);
 
-        const blob = new Blob([decryptedContentBuffer], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-        setBookContentUrl(url);
+        setFileType(contentType);
+        console.log(contentType);
+        setDecryptedBuffer(decryptedContentBuffer);
       } catch (error) {
-        console.error('❌ Error in fetchLicense:', { error, keys, id });
+        console.error('❌ Error in fetchLicense:', error);
       }
     };
-
     fetchLicense();
   }, [keys, id]);
 
-  if (loading) {
+  useEffect(() => {
+    if (!decryptedBuffer || !fileType) {
+      console.error('❌ Missing decryptedBuffer or fileType');
+      return;
+    }
+
+    console.log('🔍 File type:', fileType);
+
+    if (fileType === 'application/octet-stream') {
+      console.log('🔍 Received application/octet-stream, attempting to detect file type...');
+      const fileBytes = new Uint8Array(decryptedBuffer);
+      const isPDF = fileBytes[0] === 0x25 && fileBytes[1] === 0x50;
+      const isWord = fileBytes[0] === 0x50 && fileBytes[1] === 0x4B;
+
+      if (isPDF) {
+        console.log('✅ PDF detected');
+        const blob = new Blob([decryptedBuffer], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        setBookContentUrl(url);
+      } else if (isWord) {
+        console.log('✅ Word detected');
+        mammoth.convertToHtml({ arrayBuffer: decryptedBuffer })
+          .then((result) => {
+            setDocxHtml(result.value);
+          })
+          .catch((err) => {
+            console.error('❌ mammoth error:', err);
+          });
+      } else {
+        console.error('❌ Unable to detect file type for application/octet-stream');
+      }
+      return;
+    }
+
+    if (fileType.includes('word')) {
+      console.log('🔍 Processing Word document...');
+      mammoth.convertToHtml({ arrayBuffer: decryptedBuffer })
+        .then((result) => {
+          console.log('✅ Word file converted to HTML');
+          setDocxHtml(result.value);
+        })
+        .catch((err) => {
+          console.error('❌ mammoth error:', err);
+        });
+    }
+    else if (fileType.includes('pdf')) {
+      console.log('🔍 Processing PDF document...');
+      const blob = new Blob([decryptedBuffer], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      console.log('✅ PDF URL created:', url);
+      setBookContentUrl(url);
+    } 
+    else {
+      console.error('❌ Unsupported file type:', fileType);
+    }
+  }, [decryptedBuffer, fileType]);
+
+  // Dynamically calculate maxScale based on container width and PDF page width
+  useLayoutEffect(() => {
+    if (containerRef.current) {
+      const containerWidth = containerRef.current.offsetWidth;
+      const newMaxScale = Math.max(minScale, containerWidth / pdfPageWidth);
+      setMaxScale(newMaxScale);
+      // If current scale is above new max, clamp it
+      setScale((prev) => Math.min(prev, newMaxScale));
+    }
+  }, [pdfPageWidth, minScale]);
+
+  // When PDF loads, get its natural width
+  const handlePageLoadSuccess = (page: any) => {
+    if (page && page.originalWidth) {
+      setPdfPageWidth(page.originalWidth);
+    } else {
+      setPdfPageWidth(DEFAULT_PDF_WIDTH);
+    }
+  };
+
+  const handleZoomIn = () => {
+    setScale(prev => {
+      const next = Math.min(prev + 0.1, maxScale);
+      return parseFloat(next.toFixed(2));
+    });
+  };
+
+  const handleZoomOut = () => {
+    setScale(prev => {
+      const next = Math.max(prev - 0.1, minScale);
+      return parseFloat(next.toFixed(2));
+    });
+  };
+
+  const handleScaleChange = (event: Event, value: number | number[]) => {
+    const newValue = Math.max(minScale, Math.min(maxScale, value as number));
+    setScale(parseFloat(newValue.toFixed(2)));
+  };
+  
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= (numPages || 1)) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  if (loading || !bookContentUrl) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '100vh',
-          gap: 2,
-          backgroundColor: '#f5f5f5',
-        }}
-      >
-        <CircularProgress size={60} thickness={4} />
-        <Typography variant="h6" color="text.secondary">
-          Initializing secure reading environment...
+      <Box sx={{
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center',
+        justifyContent: 'center', 
+        minHeight: '100vh', 
+        gap: 2, 
+        backgroundColor: '#232323',
+      }}>
+        <CircularProgress size={60} thickness={4} sx={{ color: '#fff' }} />
+        <Typography variant="h6" color="#fff">
+          {loading ? 'Initializing secure reading environment...' : 'Loading document...'}
         </Typography>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Reading book with ID: {id}
-      </Typography>
-      <Typography variant="body2" color="text.secondary">
-        Using PDF.js version: {pdfVersion}
-      </Typography>
-
-      {bookContentUrl ? (
-        <Box sx={{ mt: 3 }}>
-          <Document
-            file={bookContentUrl}
-            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-            onLoadError={(err) => console.error('PDF load error:', err)}
-            loading={
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                <CircularProgress />
-              </Box>
-            }
-          >
-            {Array.from(new Array(numPages), (_, index) => (
-              <Box key={`page_${index + 1}`} sx={{ mb: 2 }}>
-                <Page 
-                  pageNumber={index + 1} 
-                  width={800}
-                  loading={
-                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                      <CircularProgress size={24} />
-                    </Box>
-                  }
-                />
-              </Box>
-            ))}
-          </Document>
-        </Box>
-      ) : (
-        <Typography variant="body1" color="error">
-          Failed to load or decrypt book content
+    <Box sx={{
+      p: 3,
+      maxWidth: '1200px',
+      margin: '0 auto',
+      minHeight: '100vh',
+      position: 'relative',
+      backgroundColor: '#232323',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      '&::before': {
+        content: '""',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        zIndex: 0,
+        backgroundColor: 'rgba(30,30,30,0.85)',
+        backdropFilter: 'blur(2px)',
+        pointerEvents: 'none',
+      },
+    }}>
+      <Paper elevation={3} sx={{ 
+        p: 3, 
+        mb: 3, 
+        backgroundColor: '#1e1e1e', 
+        color: '#fff', 
+        zIndex: 1, 
+        width: '100%', 
+        maxWidth: 900 
+      }}>
+        <Typography variant="h4" gutterBottom>
+          Reading book with ID: {id}
         </Typography>
+        <Typography variant="body2" color="#b0b0b0">
+          Using PDF.js version: {pdfVersion}
+        </Typography>
+      </Paper>
+
+      {fileType.includes('word') && docxHtml ? (
+        <Paper elevation={3} sx={{ 
+          p: 3, 
+          backgroundColor: '#1e1e1e', 
+          color: '#fff', 
+          zIndex: 1, 
+          width: '100%', 
+          maxWidth: 900 
+        }}>
+          <Typography variant="h5" gutterBottom>📄 Document Content:</Typography>
+          <Box sx={{ 
+            p: 2, 
+            backgroundColor: '#232323', 
+            borderRadius: 1, 
+            color: '#fff',
+            '& *': {
+              color: '#fff !important',
+            }
+          }}>
+            <div dangerouslySetInnerHTML={{ __html: docxHtml }} />
+          </Box>
+        </Paper>
+      ) : (
+        <Paper elevation={3} sx={{ 
+          p: 3, 
+          backgroundColor: '#1e1e1e', 
+          color: '#fff', 
+          zIndex: 1, 
+          width: '100%', 
+          maxWidth: 900 
+        }}>
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            mb: 2,
+            gap: 2,
+            flexWrap: 'wrap',
+          }}>
+            <IconButton
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage <= 1}
+              sx={{ color: '#fff' }}
+            >
+              <NavigateBefore />
+            </IconButton>
+            <Typography>
+              Page {currentPage} of {numPages}
+            </Typography>
+            <IconButton
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= (numPages || 1)}
+              sx={{ color: '#fff' }}
+            >
+              <NavigateNext />
+            </IconButton>
+            <Box sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              ml: 2,
+              minWidth: 200,
+            }}>
+              <IconButton
+                onClick={handleZoomOut}
+                disabled={parseFloat(scale.toFixed(2)) <= minScale}
+                sx={{ color: '#fff' }}
+              >
+                <ZoomOut />
+              </IconButton>
+              <Slider
+                value={scale}
+                min={minScale}
+                max={maxScale}
+                step={0.05}
+                onChange={handleScaleChange}
+                sx={{
+                  width: 100,
+                  color: '#fff',
+                  '& .MuiSlider-thumb': {
+                    backgroundColor: '#fff',
+                  },
+                  '& .MuiSlider-track': {
+                    backgroundColor: '#fff',
+                  },
+                  '& .MuiSlider-rail': {
+                    backgroundColor: '#555',
+                  },
+                }}
+                aria-labelledby="zoom-slider"
+              />
+              <IconButton
+                onClick={handleZoomIn}
+                disabled={parseFloat(scale.toFixed(2)) >= maxScale}
+                sx={{ color: '#fff' }}
+              >
+                <ZoomIn />
+              </IconButton>
+            </Box>
+          </Box>
+          <Box
+            ref={containerRef}
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              backgroundColor: '#1e1e1e',
+              borderRadius: 1,
+              p: 2,
+              overflow: 'hidden',
+              position: 'relative',
+              zIndex: 1,
+              '& .react-pdf__Document': {
+                maxWidth: '100%',
+                overflow: 'hidden',
+                backgroundColor: '#1e1e1e',
+              },
+              '& .react-pdf__Page': {
+                maxWidth: '100%',
+                backgroundColor: '#1e1e1e',
+                '& canvas': {
+                  maxWidth: '100%',
+                  height: 'auto !important',
+                  backgroundColor: '#1e1e1e',
+                },
+              },
+            }}
+          >
+            <Document
+              file={bookContentUrl}
+              onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+              onLoadError={(err) => console.error('PDF load error:', err)}
+              loading={
+                <Box sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  py: 4,
+                  backgroundColor: '#1e1e1e',
+                }}>
+                  <CircularProgress sx={{ color: '#fff' }} />
+                </Box>
+              }
+            >
+              <Page
+                pageNumber={currentPage}
+                scale={scale}
+                width={pdfPageWidth}
+                onLoadSuccess={handlePageLoadSuccess}
+                loading={
+                  <Box sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    py: 4,
+                    backgroundColor: '#1e1e1e',
+                  }}>
+                    <CircularProgress size={24} sx={{ color: '#fff' }} />
+                  </Box>
+                }
+              />
+            </Document>
+          </Box>
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            mb: 2,
+            gap: 2,
+            flexWrap: 'wrap',
+          }}>
+            <IconButton
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage <= 1}
+              sx={{ color: '#fff' }}
+            >
+              <NavigateBefore />
+            </IconButton>
+            <Typography>
+              Page {currentPage} of {numPages}
+            </Typography>
+            <IconButton
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= (numPages || 1)}
+              sx={{ color: '#fff' }}
+            >
+              <NavigateNext />
+            </IconButton>
+            <Box sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              ml: 2,
+              minWidth: 200,
+            }}>
+              <IconButton
+                onClick={handleZoomOut}
+                disabled={parseFloat(scale.toFixed(2)) <= minScale}
+                sx={{ color: '#fff' }}
+              >
+                <ZoomOut />
+              </IconButton>
+              <Slider
+                value={scale}
+                min={minScale}
+                max={maxScale}
+                step={0.05}
+                onChange={handleScaleChange}
+                sx={{
+                  width: 100,
+                  color: '#fff',
+                  '& .MuiSlider-thumb': {
+                    backgroundColor: '#fff',
+                  },
+                  '& .MuiSlider-track': {
+                    backgroundColor: '#fff',
+                  },
+                  '& .MuiSlider-rail': {
+                    backgroundColor: '#555',
+                  },
+                }}
+                aria-labelledby="zoom-slider"
+              />
+              <IconButton
+                onClick={handleZoomIn}
+                disabled={parseFloat(scale.toFixed(2)) >= maxScale}
+                sx={{ color: '#fff' }}
+              >
+                <ZoomIn />
+              </IconButton>
+            </Box>
+          </Box>
+        </Paper>
       )}
     </Box>
   );

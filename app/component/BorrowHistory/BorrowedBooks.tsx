@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Paper, CircularProgress, Button, Grid,
   useTheme, useMediaQuery, List, ListItem, ListItemIcon,
-  ListItemText, Divider, TextField, Avatar
+  ListItemText, Divider, TextField, Avatar, IconButton
 } from '@mui/material';
 import Header from '../Home/Header';
 import SoftBooksHistory from './SoftBooksHistory';
@@ -11,12 +11,32 @@ import PersonIcon from '@mui/icons-material/Person';
 import HistoryIcon from '@mui/icons-material/History';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import AutoStoriesIcon from '@mui/icons-material/AutoStories';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
 import { useThemeContext } from '../Context/ThemeContext';
+import apiService from '@/app/untils/api';
 
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
   value: number;
+}
+
+interface ApiResponse<T> {
+  code: number;
+  success: boolean;
+  message: string;
+  data: T;
+}
+
+interface UserInfo {
+  userId: string;
+  username: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  address: string;
+  avatar?: string;
 }
 
 function TabPanel(props: TabPanelProps) {
@@ -45,13 +65,89 @@ const UserInfo = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [mainTabValue, setMainTabValue] = useState(0);
   const [bookHistoryTabValue, setBookHistoryTabValue] = useState(0);
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
   const [userInfo, setUserInfo] = useState({
     fullName: '',
     email: '',
     phone: '',
     address: '',
-    avatar: ''
+    avatar: 'https://img6.thuthuatphanmem.vn/uploads/2022/11/18/anh-avatar-don-gian-cho-nu_081757692.jpg'
   });
+
+  useEffect(() => {
+    const userInfoStr = localStorage.getItem('info');
+    if (userInfoStr) {
+      try {
+        const parsedInfo = JSON.parse(userInfoStr) as UserInfo;
+        if (parsedInfo.userId) {
+          setCurrentUserId(parsedInfo.userId);
+          fetchUserData(parsedInfo.userId);
+        }
+      } catch (error) {
+        console.error('Error parsing user info:', error);
+      }
+    }
+  }, []);
+
+  const fetchUserData = async (userId: string) => {
+    try {
+      setLoading(true);
+      const response = await apiService.get<ApiResponse<UserInfo>>(`/api/v1/users/info`);
+      const userData = response.data.data;
+      console.log('response User data', response);
+      
+      setUserInfo({
+        fullName: `${userData.firstName} ${userData.lastName}`,
+        email: userData.username,
+        phone: userData.phoneNumber,
+        address: userData.address,
+        avatar: userData.avatar || 'https://img6.thuthuatphanmem.vn/uploads/2022/11/18/anh-avatar-don-gian-cho-nu_081757692.jpg'
+      });
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!currentUserId) return;
+    
+    try {
+      setLoading(true);
+      const [firstName, lastName] = userInfo.fullName.split(' ');
+      
+      const updateData = {
+        firstName,
+        lastName,
+        phoneNumber: userInfo.phone,
+        address: userInfo.address
+      };
+
+      await apiService.put(`/api/v1/users/${currentUserId}`, updateData);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating user data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUserInfo(prev => ({
+          ...prev,
+          avatar: reader.result as string
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleMainTabChange = (newValue: number) => {
     setMainTabValue(newValue);
@@ -248,135 +344,147 @@ const UserInfo = () => {
             }}
           >
             <TabPanel value={mainTabValue} index={0}>
-              <Grid container spacing={4}>
-                <Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: 'center' }}>
-                  <Box sx={{ textAlign: 'center' }}>
-                    <Box
-                      component="img"
-                      src={userInfo.avatar || '/default-avatar.png'}
-                      alt="User Avatar"
-                                        sx={{
-                        width: 150,
-                        height: 150,
-                        borderRadius: '50%',
-                        mb: 2,
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                        objectFit: 'cover',
-                        transition: 'all 0.3s ease',
-                                          '&:hover': {
-                          transform: 'scale(1.05)',
-                          boxShadow: '0 6px 25px rgba(0,0,0,0.15)'
-                        }
-                      }}
-                    />
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                                        sx={{
-                        mt: 2,
-                        transition: 'all 0.3s ease',
-                                          '&:hover': {
-                          transform: 'translateY(-2px)',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                        }
-                      }}
-                    >
-                      Change Avatar
-                    </Button>
-                                </Box>
-                </Grid>
-                <Grid item xs={12} md={8}>
-                  <Grid container spacing={3}>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        label="Full Name"
-                        value={userInfo.fullName}
-                        variant="outlined"
-                                            sx={{
-                          '& .MuiOutlinedInput-root': {
-                            transition: 'all 0.3s ease',
-                                              '&:hover': {
-                              transform: 'translateY(-2px)',
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                            }
-                                              }
-                                            }}
-                                          />
-                                        </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        label="Email"
-                        value={userInfo.email}
-                        variant="outlined"
-                                            sx={{
-                          '& .MuiOutlinedInput-root': {
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                              transform: 'translateY(-2px)',
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                            }
-                          }
-                        }}
-                      />
-                                            </Grid>
-                                            <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        label="Phone"
-                        value={userInfo.phone}
-                        variant="outlined"
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                              transform: 'translateY(-2px)',
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                            }
-                          }
-                        }}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Address"
-                        value={userInfo.address}
-                        variant="outlined"
-                        multiline
-                        rows={3}
-                  sx={{
-                          '& .MuiOutlinedInput-root': {
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                              transform: 'translateY(-2px)',
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                            }
-                          }
-                        }}
-                      />
-              </Grid>
-                    <Grid item xs={12}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                        size="large"
-                  sx={{
-                          mt: 2,
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                          }
-                        }}
+              {loading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <Box sx={{ p: 3 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                    {isEditing ? (
+                      <IconButton 
+                        color="primary" 
+                        onClick={handleSave}
+                        disabled={loading}
                       >
-                        Save Changes
-                </Button>
-              </Grid>
-            </Grid>
-                </Grid>
-              </Grid>
+                        <SaveIcon />
+                      </IconButton>
+                    ) : (
+                      <IconButton 
+                        color="primary" 
+                        onClick={() => setIsEditing(true)}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                    )}
+                  </Box>
+                  <Grid container spacing={4}>
+                    <Grid item xs={12} md={4} sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'center',
+                      alignItems: 'flex-start',
+                      pt: 2,
+                      px: { md: 4 }
+                    }}>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        id="avatar-input"
+                        onChange={handleImageChange}
+                        disabled={!isEditing}
+                      />
+                      <label htmlFor="avatar-input">
+                        <Box
+                          component="img"
+                          src={userInfo.avatar}
+                          alt="User Avatar"
+                          sx={{
+                            width: 200,
+                            height: 200,
+                            borderRadius: '50%',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                            objectFit: 'cover',
+                            transition: 'all 0.3s ease',
+                            cursor: isEditing ? 'pointer' : 'default',
+                            '&:hover': {
+                              transform: isEditing ? 'scale(1.05)' : 'none',
+                              boxShadow: isEditing ? '0 6px 25px rgba(0,0,0,0.15)' : '0 4px 20px rgba(0,0,0,0.1)'
+                            }
+                          }}
+                        />
+                      </label>
+                    </Grid>
+                    <Grid item xs={12} md={8} sx={{ pt: 2 }}>
+                      <Grid container spacing={3}>
+                        <Grid item xs={12} sm={6}>
+                          <TextField
+                            fullWidth
+                            label="Full Name"
+                            value={userInfo.fullName}
+                            onChange={(e) => setUserInfo(prev => ({ ...prev, fullName: e.target.value }))}
+                            variant="outlined"
+                            disabled={!isEditing}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                  transform: isEditing ? 'translateY(-2px)' : 'none',
+                                  boxShadow: isEditing ? '0 4px 12px rgba(0,0,0,0.1)' : 'none'
+                                }
+                              }
+                            }}
+                          />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <TextField
+                            fullWidth
+                            label="Email"
+                            value={userInfo.email}
+                            variant="outlined"
+                            disabled
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                transition: 'all 0.3s ease'
+                              }
+                            }}
+                          />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <TextField
+                            fullWidth
+                            label="Phone"
+                            value={userInfo.phone}
+                            onChange={(e) => setUserInfo(prev => ({ ...prev, phone: e.target.value }))}
+                            variant="outlined"
+                            disabled={!isEditing}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                  transform: isEditing ? 'translateY(-2px)' : 'none',
+                                  boxShadow: isEditing ? '0 4px 12px rgba(0,0,0,0.1)' : 'none'
+                                }
+                              }
+                            }}
+                          />
+                        </Grid>
+                        <Grid item xs={12}>
+                          <TextField
+                            fullWidth
+                            label="Address"
+                            value={userInfo.address}
+                            onChange={(e) => setUserInfo(prev => ({ ...prev, address: e.target.value }))}
+                            variant="outlined"
+                            multiline
+                            rows={3}
+                            disabled={!isEditing}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                  transform: isEditing ? 'translateY(-2px)' : 'none',
+                                  boxShadow: isEditing ? '0 4px 12px rgba(0,0,0,0.1)' : 'none'
+                                }
+                              }
+                            }}
+                          />
+                        </Grid>
+                      </Grid>
+                    </Grid>
+                  </Grid>
+                </Box>
+              )}
             </TabPanel>
 
             <TabPanel value={mainTabValue} index={1}>
@@ -389,7 +497,7 @@ const UserInfo = () => {
               </TabPanel>
             </TabPanel>
           </Paper>
-              </Box>
+        </Box>
       </Box>
     </>
   );

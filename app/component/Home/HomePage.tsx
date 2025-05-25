@@ -10,6 +10,7 @@ import {
   Theme
 } from '@mui/material';
 import Header from './Header';
+import Footer from './Footer';
 import { keyframes } from '@emotion/react';
 import FloatingChat from './FloatingChat';
 
@@ -233,128 +234,137 @@ const Home: React.FC = () => {
   const theme = useTheme();
 
   return (
-    <Box sx={{ overflowX: 'hidden' }}>
+    <Box sx={{ 
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: '100vh',
+      overflowX: 'hidden'
+    }}>
       <Header />
       
-      <HeroSection>
-        <Container maxWidth="lg">
-          <Grid container spacing={4} alignItems="center" sx={{ position: 'relative', zIndex: 2 }}>
-            <Grid item xs={12} md={8}>
-              <Typography 
-                variant="h3" 
-                component="h1" 
-                gutterBottom 
-                sx={{ 
-                  fontWeight: 700,
-                  lineHeight: 1.3,
-                  mb: 3,
-                  color: 'white',
-                  textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-                }}
-              >
-                Welcome to Our Digital Library
-              </Typography>
-              <Typography 
-                variant="h5" 
-                component="p" 
-                gutterBottom 
-                sx={{ 
-                  mb: 4,
-                  opacity: 0.9,
-                  lineHeight: 1.6,
-                  color: 'white',
-                  textShadow: '0 1px 2px rgba(0,0,0,0.3)'
-                }}
-              >
-                Access thousands of ebooks, audiobooks and academic resources. 
-                All you need is your library account.
-              </Typography>
-              <Button 
-                variant="contained" 
-                size="large"
-                href="/bookshelf"
-                sx={{ 
-                  backgroundColor: 'secondary.main',
-                  color: 'white',
-                  px: 4,
-                  py: 1.5,
-                  borderRadius: '4px',
-                  fontWeight: 600,
-                  '&:hover': {
-                    backgroundColor: 'secondary.dark',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-                  },
-                  transition: 'all 0.3s ease',
-                }}
-              >
-                Explore Collections
-              </Button>
+      <Box sx={{ flex: 1 }}>
+        <HeroSection>
+          <Container maxWidth="lg">
+            <Grid container spacing={4} alignItems="center" sx={{ position: 'relative', zIndex: 2 }}>
+              <Grid item xs={12} md={8}>
+                <Typography 
+                  variant="h3" 
+                  component="h1" 
+                  gutterBottom 
+                  sx={{ 
+                    fontWeight: 700,
+                    lineHeight: 1.3,
+                    mb: 3,
+                    color: 'white',
+                    textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                  }}
+                >
+                  Welcome to Our Digital Library
+                </Typography>
+                <Typography 
+                  variant="h5" 
+                  component="p" 
+                  gutterBottom 
+                  sx={{ 
+                    mb: 4,
+                    opacity: 0.9,
+                    lineHeight: 1.6,
+                    color: 'white',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+                  }}
+                >
+                  Access thousands of ebooks, audiobooks and academic resources. 
+                  All you need is your library account.
+                </Typography>
+                <Button 
+                  variant="contained" 
+                  size="large"
+                  href="/bookshelf"
+                  sx={{ 
+                    backgroundColor: 'secondary.main',
+                    color: 'white',
+                    px: 4,
+                    py: 1.5,
+                    borderRadius: '4px',
+                    fontWeight: 600,
+                    '&:hover': {
+                      backgroundColor: 'secondary.dark',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                    },
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  Explore Collections
+                </Button>
+              </Grid>
             </Grid>
-          </Grid>
-        </Container>
-      </HeroSection>
+          </Container>
+        </HeroSection>
 
-      {/* Using the Library Section */}
-      <Box sx={{ py: 8, backgroundColor: theme.palette.background.default }}>
-        <Container maxWidth="lg">
-          <SectionTitle variant="h4" sx={{ color: 'text.primary' }}>Using the Library</SectionTitle>
-          <Grid container spacing={4}>
-            <Grid item xs={12} md={4}>
-              <LibraryServiceCard 
-                title="Get a Library Card"
-                description="Register online or visit in person to get full access to all digital resources."
-                href="/register"
-                bgColor={cardImages.libraryCard}
-                icon={<LibraryCardIcon />}
-              />
+        {/* Using the Library Section */}
+        <Box sx={{ py: 8, backgroundColor: theme.palette.background.default }}>
+          <Container maxWidth="lg">
+            <SectionTitle variant="h4" sx={{ color: 'text.primary' }}>Using the Library</SectionTitle>
+            <Grid container spacing={4}>
+              <Grid item xs={12} md={4}>
+                <LibraryServiceCard 
+                  title="Get a Library Card"
+                  description="Register online or visit in person to get full access to all digital resources."
+                  href="/register"
+                  bgColor={cardImages.libraryCard}
+                  icon={<LibraryCardIcon />}
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <LibraryServiceCard 
+                  title="Borrow Materials"
+                  description="Check out ebooks, audiobooks, and other digital materials for free."
+                  href="/how-to-borrow"
+                  bgColor={cardImages.borrowMaterials}
+                  icon={<BorrowIcon />}
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <LibraryServiceCard 
+                  title="Research Help"
+                  description="Get assistance from our librarians for your academic research needs."
+                  href="/research-help"
+                  bgColor={cardImages.researchHelp}
+                  icon={<ResearchIcon />}
+                />
+              </Grid>
             </Grid>
-            <Grid item xs={12} md={4}>
-              <LibraryServiceCard 
-                title="Borrow Materials"
-                description="Check out ebooks, audiobooks, and other digital materials for free."
-                href="/how-to-borrow"
-                bgColor={cardImages.borrowMaterials}
-                icon={<BorrowIcon />}
-              />
+          </Container>
+        </Box>
+
+        {/* Featured Collections */}
+        <Box sx={{ py: 8, backgroundColor: theme.palette.background.paper }}>
+          <Container maxWidth="lg">
+            <SectionTitle variant="h4" sx={{ color: 'text.primary' }}>Featured Collections</SectionTitle>
+            <Grid container spacing={4}>
+              <Grid item xs={12} md={6}>
+                <CollectionCard 
+                  title="Academic Journals"
+                  subtitle="Latest research publications"
+                  href="/journals"
+                  iconBgColor={theme.palette.primary.main}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <CollectionCard 
+                  title="Popular Titles"
+                  subtitle="Bestsellers and new releases"
+                  href="/popular-books"
+                  iconBgColor={theme.palette.secondary.main}
+                />
+              </Grid>
             </Grid>
-            <Grid item xs={12} md={4}>
-              <LibraryServiceCard 
-                title="Research Help"
-                description="Get assistance from our librarians for your academic research needs."
-                href="/research-help"
-                bgColor={cardImages.researchHelp}
-                icon={<ResearchIcon />}
-              />
-            </Grid>
-          </Grid>
-        </Container>
+          </Container>
+        </Box>
       </Box>
 
-      {/* Featured Collections */}
-      <Box sx={{ py: 8, backgroundColor: theme.palette.background.paper }}>
-        <Container maxWidth="lg">
-          <SectionTitle variant="h4" sx={{ color: 'text.primary' }}>Featured Collections</SectionTitle>
-          <Grid container spacing={4}>
-            <Grid item xs={12} md={6}>
-              <CollectionCard 
-                title="Academic Journals"
-                subtitle="Latest research publications"
-                href="/journals"
-                iconBgColor={theme.palette.primary.main}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <CollectionCard 
-                title="Popular Titles"
-                subtitle="Bestsellers and new releases"
-                href="/popular-books"
-                iconBgColor={theme.palette.secondary.main}
-              />
-            </Grid>
-          </Grid>
-        </Container>
-      </Box>
+      <Footer />
       <FloatingChat/>
     </Box>
   );
