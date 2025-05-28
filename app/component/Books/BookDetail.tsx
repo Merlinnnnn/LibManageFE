@@ -177,7 +177,7 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
     if (!book) {
         console.log("Book in render:", book);
 
-        return <Typography>Loading...</Typography>;
+        return <Typography></Typography>;
     }
 
     return (
@@ -215,18 +215,18 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
                         {/* Thông tin sách */}
                         <Box flex="1">
                             <Typography color="textSecondary" gutterBottom>
-                                by {book.author}
+                                bởi {book.author}
                             </Typography>
                             <Typography variant="body2" style={{ marginTop: 8, marginBottom: 16 }}>
                                 {book.description}
                             </Typography>
 
                             <Box marginBottom={2}>
-                                <Typography variant="body2">Publisher: {book.publisher}</Typography>
-                                <Typography variant="body2">Published Date: {book.publishedDate}</Typography>
-                                <Typography variant="body2">Page Count: {book.pageCount}</Typography>
-                                <Typography variant="body2">Language: {book.language || 'N/A'}</Typography>
-                                <Typography variant="body2">Available: {book.availableCount} copies</Typography>
+                                <Typography variant="body2">Nhà xuất bản: {book.publisher}</Typography>
+                                <Typography variant="body2">Ngày xuất bản: {book.publishedDate}</Typography>
+                                <Typography variant="body2">Số trang: {book.pageCount}</Typography>
+                                <Typography variant="body2">Ngôn ngữ: {book.language || 'N/A'}</Typography>
+                                <Typography variant="body2">Có sẵn: {book.availableCount} bản</Typography>
                             </Box>
                             <Box display="flex" gap={1} marginTop={1} flexWrap="wrap">
                                 {book.documentTypes.map((type) => (
@@ -249,15 +249,15 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
                                     style={{ flex: 1, borderRadius: '20px' }}
                                     disabled={isBorrowed}
                                 >
-                                    Borrow Book
+                                    Mượn sách
                                 </Button>
                                 <Button
                                     variant="outlined"
                                     color="secondary"
-                                    onClick={handleReadBookClick(book.documentId.toString())} // Ép kiểu thành chuỗi
+                                    onClick={handleReadBookClick(book.documentId.toString())}
                                     style={{ flex: 1, borderRadius: '20px' }}
                                 >
-                                    Read Book
+                                    Đọc sách
                                 </Button>
 
                             </Box>
@@ -275,16 +275,16 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
                     </Box>)}
             </DialogContent>
             <Dialog open={confirmDialogOpen} onClose={handleCloseConfirmDialog}>
-                <DialogTitle>Confirm Loan Request</DialogTitle>
+                <DialogTitle>Xác nhận yêu cầu mượn sách</DialogTitle>
                 <DialogContent>
-                    <Typography>Are you sure you want to request a loan for this book?</Typography>
+                    <Typography>Bạn có chắc chắn muốn yêu cầu mượn sách này?</Typography>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseConfirmDialog} color="primary">
-                        No
+                        Không
                     </Button>
                     <Button onClick={handleConfirmLoan} color="primary" variant="contained">
-                        Yes
+                        Có
                     </Button>
                 </DialogActions>
                 <Snackbar

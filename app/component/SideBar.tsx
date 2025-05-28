@@ -128,7 +128,7 @@ const Sidebar: React.FC = () => {
 
     useEffect(() => {
         sessionStorage.setItem("selectedIndex", selectedIndex.toString());
-        if(menuItems[selectedIndex].text === "Logout"){
+        if(menuItems[selectedIndex].text === "Đăng xuất"){
             logout();
         }
     }, [selectedIndex]);
@@ -166,63 +166,63 @@ const Sidebar: React.FC = () => {
 
     const menuItems = [
         {
-            text: "Dashboard",
+            text: "Thống kê",
             icon: <Dashboard />,
             path: "",
             subItems: [
                 {
-                    text: "User",
+                    text: "Người dùng",
                     icon: <PersonIcon />,
                     path: "/user_dashboard"
                 },
                 {
-                    text: "Loan",
+                    text: "Mượn trả",
                     icon: <AttachMoneyIcon />,
                     path: "/loan_dashboard"
                 },
                 {
-                    text: "Book",
+                    text: "Sách",
                     icon: <StackedBarChartIcon />,
                     path: "/book_dashboard"
                 }
             ]
         },
         {
-            text: "Inventory",
+            text: "Kho sách",
             icon: <AutoStoriesIcon />,
             path: "",
             subItems: [
                 {
-                    text: "Add Book",
+                    text: "Thêm sách",
                     icon: <AddIcon />,
                     path: "/addbook"
                 },
                 {
-                    text: "Books Management",
+                    text: "Quản lý sách",
                     icon: <LibraryBooksIcon />,
                     path: "/book-manage"
                 }
             ]
         },
         {
-            text: "Manager",
+            text: "Quản lý",
             icon: <ManageAccountsIcon />,
             path: "",
             subItems: [
                 {
-                    text: "Manager",
+                    text: "Quản lý mượn trả",
                     icon: <ManageAccountsIcon />,
                     path: "/loan-manager"
                 },
                 {
-                    text: "Library map",
+                    text: "Bản đồ thư viện",
                     icon: <MapIcon />,
                     path: "/map"
                 }
             ]
         },
         {
-            text: "Logout",
+            text: "Đăng xuất",
             icon: <ExitToApp />,
             onclick: logout
         }
@@ -280,8 +280,8 @@ const Sidebar: React.FC = () => {
                                 
                                 setSelectedIndex(index);
                                 if (item.subItems) {
-                                    item.text === "Dashboard" ? handleDashboardClick() :
-                                    item.text === "Inventory" ? handleInventoryClick() : handleBusinessClick();
+                                    item.text === "Thống kê" ? handleDashboardClick() :
+                                    item.text === "Kho sách" ? handleInventoryClick() : handleBusinessClick();
                                 }
                             }}
                             sx={{
@@ -310,13 +310,13 @@ const Sidebar: React.FC = () => {
                                 <ListItemText primary={item.text} />
                             )}
                             {isExpanded && item.subItems && (
-                                (item.text === "Dashboard" ? openDashboard : item.text === "Inventory" ? openInventory : openBusiness)
+                                (item.text === "Thống kê" ? openDashboard : item.text === "Kho sách" ? openInventory : openBusiness)
                                 ? <ExpandLess /> : <ExpandMore />
                             )}
                         </ListItemButton>
 
                         {item.subItems && (
-                            <Collapse in={(item.text === "Dashboard" && openDashboard) || (item.text === "Inventory" && openInventory) || (item.text === "Manager" && openBusiness)} timeout="auto" unmountOnExit>
+                            <Collapse in={(item.text === "Thống kê" && openDashboard) || (item.text === "Kho sách" && openInventory) || (item.text === "Quản lý" && openBusiness)} timeout="auto" unmountOnExit>
                                 <List component="div" disablePadding>
                                     {item.subItems.map((subItem) => (
                                         <ListItemButton
@@ -367,7 +367,7 @@ const Sidebar: React.FC = () => {
                     color: textColor,
                 }}
             >
-                {isExpanded && <Typography variant="subtitle1">{fullName || 'No Name'}</Typography>}
+                {isExpanded && <Typography variant="subtitle1">{fullName || 'Chưa có tên'}</Typography>}
                 <IconButton
                     edge="end"
                     aria-label="notifications"
@@ -418,7 +418,7 @@ const Sidebar: React.FC = () => {
                 >
                     <Box p={2} width={300}>
                         <Typography variant="h6" gutterBottom>
-                            Notifications
+                            Thông báo
                         </Typography>
                         <List>
                             {notifications.map((notification) => (

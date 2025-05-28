@@ -55,7 +55,7 @@ interface Notification {
 
 interface ApiResponse {
   data: {
-    result: {
+    data: {
       content: Notification[];
     };
   };
@@ -197,8 +197,8 @@ const Header: React.FC = () => {
   const fetchNotifications = async () => {
     try {
       const response: ApiResponse = await apiService.get('/api/v1/notifications');
-      if (response.data?.result?.content) {
-        setNotifications(response.data.result.content);
+      if (response.data?.data?.content) {
+        setNotifications(response.data.data.content);
       }
     } catch (error) {
       console.log('Error fetching notifications:', error);
@@ -280,7 +280,7 @@ const Header: React.FC = () => {
               },
             }}
           >
-            Take a Tour
+            Tham quan
           </Button>
         </Box>
 
@@ -314,7 +314,7 @@ const Header: React.FC = () => {
         {/* Right Side - User Controls */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           {/* Theme Toggle */}
-          <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
+          <Tooltip title={`Chuyển sang chế độ ${mode === 'light' ? 'tối' : 'sáng'}`}>
             <IconButton
               onClick={handleToggleTheme}
               sx={{ color: 'white' }}
@@ -326,7 +326,7 @@ const Header: React.FC = () => {
           {username ? (
             <>
               {/* Notifications */}
-              <Tooltip title="Notifications">
+              <Tooltip title="Thông báo">
                 <IconButton
                   onClick={handleNotificationClick}
                   sx={{ color: 'white' }}
@@ -361,7 +361,7 @@ const Header: React.FC = () => {
                 }}
               >
                 <Box sx={{ p: 2, bgcolor: 'primary.main', color: 'white' }}>
-                  <Typography variant="h6">Notifications</Typography>
+                  <Typography variant="h6">Thông báo</Typography>
                 </Box>
                 <Box sx={{ overflow: 'auto', maxHeight: 400 }}>
                   {notifications.length > 0 ? (
@@ -379,7 +379,15 @@ const Header: React.FC = () => {
                             >
                               <ListItemText
                                 primary={
-                                  <Typography fontWeight={notification.status === 'UNREAD' ? 600 : 400}>
+                                  <Typography 
+                                    fontWeight={notification.status === 'UNREAD' ? 600 : 400}
+                                    sx={{ 
+                                      cursor: 'pointer',
+                                      '&:hover': {
+                                        color: 'primary.main'
+                                      }
+                                    }}
+                                  >
                                     {notification.title}
                                   </Typography>
                                 }
@@ -401,7 +409,7 @@ const Header: React.FC = () => {
                   ) : (
                     <Box sx={{ p: 3, textAlign: 'center' }}>
                       <Typography variant="body2" color="text.secondary">
-                        No notifications yet
+                        Chưa có thông báo nào
                       </Typography>
                     </Box>
                   )}
@@ -409,7 +417,7 @@ const Header: React.FC = () => {
               </Popover>
 
               {/* User Menu */}
-              <Tooltip title="Account settings">
+              <Tooltip title="Cài đặt tài khoản">
                 <IconButton
                   id="user-info"
                   onClick={handleMenuClick}
@@ -448,7 +456,7 @@ const Header: React.FC = () => {
                 <Box sx={{ p: 2, bgcolor: 'primary.main', color: 'white' , borderRadius: 3}}>
                   <Typography fontWeight={600}>{username}</Typography>
                   <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                    Member
+                    Thành viên
                   </Typography>
                 </Box>
                 <Divider />
@@ -459,7 +467,7 @@ const Header: React.FC = () => {
                   sx={{ py: 1.5 }}
                 >
                   <FavoriteBorderIcon sx={{ mr: 1.5, color: 'text.secondary' }} />
-                  Favorites
+                  Yêu thích
                 </MenuItem>
                 <MenuItem 
                   id="info"
@@ -469,7 +477,7 @@ const Header: React.FC = () => {
                   sx={{ py: 1.5 }}
                 >
                   <HistoryIcon sx={{ mr: 1.5, color: 'text.secondary' }} />
-                  Borrowed Books
+                  Sách đã mượn
                 </MenuItem>
                 <MenuItem 
                   id="virtual-book"
@@ -479,7 +487,7 @@ const Header: React.FC = () => {
                   sx={{ py: 1.5 }}
                 >
                   <AddIcon sx={{ mr: 1.5, color: 'text.secondary' }} />
-                  Add Virtual Book
+                  Thêm sách ảo
                 </MenuItem>
                 <Divider />
                 <MenuItem 
@@ -488,7 +496,7 @@ const Header: React.FC = () => {
                   sx={{ py: 1.5, color: 'error.main' }}
                 >
                   <LogoutIcon sx={{ mr: 1.5 }} />
-                  Logout
+                  Đăng xuất
                 </MenuItem>
               </Menu>
             </>

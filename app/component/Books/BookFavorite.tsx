@@ -73,7 +73,7 @@ export default function BookFavorite() {
       console.log('Không thể tải sách:', error);
       setBooks([]);
       setDisplayedBooks([]);
-      showSnackbar('error', 'Failed to load books.');
+      showSnackbar('error', 'Không thể tải sách');
     } finally {
       setLoading(false);
     }

@@ -116,7 +116,7 @@ const TrendingBooks: React.FC = () => {
 
   return (
     <Container id='book-list' >
-      <Typography variant="h4" gutterBottom>Recoment Books</Typography>
+      <Typography variant="h4" gutterBottom>Sách đề xuất</Typography>
       {books.length > 0 ? (
         <BookSliderContainer>
           <LeftArrowButton onClick={scrollLeft}>
@@ -136,7 +136,7 @@ const TrendingBooks: React.FC = () => {
           </RightArrowButton>
         </BookSliderContainer>
       ) : (
-        <Typography variant="body1">No books available for recommendation.</Typography>
+        <Typography variant="body1">Không có sách nào để đề xuất.</Typography>
       )}
 
       {selectedBookId && (

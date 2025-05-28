@@ -204,7 +204,7 @@ const fetchBookDetails = async (id: number) => {
     return (
         <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
             <DialogTitle>
-                Edit Book Information
+                Chỉnh sửa thông tin sách
                 <IconButton aria-label="close" onClick={onClose} sx={{ position: 'absolute', right: 8, top: 8 }}>
                     <CloseIcon />
                 </IconButton>
@@ -247,7 +247,7 @@ const fetchBookDetails = async (id: number) => {
                                             height="100%"
                                         >
                                             <UploadFileIcon fontSize="large" color="action" />
-                                            <Typography variant="caption">Upload Cover Image</Typography>
+                                            <Typography variant="caption">Tải ảnh bìa</Typography>
                                         </Box>
                                     )}
                                 </label>
@@ -259,35 +259,35 @@ const fetchBookDetails = async (id: number) => {
                                     <TextField size="small" fullWidth label="ISBN" name="isbn" value={book.isbn || ''} onChange={handleChange} />
                                 </Grid>
                                 <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Document Name" name="documentName" value={book.documentName || ''} onChange={handleChange} />
+                                    <TextField size="small" fullWidth label="Tên sách" name="documentName" value={book.documentName || ''} onChange={handleChange} />
                                 </Grid>
                                 <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Author" name="author" value={book.author || ''} onChange={handleChange} />
+                                    <TextField size="small" fullWidth label="Tác giả" name="author" value={book.author || ''} onChange={handleChange} />
                                 </Grid>
                                 <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Publisher" name="publisher" value={book.publisher || ''} onChange={handleChange} />
+                                    <TextField size="small" fullWidth label="Nhà xuất bản" name="publisher" value={book.publisher || ''} onChange={handleChange} />
                                 </Grid>
                                 <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Published Date" name="publishedDate" type="date" InputLabelProps={{ shrink: true }} value={book.publishedDate || ''} onChange={handleChange} />
+                                    <TextField size="small" fullWidth label="Ngày xuất bản" name="publishedDate" type="date" InputLabelProps={{ shrink: true }} value={book.publishedDate || ''} onChange={handleChange} />
                                 </Grid>
                                 <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Page Count" name="pageCount" type="number" value={book.pageCount || 0} onChange={handleChange} />
+                                    <TextField size="small" fullWidth label="Số trang" name="pageCount" type="number" value={book.pageCount || 0} onChange={handleChange} />
                                 </Grid>
                                 <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Language" name="language" value={book.language || ''} onChange={handleChange} />
+                                    <TextField size="small" fullWidth label="Ngôn ngữ" name="language" value={book.language || ''} onChange={handleChange} />
                                 </Grid>
                                 <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Quantity" name="quantity" type="number" value={book.quantity || 0} onChange={handleChange} />
+                                    <TextField size="small" fullWidth label="Số lượng" name="quantity" type="number" value={book.quantity || 0} onChange={handleChange} />
                                 </Grid>
                                 <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Price" name="price" type="number" value={book.price || 0} onChange={handleChange} />
+                                    <TextField size="small" fullWidth label="Giá" name="price" type="number" value={book.price || 0} onChange={handleChange} />
                                 </Grid>
                             </Grid>
                         </Grid>
                     </Grid>
                 )}
                 <Box mt={3}>
-                    <Typography variant="h6">Select Types</Typography>
+                    <Typography variant="h6">Chọn loại sách</Typography>
                     <Box mt={1} display="flex" flexWrap="wrap" gap={1}>
                         {documentTypes.map((tag) => (
                             <Chip
@@ -301,7 +301,7 @@ const fetchBookDetails = async (id: number) => {
                     </Box>
                 </Box>
                 <Box mt={3}>
-                    <Typography variant="h6">Select Courses</Typography>
+                    <Typography variant="h6">Chọn khóa học</Typography>
                     <Box mt={1} display="flex" flexWrap="wrap" gap={1}>
                         {courses.map((course) => (
                             <Chip
@@ -316,7 +316,7 @@ const fetchBookDetails = async (id: number) => {
                 </Box>
                 <Box mt={3} textAlign="center">
                     <Button variant="contained" color="primary" onClick={handleSaveChanges}>
-                        Save Changes
+                        Lưu thay đổi
                     </Button>
                 </Box>
             </DialogContent>

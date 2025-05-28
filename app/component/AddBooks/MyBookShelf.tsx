@@ -24,7 +24,8 @@ import {
     Tab,
     Container,
     IconButton,
-    Fab
+    Fab,
+    Zoom
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
@@ -42,6 +43,7 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import LocalLibraryIcon from '@mui/icons-material/LocalLibrary';
 import ListIcon from '@mui/icons-material/List';
 import AccessList from './AccessList';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 
 interface Upload {
     uploadId: number;
@@ -127,6 +129,8 @@ const MyBookShelf: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [favoritesLoading, setFavoritesLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [searchString, setSearchString] = useState('');
+    const [showScrollTop, setShowScrollTop] = useState(false);
     const [openUploadDialog, setOpenUploadDialog] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [favoritesPage, setFavoritesPage] = useState(0);
@@ -140,6 +144,25 @@ const MyBookShelf: React.FC = () => {
     const booksPerPage = 5;
     const [accessListOpen, setAccessListOpen] = useState(false);
     const [selectedUploadId, setSelectedUploadId] = useState<number | null>(null);
+    const [allBooks, setAllBooks] = useState<Book[]>([]);
+    const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
+
+    // Add scroll event listener
+    useEffect(() => {
+        const handleScroll = () => {
+            setShowScrollTop(window.pageYOffset > 400);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const scrollToTop = () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    };
 
     const fetchBooks = async (): Promise<Book[]> => {
         try {
@@ -151,10 +174,31 @@ const MyBookShelf: React.FC = () => {
                 userId = info.userId;
             }
 
-            const response = await apiService.get<ApiResponse<DigitalDocument>>(`/api/v1/digital-documents/users/${userId}`);
-            console.log('fetchbook', response);
+            // Build query parameters
+            const params: Record<string, any> = {};
             
-            return response.data.data.content.map(doc => {
+            // Add search query if exists
+            if (searchQuery.trim()) {
+                params.title = searchQuery.trim();
+            }
+
+            // Add document type filters if selected
+            if (selectedDocumentTypes.length > 0) {
+                params.documentTypeIds = selectedDocumentTypes.join(',');
+            }
+
+            // Add course filters if selected
+            if (selectedCourses.length > 0) {
+                params.courseIds = selectedCourses.join(',');
+            }
+
+            const response = await apiService.get<ApiResponse<DigitalDocument>>(
+                `/api/v1/digital-documents/users/${userId}`,
+                { params }
+            );
+            console.log(response);
+            
+            const fetchedBooks = response.data.data.content.map(doc => {
                 const wordFile = doc.uploads.find(u => u.fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || u.fileType === 'application/msword')?.filePath;
                 const pdfFile = doc.uploads.find(u => u.fileType === 'application/pdf')?.filePath;
                 const mp4File = doc.uploads.find(u => u.fileType === 'video/mp4')?.filePath;
@@ -166,7 +210,7 @@ const MyBookShelf: React.FC = () => {
                     author: doc.author,
                     coverImage: doc.coverImage || 'https://th.bing.com/th/id/OIP.cB5B7jK44BU3VNazD-SqYgHaHa?rs=1&pid=ImgDetMain',
                     uploadDate: firstUpload?.uploadedAt || '',
-                    fileSize: '0 MB', // Since fileSize is not provided in the response
+                    fileSize: '0 MB',
                     documentType: 'Textbook',
                     courses: [doc.documentName],
                     isPublic: true,
@@ -175,6 +219,10 @@ const MyBookShelf: React.FC = () => {
                     mp4File
                 };
             });
+
+            setAllBooks(fetchedBooks);
+            setFilteredBooks(fetchedBooks);
+            return fetchedBooks;
         } catch (error) {
             console.error('Error fetching books:', error);
             return [];
@@ -342,8 +390,46 @@ const MyBookShelf: React.FC = () => {
         setSelectedUploadId(null);
     };
 
-    const currentBooks = books.slice((currentPage - 1) * booksPerPage, currentPage * booksPerPage);
+    const currentBooks = filteredBooks.slice((currentPage - 1) * booksPerPage, currentPage * booksPerPage);
     const currentFavorites = favoriteBooks.slice(favoritesPage * booksPerPage, (favoritesPage + 1) * booksPerPage);
+
+    const searchBooks = (title: string) => {
+        setLoading(true);
+        setSearchQuery(title);
+        fetchBooks().finally(() => setLoading(false));
+    };
+
+    const filterBooks = () => {
+        setLoading(true);
+        fetchBooks().finally(() => setLoading(false));
+    };
+
+    // Update useEffect for filter
+    useEffect(() => {
+        if (selectedDocumentTypes.length > 0 || selectedCourses.length > 0) {
+            filterBooks();
+        } else {
+            fetchBooks();
+        }
+    }, [selectedDocumentTypes, selectedCourses]);
+
+    const handleSearchKeyPress = (event: React.KeyboardEvent) => {
+        if (event.key === 'Enter') {
+            if (searchQuery.trim()) {
+                searchBooks(searchQuery);
+            } else {
+                fetchBooks();
+            }
+        }
+    };
+
+    const handleSearchButton = () => {
+        if (searchQuery.trim()) {
+            searchBooks(searchQuery);
+        } else {
+            fetchBooks();
+        }
+    };
 
     return (
         <Box>
@@ -351,9 +437,77 @@ const MyBookShelf: React.FC = () => {
             <Box sx={{ 
                 background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
                 minHeight: '100vh',
-                py: 4
+                py: 4,
+                position: 'relative'
             }}>
                 <Container maxWidth="xl">
+                    {/* Search Bar */}
+                    <Box sx={{ 
+                        bgcolor: 'primary.main',
+                        color: 'white',
+                        borderRadius: 4,
+                        p: 4,
+                        mb: 4,
+                        textAlign: 'center',
+                        boxShadow: 3,
+                        background: 'linear-gradient(45deg, #6a1b9a 30%, #9c27b0 90%)'
+                    }}>
+                        <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
+                            My Digital Library
+                        </Typography>
+                        <Typography variant="h6" sx={{ mb: 3 }}>
+                            Manage and organize your digital documents
+                        </Typography>
+                        
+                        <Box sx={{ 
+                            display: 'flex', 
+                            justifyContent: 'center',
+                            maxWidth: 600,
+                            mx: 'auto'
+                        }}>
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                placeholder="Tìm sách"
+                                size="medium"
+                                value={searchQuery}
+                                onChange={(event) => setSearchQuery(event.target.value)}
+                                onKeyDown={handleSearchKeyPress}
+                                sx={{
+                                    bgcolor: 'background.paper',
+                                    borderRadius: 2,
+                                    '& fieldset': {
+                                        borderRadius: 2,
+                                        border: 'none'
+                                    },
+                                }}
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <SearchIcon color="primary" />
+                                        </InputAdornment>
+                                    ),
+                                    endAdornment: (
+                                        <Button 
+                                            variant="contained" 
+                                            color="secondary"
+                                            onClick={handleSearchButton}
+                                            sx={{
+                                                borderRadius: 2,
+                                                px: 3,
+                                                textTransform: 'none',
+                                                boxShadow: 'none'
+                                            }}
+                                        >
+                                            Tìm
+                                        </Button>
+                                    )
+                                }}
+                            />
+                        </Box>
+                    </Box>
+
+                    {/* Add Book Button */}
                     <Fab
                         color="primary"
                         aria-label="add"
@@ -362,7 +516,12 @@ const MyBookShelf: React.FC = () => {
                             position: 'fixed',
                             bottom: 24,
                             right: 24,
-                            zIndex: 1000
+                            zIndex: 1000,
+                            width: 56,
+                            height: 56,
+                            '&:hover': {
+                                backgroundColor: 'secondary.main'
+                            }
                         }}
                     >
                         <AddIcon />
@@ -377,8 +536,10 @@ const MyBookShelf: React.FC = () => {
                                 p: 3, 
                                 borderRadius: 3,
                                 position: 'sticky',
-                                top: 20,
-                                boxShadow: 3
+                                top: { xs: 80, sm: 88 },
+                                boxShadow: 3,
+                                maxHeight: 'calc(100vh - 100px)',
+                                overflowY: 'auto'
                             }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                                     <FilterListIcon color="primary" sx={{ mr: 1 }} />
@@ -447,7 +608,7 @@ const MyBookShelf: React.FC = () => {
                                     </Typography>
                                 </Box>
 
-                                <Tabs value={activeTab} onChange={handleTabChange} aria-label="book shelf tabs" sx={{ mb: 3 }}>
+                                <Tabs value={activeTab} onChange={(event, newValue) => setActiveTab(newValue)} aria-label="book shelf tabs" sx={{ mb: 3 }}>
                                     <Tab label="My Books" icon={<DescriptionIcon />} iconPosition="start" />
                                     <Tab label="Favorites" icon={<FavoriteIcon />} iconPosition="start" />
                                 </Tabs>
@@ -548,7 +709,7 @@ const MyBookShelf: React.FC = () => {
                                                 </Grid>
                                                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
                                                     <Pagination
-                                                        count={Math.ceil(books.length / booksPerPage)}
+                                                        count={Math.ceil(filteredBooks.length / booksPerPage)}
                                                         page={currentPage}
                                                         onChange={(event, page) => setCurrentPage(page)}
                                                         color="primary"
@@ -667,6 +828,28 @@ const MyBookShelf: React.FC = () => {
                             </Paper>
                         </Grid>
                     </Grid>
+
+                    {/* Scroll to Top Button */}
+                    <Zoom in={showScrollTop}>
+                        <Fab
+                            color="primary"
+                            aria-label="scroll to top"
+                            onClick={scrollToTop}
+                            sx={{
+                                position: 'fixed',
+                                bottom: 96,
+                                right: 24,
+                                zIndex: 1000,
+                                width: 56,
+                                height: 56,
+                                '&:hover': {
+                                    backgroundColor: 'secondary.main'
+                                }
+                            }}
+                        >
+                            <KeyboardArrowUpIcon />
+                        </Fab>
+                    </Zoom>
                 </Container>
             </Box>
 

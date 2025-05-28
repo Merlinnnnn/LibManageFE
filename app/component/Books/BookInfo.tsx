@@ -276,12 +276,12 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
                         </IconButton>
                     </Box>
                     <Typography variant="body2" color="text.secondary">
-                        by {book.author}
+                        bởi {book.author}
                     </Typography>
-                    <Typography variant="body2">Publisher: {book.publisher}</Typography>
-                    <Typography variant="body2">Published: {book.publishedDate || 'N/A'}</Typography>
-                    <Typography variant="body2">Language: {book.language || 'N/A'}</Typography>
-                    <Typography variant="body2">Available: {book.quantity} copies</Typography>
+                    <Typography variant="body2">Nhà xuất bản: {book.publisher}</Typography>
+                    <Typography variant="body2">Ngày xuất bản: {book.publishedDate || 'N/A'}</Typography>
+                    <Typography variant="body2">Ngôn ngữ: {book.language || 'N/A'}</Typography>
+                    <Typography variant="body2">Có sẵn: {book.quantity} bản</Typography>
                     
                     {/* Mô tả sách */}
                     <Box mt={1}>
@@ -299,7 +299,7 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
                             sx={{ textTransform: 'none' }}
                             //disabled={book.quantity <= 0}
                         >
-                            Borrow Book
+                            Mượn sách
                         </Button>
 
                         {/* File action buttons - only for DIGITAL documents */}
@@ -312,7 +312,7 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
                                         onClick={() => handleFileOpen(pdfUrl)}
                                         sx={{ textTransform: 'none' }}
                                     >
-                                        Read PDF
+                                        Đọc PDF
                                     </Button>
                                 )}
                                 {hasWord && (
@@ -322,7 +322,7 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
                                         onClick={() => handleFileOpen(wordUrl)}
                                         sx={{ textTransform: 'none' }}
                                     >
-                                        Read Word
+                                        Đọc Word
                                     </Button>
                                 )}
                             </>
@@ -338,18 +338,18 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
                 aria-labelledby="borrow-dialog-title"
                 aria-describedby="borrow-dialog-description"
             >
-                <DialogTitle id="borrow-dialog-title">Confirm Book Borrow</DialogTitle>
+                <DialogTitle id="borrow-dialog-title">Xác nhận mượn sách</DialogTitle>
                 <DialogContent>
                     <DialogContentText id="borrow-dialog-description">
-                        Are you sure you want to borrow "{book.documentName}" by {book.author}?
+                        Bạn có chắc chắn muốn mượn "{book.documentName}" của {book.author}?
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleBorrowCancel} color="primary">
-                        Cancel
+                        Hủy
                     </Button>
                     <Button onClick={handleBorrowConfirm} color="primary" autoFocus>
-                        Confirm Borrow
+                        Xác nhận mượn
                     </Button>
                 </DialogActions>
             </Dialog>

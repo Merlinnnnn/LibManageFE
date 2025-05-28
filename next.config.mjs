@@ -13,6 +13,7 @@ const nextConfig = {
   // 👇 Thêm đoạn này để React-PDF không bị lỗi "Module not found: Can't resolve 'canvas'"
   webpack: (config) => {
     config.resolve.alias['pdfjs-dist'] = 'pdfjs-dist/legacy/build/pdf';
+    config.resolve.alias.canvas = false;
     return config;
   }
 };

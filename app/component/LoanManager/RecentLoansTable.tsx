@@ -148,37 +148,18 @@ const RecentLoansTable: React.FC = () => {
                 <Table stickyHeader size="small">
                     <TableHead>
                         <TableRow>
-                            <TableCell style={{ padding: '4px 8px' }}>Transaction ID</TableCell>
-                            <TableCell style={{ padding: '4px 8px' }}>Document Name</TableCell>
-                            <TableCell style={{ padding: '4px 8px' }}>Username</TableCell>
-                            <TableCell style={{ padding: '4px 8px' }}>Loan Date</TableCell>
-
-                            {/* Cột Status */}
+                            <TableCell style={{ padding: '4px 8px' }}>Mã giao dịch</TableCell>
+                            <TableCell style={{ padding: '4px 8px' }}>Tên sách</TableCell>
+                            <TableCell style={{ padding: '4px 8px' }}>Tên người dùng</TableCell>
+                            <TableCell style={{ padding: '4px 8px' }}>Ngày mượn</TableCell>
                             <TableCell style={{ padding: '4px 8px' }}>
                                 <Grid container spacing={1} alignItems="center">
                                     <Grid item>
-                                        Status
-                                    </Grid>
-                                    <Grid item>
-                                        <FormControl fullWidth size="small">
-                                            <Select
-                                                value={filterStatus}
-                                                onChange={(e) => setFilterStatus(e.target.value)}
-                                                label="Status Filter"
-                                            >
-                                                <MenuItem value="ALL">All</MenuItem>
-                                                <MenuItem value="PENDING">Pending</MenuItem>
-                                                <MenuItem value="APPROVED">Approved</MenuItem>
-                                                <MenuItem value="CANCEL">Cancel</MenuItem>
-                                                <MenuItem value="RECEIVED">Received</MenuItem>
-                                                <MenuItem value="RETURNED">Returned</MenuItem>
-                                            </Select>
-                                        </FormControl>
+                                        Trạng thái
                                     </Grid>
                                 </Grid>
                             </TableCell>
-
-                            <TableCell style={{ padding: '4px 8px' }}>Action</TableCell>
+                            <TableCell style={{ padding: '4px 8px' }}>Hành động</TableCell>
                         </TableRow>
                     </TableHead>
 
@@ -200,19 +181,19 @@ const RecentLoansTable: React.FC = () => {
                                 <TableCell style={{ padding: '4px 8px' }}>
                                     {loan.status === 'PENDING' ? (
                                         <>
-                                            <Tooltip title="Approve">
+                                            <Tooltip title="Duyệt">
                                                 <IconButton color="primary" onClick={() => handleLoanAction(loan.transactionId, 'APPROVE')}>
                                                     <DoneIcon />
                                                 </IconButton>
                                             </Tooltip>
-                                            <Tooltip title="Reject">
+                                            <Tooltip title="Từ chối">
                                                 <IconButton color="secondary" onClick={() => handleLoanAction(loan.transactionId, 'REJECTED')}>
                                                     <BlockIcon />
                                                 </IconButton>
                                             </Tooltip>
                                         </>
                                     ) : loan.status === 'APPROVED' ? (
-                                        <Tooltip title="Cancel">
+                                        <Tooltip title="Hủy">
                                             <IconButton color="error" onClick={() => handleLoanAction(loan.transactionId, 'CANCEL')}>
                                                 <ClearIcon />
                                             </IconButton>

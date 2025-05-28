@@ -147,7 +147,7 @@ const ReadBookPage = () => {
     const fetchLicense = async () => {
       if (!keys || !id) return;
       try {
-        const licenseResponse = await apiService.post<LicenseResponse>('/api/drm/license', {
+        const licenseResponse = await apiService.post<LicenseResponse>('/api/v1/drm/license', {
           uploadId: id,
           deviceId: '123',
           publicKey: keys.publicKey,
@@ -161,7 +161,7 @@ const ReadBookPage = () => {
         );
         const contentKey = new TextDecoder().decode(decryptedKeyBuffer);
 
-        const contentResponse = await apiService.get(`/api/drm/content/${id}`, {
+        const contentResponse = await apiService.get(`/api/v1/drm/content/${id}`, {
           responseType: 'arraybuffer',
         });
 
@@ -171,6 +171,7 @@ const ReadBookPage = () => {
 
         setFileType(contentType);
         console.log(contentType);
+        console.log('174',decryptedContentBuffer);
         setDecryptedBuffer(decryptedContentBuffer);
       } catch (error) {
         console.error('❌ Error in fetchLicense:', error);
@@ -180,10 +181,13 @@ const ReadBookPage = () => {
   }, [keys, id]);
 
   useEffect(() => {
-    if (!decryptedBuffer || !fileType) {
-      console.error('❌ Missing decryptedBuffer or fileType');
+    if (!(decryptedBuffer instanceof ArrayBuffer) || decryptedBuffer.byteLength === 0 || !fileType) {
+      console.error('❌ Missing or invalid decryptedBuffer or fileType');
+      console.log('decryptedBuffer:', decryptedBuffer);
+      console.log('fileType:', fileType);
       return;
     }
+    
 
     console.log('🔍 File type:', fileType);
 

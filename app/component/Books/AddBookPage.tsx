@@ -343,7 +343,7 @@ const AddBookPage: React.FC = () => {
             <Box flex={1} display="flex" justifyContent="center" p={3}>
                 <Paper sx={{ padding: 3, maxWidth: 1200 }}>
                     <Typography variant="h4" align="center" gutterBottom>
-                        Add New Book
+                        Thêm sách mới
                     </Typography>
                     <Grid container spacing={2} justifyContent="center">
                         {/* Image Upload Section */}
@@ -385,7 +385,7 @@ const AddBookPage: React.FC = () => {
                                 </label>
                             </Box>
                             <Typography variant="caption" sx={{ mt: 1, color: '#888', textAlign: 'center', display: 'block' }}>
-                                *.jpeg, *.jpg, *.png <br /> Maximum 100 KB
+                                *.jpeg, *.jpg, *.png <br /> Tối đa 100 KB
                             </Typography>
                         </Grid>
 
@@ -394,34 +394,34 @@ const AddBookPage: React.FC = () => {
                             <Grid container spacing={2}>
                                 {/* Các trường TextField cho thông tin sách */}
                                 <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="ISBN" name="isbn" value={book.isbn} onChange={handleChange} />
+                                    <TextField size="small" fullWidth label="Mã ISBN" name="isbn" value={book.isbn} onChange={handleChange} />
                                 </Grid>
                                 <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Document Name" name="documentName" value={book.documentName} onChange={handleChange} />
+                                    <TextField size="small" fullWidth label="Tên sách" name="documentName" value={book.documentName} onChange={handleChange} />
                                 </Grid>
                                 <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Author" name="author" value={book.author} onChange={handleChange} />
+                                    <TextField size="small" fullWidth label="Tác giả" name="author" value={book.author} onChange={handleChange} />
                                 </Grid>
                                 <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Publisher" name="publisher" value={book.publisher} onChange={handleChange} />
+                                    <TextField size="small" fullWidth label="Nhà xuất bản" name="publisher" value={book.publisher} onChange={handleChange} />
                                 </Grid>
                                 <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Published Date" name="publishedDate" type="date" InputLabelProps={{ shrink: true }} value={book.publishedDate} onChange={handleChange} />
+                                    <TextField size="small" fullWidth label="Ngày xuất bản" name="publishedDate" type="date" InputLabelProps={{ shrink: true }} value={book.publishedDate} onChange={handleChange} />
                                 </Grid>
                                 <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Page Count" name="pageCount" type="number" value={book.pageCount} onChange={handleChange} />
+                                    <TextField size="small" fullWidth label="Số trang" name="pageCount" type="number" value={book.pageCount} onChange={handleChange} />
                                 </Grid>
                                 <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Language" name="language" value={book.language} onChange={handleChange} />
+                                    <TextField size="small" fullWidth label="Ngôn ngữ" name="language" value={book.language} onChange={handleChange} />
                                 </Grid>
                                 <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Quantity" name="quantity" type="number" value={book.quantity} onChange={handleChange} />
+                                    <TextField size="small" fullWidth label="Số lượng" name="quantity" type="number" value={book.quantity} onChange={handleChange} />
                                 </Grid>
                                 <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Available Count" name="availableCount" type="number" value={book.availableCount} onChange={handleChange} />
+                                    <TextField size="small" fullWidth label="Số lượng có sẵn" name="availableCount" type="number" value={book.availableCount} onChange={handleChange} />
                                 </Grid>
                                 <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Price" name="price" type="number" value={book.price} onChange={handleChange} />
+                                    <TextField size="small" fullWidth label="Giá" name="price" type="number" value={book.price} onChange={handleChange} />
                                 </Grid>
                             </Grid>
                         </Grid>
@@ -442,9 +442,9 @@ const AddBookPage: React.FC = () => {
                                 color="primary"
                                 component="span"
                                 startIcon={<UploadFileIcon />}
-                                disabled={!!selectedPdfFile} // Vô hiệu hóa nút khi đã có file được chọn
+                                disabled={!!selectedPdfFile}
                             >
-                                Upload PDF
+                                Tải lên PDF
                             </Button>
                         </label>
                     </Box>
@@ -466,7 +466,7 @@ const AddBookPage: React.FC = () => {
                     )}
                     {/* Tags Selection */}
                     <Box mt={3}>
-                        <Typography variant="h6">Select Type</Typography>
+                        <Typography variant="h6">Chọn loại sách</Typography>
                         <Box mt={1} display="flex" flexWrap="wrap" gap={1}>
                             {(Array.isArray(documentTypes) ? documentTypes : []).map((tag) => (
                                 <Chip
@@ -481,7 +481,7 @@ const AddBookPage: React.FC = () => {
                         </Box>
                     </Box>
                     <Box mt={3}>
-                        <Typography variant="h6">Select Courses</Typography>
+                        <Typography variant="h6">Chọn khóa học</Typography>
                         <Box mt={1} display="flex" flexWrap="wrap" gap={1}>
                             {courses.map((course) => (
                                 <Chip
@@ -498,7 +498,7 @@ const AddBookPage: React.FC = () => {
                     {/* Submit Button */}
                     <Box mt={3} textAlign="center">
                         <Button variant="contained" color="primary" onClick={handleAddBook}>
-                            Add Book
+                            Thêm sách
                         </Button>
                     </Box>
                     <SpeedDial
@@ -523,12 +523,12 @@ const AddBookPage: React.FC = () => {
                         />
                     </SpeedDial>
                     <Dialog open={openAddTypeDialog} onClose={handleCloseAddTypeDialog}>
-                        <DialogTitle>Add New Type</DialogTitle>
+                        <DialogTitle>Thêm loại sách mới</DialogTitle>
                         <DialogContent>
                             <TextField
                                 autoFocus
                                 margin="dense"
-                                label="Type Name"
+                                label="Tên loại sách"
                                 type="text"
                                 fullWidth
                                 value={newTypeName}
@@ -536,7 +536,7 @@ const AddBookPage: React.FC = () => {
                             />
                             <TextField
                                 margin="dense"
-                                label="Description"
+                                label="Mô tả"
                                 type="text"
                                 fullWidth
                                 multiline
@@ -547,20 +547,20 @@ const AddBookPage: React.FC = () => {
                         </DialogContent>
                         <DialogActions>
                             <Button onClick={handleCloseAddTypeDialog} color="primary">
-                                Cancel
+                                Hủy
                             </Button>
                             <Button onClick={handleAddNewType} color="primary" variant="contained">
-                                Add
+                                Thêm
                             </Button>
                         </DialogActions>
                     </Dialog>
                     <Dialog open={openAddCourseDialog} onClose={handleCloseAddCourseDialog}>
-                        <DialogTitle>Add New Course</DialogTitle>
+                        <DialogTitle>Thêm khóa học mới</DialogTitle>
                         <DialogContent>
                             <TextField
                                 autoFocus
                                 margin="dense"
-                                label="Course Code"
+                                label="Mã khóa học"
                                 type="text"
                                 fullWidth
                                 value={newCourseCode}
@@ -569,7 +569,7 @@ const AddBookPage: React.FC = () => {
                             <TextField
                                 autoFocus
                                 margin="dense"
-                                label="Course Name"
+                                label="Tên khóa học"
                                 type="text"
                                 fullWidth
                                 value={newTypeName}
@@ -577,7 +577,7 @@ const AddBookPage: React.FC = () => {
                             />
                             <TextField
                                 margin="dense"
-                                label="Description"
+                                label="Mô tả"
                                 type="text"
                                 fullWidth
                                 multiline
@@ -588,10 +588,10 @@ const AddBookPage: React.FC = () => {
                         </DialogContent>
                         <DialogActions>
                             <Button onClick={handleCloseAddCourseDialog} color="primary">
-                                Cancel
+                                Hủy
                             </Button>
                             <Button onClick={handleAddNewCourse} color="primary" variant="contained">
-                                Add
+                                Thêm
                             </Button>
                         </DialogActions>
                     </Dialog>

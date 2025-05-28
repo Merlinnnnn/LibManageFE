@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   Box, 
   Typography, 
@@ -13,6 +13,7 @@ import Header from './Header';
 import Footer from './Footer';
 import { keyframes } from '@emotion/react';
 import FloatingChat from './FloatingChat';
+import { useAuth } from '../Context/AuthContext';
 
 // Type definitions
 interface LibraryServiceCardProps {
@@ -183,55 +184,60 @@ const LibraryServiceCard: React.FC<LibraryServiceCardProps> = ({
           {description}
         </Typography>
         <Typography variant="body2" sx={{ fontWeight: 500 }}>
-          Click to learn more →
+          Nhấp để tìm hiểu thêm →
         </Typography>
       </ServiceCardContent>
     </ServiceCardContainer>
   );
 };
 
-const CollectionCard: React.FC<CollectionCardProps> = ({ 
-  title, 
-  subtitle, 
-  href, 
-  iconBgColor 
-}) => {
-  const theme = useTheme();
+// const CollectionCard: React.FC<CollectionCardProps> = ({ 
+//   title, 
+//   subtitle, 
+//   href, 
+//   iconBgColor 
+// }) => {
+//   const theme = useTheme();
 
-  return (
-    <ServiceCardContainer href={href}>
-      <ServiceCardContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Box sx={{ 
-            width: 80, 
-            height: 80, 
-            backgroundColor: iconBgColor || theme.palette.grey[200], 
-            mr: 2,
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontWeight: 'bold'
-          }}>
-            {title.split(' ').map(word => word[0]).join('')}
-          </Box>
-          <Box>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>{title}</Typography>
-            <Typography variant="body2">{subtitle}</Typography>
-          </Box>
-        </Box>
-        <Typography variant="body2" sx={{ fontWeight: 500, textAlign: 'right' }}>
-          Explore collection →
-        </Typography>
-      </ServiceCardContent>
-    </ServiceCardContainer>
-  );
-};
+//   return (
+//     <ServiceCardContainer href={href}>
+//       <ServiceCardContent>
+//         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+//           <Box sx={{ 
+//             width: 80, 
+//             height: 80, 
+//             backgroundColor: iconBgColor || theme.palette.grey[200], 
+//             mr: 2,
+//             borderRadius: '8px',
+//             display: 'flex',
+//             alignItems: 'center',
+//             justifyContent: 'center',
+//             color: 'white',
+//             fontWeight: 'bold'
+//           }}>
+//             {title.split(' ').map(word => word[0]).join('')}
+//           </Box>
+//           <Box>
+//             <Typography variant="h6" sx={{ fontWeight: 600 }}>{title}</Typography>
+//             <Typography variant="body2">{subtitle}</Typography>
+//           </Box>
+//         </Box>
+//         <Typography variant="body2" sx={{ fontWeight: 500, textAlign: 'right' }}>
+//           Khám phá bộ sưu tập →
+//         </Typography>
+//       </ServiceCardContent>
+//     </ServiceCardContainer>
+//   );
+// };
 
 // Main component
 const Home: React.FC = () => {
   const theme = useTheme();
+  const { checkTokenValidity } = useAuth();
+
+  useEffect(() => {
+    checkTokenValidity();
+  }, []);
 
   return (
     <Box sx={{ 
@@ -273,8 +279,8 @@ const Home: React.FC = () => {
                     textShadow: '0 1px 2px rgba(0,0,0,0.3)'
                   }}
                 >
-                  Access thousands of ebooks, audiobooks and academic resources. 
-                  All you need is your library account.
+                  Truy cập hàng nghìn sách điện tử, sách nói và tài nguyên học thuật. 
+                  Tất cả những gì bạn cần là tài khoản thư viện.
                 </Typography>
                 <Button 
                   variant="contained" 
@@ -295,7 +301,7 @@ const Home: React.FC = () => {
                     transition: 'all 0.3s ease',
                   }}
                 >
-                  Explore Collections
+                  Khám phá tủ sách 
                 </Button>
               </Grid>
             </Grid>
@@ -305,21 +311,21 @@ const Home: React.FC = () => {
         {/* Using the Library Section */}
         <Box sx={{ py: 8, backgroundColor: theme.palette.background.default }}>
           <Container maxWidth="lg">
-            <SectionTitle variant="h4" sx={{ color: 'text.primary' }}>Using the Library</SectionTitle>
+            <SectionTitle variant="h4" sx={{ color: 'text.primary' }}>Sử dụng thư viện</SectionTitle>
             <Grid container spacing={4}>
               <Grid item xs={12} md={4}>
                 <LibraryServiceCard 
-                  title="Get a Library Card"
-                  description="Register online or visit in person to get full access to all digital resources."
-                  href="/register"
+                  title="Đăng ký thẻ thư viện"
+                  description="Đăng ký trực tuyến hoặc đến trực tiếp để có quyền truy cập đầy đủ vào tất cả tài nguyên số."
+                  href="/instruct"
                   bgColor={cardImages.libraryCard}
                   icon={<LibraryCardIcon />}
                 />
               </Grid>
               <Grid item xs={12} md={4}>
                 <LibraryServiceCard 
-                  title="Borrow Materials"
-                  description="Check out ebooks, audiobooks, and other digital materials for free."
+                  title="Mượn tài liệu"
+                  description="Mượn sách điện tử, sách nói và các tài liệu số khác miễn phí."
                   href="/how-to-borrow"
                   bgColor={cardImages.borrowMaterials}
                   icon={<BorrowIcon />}
@@ -327,8 +333,8 @@ const Home: React.FC = () => {
               </Grid>
               <Grid item xs={12} md={4}>
                 <LibraryServiceCard 
-                  title="Research Help"
-                  description="Get assistance from our librarians for your academic research needs."
+                  title="Hỗ trợ nghiên cứu"
+                  description="Nhận hỗ trợ từ thủ thư của chúng tôi cho nhu cầu nghiên cứu học thuật của bạn."
                   href="/research-help"
                   bgColor={cardImages.researchHelp}
                   icon={<ResearchIcon />}
@@ -338,30 +344,30 @@ const Home: React.FC = () => {
           </Container>
         </Box>
 
-        {/* Featured Collections */}
+        {/* Featured Collections
         <Box sx={{ py: 8, backgroundColor: theme.palette.background.paper }}>
           <Container maxWidth="lg">
-            <SectionTitle variant="h4" sx={{ color: 'text.primary' }}>Featured Collections</SectionTitle>
+            <SectionTitle variant="h4" sx={{ color: 'text.primary' }}>Bộ sưu tập nổi bật</SectionTitle>
             <Grid container spacing={4}>
               <Grid item xs={12} md={6}>
                 <CollectionCard 
-                  title="Academic Journals"
-                  subtitle="Latest research publications"
+                  title="Tạp chí học thuật"
+                  subtitle="Ấn phẩm nghiên cứu mới nhất"
                   href="/journals"
                   iconBgColor={theme.palette.primary.main}
                 />
               </Grid>
               <Grid item xs={12} md={6}>
                 <CollectionCard 
-                  title="Popular Titles"
-                  subtitle="Bestsellers and new releases"
+                  title="Sách phổ biến"
+                  subtitle="Sách bán chạy và phát hành mới"
                   href="/popular-books"
                   iconBgColor={theme.palette.secondary.main}
                 />
               </Grid>
             </Grid>
           </Container>
-        </Box>
+        </Box> */}
       </Box>
 
       <Footer />

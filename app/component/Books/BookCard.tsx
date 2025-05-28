@@ -81,7 +81,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, onViewDocument }) => {
       <BookInfo>
         <BookTitle>{book.documentName}</BookTitle>
         <ViewDocumentButton variant="contained" onClick={onViewDocument}>
-          View Document
+          Xem sách
         </ViewDocumentButton>
       </BookInfo>
     </BookCardContainer>

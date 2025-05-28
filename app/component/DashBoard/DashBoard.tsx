@@ -1,211 +1,250 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Card, Typography, Grid, IconButton } from '@mui/material';
-import { Pie } from 'react-chartjs-2';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, ChartOptions } from 'chart.js';
+import {
+  Box,
+  Grid,
+  Paper,
+  Typography,
+  CircularProgress,
+  Card,
+  CardContent,
+  useTheme,
+} from '@mui/material';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
+import dashboardService, { DashboardStatistics } from '../../services/dashboardService';
 import Sidebar from '../SideBar';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import PersonIcon from '@mui/icons-material/Person';
-import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
-import apiService from '@/app/untils/api';
 
-ChartJS.register(ArcElement, Tooltip, Legend);
-
-// Định nghĩa interface cho dữ liệu trả về từ API
-interface UserRoleData {
-    totalUsers: number;
-    usersByRole: {
-        ADMIN: number;
-        MANAGER: number;
-        USER: number;
-    };
-}
-
-interface UserRoleResponse {
-    code: number;
-    message: string;
-    result: UserRoleData;
-}
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 const Dashboard: React.FC = () => {
-    const [data, setData] = useState<UserRoleData>({
-        totalUsers: 0,
-        usersByRole: {
-            ADMIN: 0,
-            MANAGER: 0,
-            USER: 0,
-        },
-    });
+  const theme = useTheme();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [statistics, setStatistics] = useState<DashboardStatistics | null>(null);
 
-    // Fetch API
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await apiService.get<UserRoleResponse>('/api/v1/dashboards/users/statistics');
-                const responseData: UserRoleData = response.data.result;
-                setData(responseData);
-            } catch (error) {
-                console.log('Error fetching data:', error);
-            }
-        };
-
-        fetchData();
-    }, []);
-
-    const pieData = {
-        labels: ['ADMIN', 'MANAGER', 'USER'],
-        datasets: [
-            {
-                data: [
-                    data.usersByRole.ADMIN || 0,
-                    data.usersByRole.MANAGER || 0,
-                    data.usersByRole.USER || 0,
-                ],
-                backgroundColor: ['#3f51b5', '#00bcd4', '#ff5722'],
-                hoverBackgroundColor: ['#303f9f', '#008394', '#e64a19'],
-            },
-        ],
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const data = await dashboardService.getAllStatistics();
+        setStatistics(data);
+        setError(null);
+      } catch (err) {
+        setError('Failed to load dashboard data');
+        console.error('Error fetching dashboard data:', err);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const pieOptions: ChartOptions<'pie'> = {
-        plugins: {
-            legend: {
-                display: true,
-                position: 'right',
-                labels: {
-                    boxWidth: 20, 
-                    padding: 10,
-                },
-            },
-        },
-        maintainAspectRatio: true, 
-    };
-    
+    fetchData();
+  }, []);
 
+  if (loading) {
     return (
-        <Box display="flex" height="100vh">
-            {/* Sidebar */}
-            <Sidebar />
-
-            <Box flex={1} padding={3} bgcolor="#ffffff" overflow="auto">
-                <Grid container spacing={2}>
-                    {/* Total Users Card */}
-                    <Grid item xs={12}>
-                        <Card
-                            sx={{
-                                padding: 3,
-                                textAlign: 'center',
-                                backgroundColor: '#f5f5f5',
-                                color: '#000000',
-                            }}
-                        >
-                            <Typography variant="h6">Total Users</Typography>
-                            <Typography variant="h4">{data.totalUsers}</Typography>
-                        </Card>
-                    </Grid>
-
-                    {/* Role Cards */}
-                        {/* Card Admin */}
-                        <Grid item xs={4}>
-                            <Card
-                                sx={{
-                                    padding: 2,
-                                    textAlign: 'center',
-                                    backgroundColor: '#f5f5f5',
-                                    color: '#000000',
-                                }}
-                            >
-                                <Typography variant="subtitle1">Admin</Typography>
-                                <Typography variant="h4">
-                                    {data.usersByRole.ADMIN || 0}
-                                </Typography>
-                                <Typography variant="body2">
-                                    {data.totalUsers > 0
-                                        ? `${(
-                                              ((data.usersByRole.ADMIN || 0) / data.totalUsers) *
-                                              100
-                                          ).toFixed(2)}%`
-                                        : '0.00%'}
-                                </Typography>
-                                <IconButton sx={{ color: '#00bcd4', marginTop: 1 }}>
-                                    <AdminPanelSettingsIcon fontSize="large" />
-                                </IconButton>
-                            </Card>
-                        </Grid>
-
-                        {/* Card Manager */}
-                        <Grid item xs={4}>
-                            <Card
-                                sx={{
-                                    padding: 2,
-                                    textAlign: 'center',
-                                    backgroundColor: '#f5f5f5',
-                                    color: '#000000',
-                                }}
-                            >
-                                <Typography variant="subtitle1">Manager</Typography>
-                                <Typography variant="h4">
-                                    {data.usersByRole.MANAGER || 0}
-                                </Typography>
-                                <Typography variant="body2">
-                                    {data.totalUsers > 0
-                                        ? `${(
-                                              ((data.usersByRole.MANAGER || 0) / data.totalUsers) *
-                                              100
-                                          ).toFixed(2)}%`
-                                        : '0.00%'}
-                                </Typography>
-                                <IconButton sx={{ color: '#00bcd4', marginTop: 1 }}>
-                                    <ManageAccountsIcon fontSize="large" />
-                                </IconButton>
-                            </Card>
-                        </Grid>
-
-                        {/* Card User */}
-                        <Grid item xs={4}>
-                            <Card
-                                sx={{
-                                    padding: 2,
-                                    textAlign: 'center',
-                                    backgroundColor: '#f5f5f5',
-                                    color: '#000000',
-                                }}
-                            >
-                                <Typography variant="subtitle1">User</Typography>
-                                <Typography variant="h4">
-                                    {data.usersByRole.USER || 0}
-                                </Typography>
-                                <Typography variant="body2">
-                                    {data.totalUsers > 0
-                                        ? `${(
-                                              ((data.usersByRole.USER || 0) / data.totalUsers) *
-                                              100
-                                          ).toFixed(2)}%`
-                                        : '0.00%'}
-                                </Typography>
-                                <IconButton sx={{ color: '#00bcd4', marginTop: 1 }}>
-                                    <PersonIcon fontSize="large" />
-                                </IconButton>
-                            </Card>
-                        </Grid>
-
-
-                    {/* Pie Chart */}
-                    <Grid item xs={12}>
-                        <Card sx={{ padding: 2, marginTop: 2, backgroundColor: '#f5f5f5' }}>
-                            <Typography variant="h6" gutterBottom>
-                                User Role Distribution
-                            </Typography>
-                            <Box display="flex" justifyContent="center" alignItems="center">
-                                <Box width="300px" height="300px">
-                                    <Pie data={pieData} options={pieOptions}/>
-                                </Box>
-                            </Box>
-                        </Card>
-                    </Grid>
-                </Grid>
-            </Box>
+      <Box display="flex">
+        <Sidebar />
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh" flexGrow={1}>
+          <CircularProgress />
         </Box>
+      </Box>
     );
+  }
+
+  if (error) {
+    return (
+      <Box display="flex">
+        <Sidebar />
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh" flexGrow={1}>
+          <Typography color="error">{error}</Typography>
+        </Box>
+      </Box>
+    );
+  }
+
+  if (!statistics) {
+    return null;
+  }
+
+  const documentData = [
+    { name: 'Enabled', value: statistics.documents.documentsByENABLED },
+    { name: 'Disabled', value: statistics.documents.documentsByDISABLED },
+  ];
+
+  return (
+    <Box display="flex">
+      <Sidebar />
+      <Box sx={{ flexGrow: 1, p: 3 }}>
+        <Typography variant="h4" gutterBottom>
+          Dashboard Overview
+        </Typography>
+
+        {/* Summary Cards */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>
+                  Total Documents
+                </Typography>
+                <Typography variant="h4">
+                  {statistics.documents.totalDocuments}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>
+                  Active Loans
+                </Typography>
+                <Typography variant="h4">
+                  {statistics.loans.activeLoans}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>
+                  Total Users
+                </Typography>
+                <Typography variant="h4">
+                  {statistics.users.totalUsers}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>
+                  Total Revenue
+                </Typography>
+                <Typography variant="h4">
+                  ${statistics.payments.totalAmount}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
+        {/* Charts */}
+        <Grid container spacing={3}>
+          {/* Document Status */}
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Document Status
+              </Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={documentData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    label
+                  >
+                    {documentData.map((entry, index: number) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </Paper>
+          </Grid>
+
+          {/* Daily Activity */}
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Daily Activity
+              </Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={[statistics.daily]}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="newLoans" fill="#8884d8" name="New Loans" />
+                  <Bar dataKey="returns" fill="#82ca9d" name="Returns" />
+                  <Bar dataKey="payments" fill="#ffc658" name="Payments" />
+                </BarChart>
+              </ResponsiveContainer>
+            </Paper>
+          </Grid>
+
+          {/* User Statistics */}
+          <Grid item xs={12}>
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                User Statistics
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={4}>
+                  <Card>
+                    <CardContent>
+                      <Typography color="textSecondary" gutterBottom>
+                        New Users
+                      </Typography>
+                      <Typography variant="h5">
+                        {statistics.users.newUsers}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <Card>
+                    <CardContent>
+                      <Typography color="textSecondary" gutterBottom>
+                        Active Users
+                      </Typography>
+                      <Typography variant="h5">
+                        {statistics.users.activeUsers}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <Card>
+                    <CardContent>
+                      <Typography color="textSecondary" gutterBottom>
+                        Total Users
+                      </Typography>
+                      <Typography variant="h5">
+                        {statistics.users.totalUsers}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+            </Paper>
+          </Grid>
+        </Grid>
+      </Box>
+    </Box>
+  );
 };
 
 export default Dashboard;

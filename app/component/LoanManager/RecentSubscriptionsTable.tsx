@@ -113,11 +113,11 @@ const ReturnRequestsTable: React.FC = () => {
                 <Table stickyHeader size="small">
                     <TableHead>
                         <TableRow>
-                            <TableCell style={{ padding: '4px 8px' }}>Request ID</TableCell>
-                            <TableCell style={{ padding: '4px 8px' }}>Document Name</TableCell>
-                            <TableCell style={{ padding: '4px 8px' }}>Username</TableCell>
-                            <TableCell style={{ padding: '4px 8px' }}>Request Date</TableCell>
-                            <TableCell style={{ padding: '4px 8px' }}>Action</TableCell>
+                            <TableCell style={{ padding: '4px 8px' }}>Mã yêu cầu</TableCell>
+                            <TableCell style={{ padding: '4px 8px' }}>Tên sách</TableCell>
+                            <TableCell style={{ padding: '4px 8px' }}>Tên người dùng</TableCell>
+                            <TableCell style={{ padding: '4px 8px' }}>Ngày yêu cầu</TableCell>
+                            <TableCell style={{ padding: '4px 8px' }}>Hành động</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -128,7 +128,7 @@ const ReturnRequestsTable: React.FC = () => {
                                 <TableCell style={{ padding: '4px 8px' }}>{request.username}</TableCell>
                                 <TableCell style={{ padding: '4px 8px' }}>{request.returnDate}</TableCell>
                                 <TableCell style={{ padding: '4px 8px' }}>
-                                    <Tooltip title="Confirm">
+                                    <Tooltip title="Xác nhận">
                                         <IconButton color="primary" onClick={() => openConfirmDialog(request.transactionId)}>
                                             <DoneIcon />
                                         </IconButton>
@@ -156,21 +156,21 @@ const ReturnRequestsTable: React.FC = () => {
                         Vui lòng nhập các thông tin cần thiết trước khi xác nhận trả sách.
                     </DialogContentText>
                     <FormControl fullWidth margin="dense" variant="outlined">
-                        <InputLabel>Book Damaged</InputLabel>
+                        <InputLabel>Sách bị hư hỏng</InputLabel>
                         <Select
-                            label="Book Damaged"
+                            label="Sách bị hư hỏng"
                             value={isBookDamaged}
                             onChange={(e) => setIsBookDamaged(e.target.value === 'true')}
                         >
-                            <MenuItem value="false">False</MenuItem>
-                            <MenuItem value="true">True</MenuItem>
+                            <MenuItem value="false">Không</MenuItem>
+                            <MenuItem value="true">Có</MenuItem>
                         </Select>
                     </FormControl>
 
                     <TextField
                         fullWidth
                         margin="dense"
-                        label="Fine Amount"
+                        label="Số tiền phạt"
                         type="number"
                         value={fineAmount}
                         onChange={(e) => setFineAmount(e.target.value)}
@@ -178,7 +178,7 @@ const ReturnRequestsTable: React.FC = () => {
                     <TextField
                         fullWidth
                         margin="dense"
-                        label="Fine Reason"
+                        label="Lý do phạt"
                         value={fineReason}
                         onChange={(e) => setFineReason(e.target.value)}
                     />

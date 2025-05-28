@@ -40,10 +40,10 @@ const Footer: React.FC = () => {
                     {/* About Section */}
                     <Grid item xs={12} md={4}>
                         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                            About LibHub
+                            Về LibHub
                         </Typography>
                         <Typography variant="body2" sx={{ opacity: 0.8, mb: 2 }}>
-                            LibHub is your digital library platform, providing access to a vast collection of books and resources for students and educators.
+                            LibHub là nền tảng thư viện số của bạn, cung cấp quyền truy cập vào bộ sưu tập sách và tài nguyên phong phú cho sinh viên và giảng viên.
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 1 }}>
                             <IconButton 
@@ -92,20 +92,20 @@ const Footer: React.FC = () => {
                     {/* Quick Links */}
                     <Grid item xs={12} md={4}>
                         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                            Quick Links
+                            Liên kết nhanh
                         </Typography>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                             <Link href="/home" color="inherit" sx={{ textDecoration: 'none', '&:hover': { opacity: 0.8 } }}>
-                                Home
+                                Trang chủ
                             </Link>
                             <Link href="/my-bookshelf" color="inherit" sx={{ textDecoration: 'none', '&:hover': { opacity: 0.8 } }}>
-                                My Bookshelf
+                                Kệ sách của tôi
                             </Link>
                             <Link href="/bookfavo" color="inherit" sx={{ textDecoration: 'none', '&:hover': { opacity: 0.8 } }}>
-                                Favorites
+                                Yêu thích
                             </Link>
                             <Link href="/borrowed-book" color="inherit" sx={{ textDecoration: 'none', '&:hover': { opacity: 0.8 } }}>
-                                Borrowed Books
+                                Sách đã mượn
                             </Link>
                         </Box>
                     </Grid>
@@ -113,7 +113,7 @@ const Footer: React.FC = () => {
                     {/* Contact Information */}
                     <Grid item xs={12} md={4}>
                         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                            Contact Us
+                            Liên hệ
                         </Typography>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -146,7 +146,7 @@ const Footer: React.FC = () => {
                     textAlign: 'center' 
                 }}>
                     <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                        © {new Date().getFullYear()} LibHub. All rights reserved.
+                        © {new Date().getFullYear()} LibHub. Bảo lưu mọi quyền.
                     </Typography>
                 </Box>
             </Container>

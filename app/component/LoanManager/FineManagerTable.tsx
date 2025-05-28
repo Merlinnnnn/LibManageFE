@@ -55,8 +55,8 @@ const FineTable: React.FC = () => {
           <TableHead>
             <TableRow>
               <TableCell style={{ padding: '4px 8px' }}>ID</TableCell>
-              <TableCell style={{ padding: '4px 8px' }}>Amount</TableCell>
-              <TableCell style={{ padding: '4px 8px' }}>Status</TableCell>
+              <TableCell style={{ padding: '4px 8px' }}>Số lượng</TableCell>
+              <TableCell style={{ padding: '4px 8px' }}>Trạng thái</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>

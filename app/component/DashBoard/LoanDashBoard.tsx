@@ -1,240 +1,232 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Card, Typography, Grid, Button, TextField } from '@mui/material';
-import { Bar, Pie } from 'react-chartjs-2';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
+import {
+  Box,
+  Grid,
+  Paper,
+  Typography,
+  CircularProgress,
+  Card,
+  CardContent,
+  useTheme,
+} from '@mui/material';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
+import dashboardService, { DashboardStatistics } from '../../services/dashboardService';
 import Sidebar from '../SideBar';
-import apiService from '@/app/untils/api';
-import { useThemeContext } from '../Context/ThemeContext';
+import BookIcon from '@mui/icons-material/Book';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import WarningIcon from '@mui/icons-material/Warning';
+import HistoryIcon from '@mui/icons-material/History';
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
+const LoanDashBoard: React.FC = () => {
+  const theme = useTheme();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [statistics, setStatistics] = useState<DashboardStatistics['loans'] | null>(null);
 
-interface BorrowReturnDetails {
-  userName: string;
-  userId: string;
-  bookTitle: string;
-  borrowDate: string;
-  returnDate: string | null;
-  status: 'On Time' | 'Late';
-}
-
-interface BorrowReturnStatistics {
-  totalBorrowReturn: number;
-  violations: number;
-  borrowReturnByMonth: {
-    month: string;
-    count: number;
-  }[];
-  borrowReturnDetails: BorrowReturnDetails[];
-}
-
-interface LoanStatistics {
-  loansByMonth: { month: number; loanCount: number }[];
-  violatorsCount: number;
-}
-
-const BorrowReturnDashboard: React.FC = () => {
-  const { mode } = useThemeContext();
-  const currentYear = new Date().getFullYear();
-  const [year, setYear] = useState<string>(currentYear.toString());
-  const [viewYear, setViewYear] = useState<string>(currentYear.toString());
-  const [data, setData] = useState<BorrowReturnStatistics>({
-    totalBorrowReturn: 0,
-    violations: 0,
-    borrowReturnByMonth: [],
-    borrowReturnDetails: [],
-  });
-  const [statusSummary, setStatusSummary] = useState<{ RETURNED: number; PENDING: number; REJECTED: number }>({
-    RETURNED: 0,
-    PENDING: 0,
-    REJECTED: 0,
-  });
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
-  const [totalLoans, setTotalLoans] = useState<number>(0);
-  const [violatorsCount, setViolatorsCount] = useState<number>(0);
-
-  // Hàm gọi API mượn trả theo năm (biểu đồ cột)
-  const fetchBorrowReturnByYear = async () => {
-    try {
-      const monthlyData: { month: string; count: number }[] = [];
-      for (let month = 1; month <= 12; month++) {
-        const response = await apiService.get<{
-          code: number;
-          result: { loanTransactionCount: number };
-        }>(`/api/v1/dashboards/loans/count?year=${viewYear}&month=${month}`);
-        monthlyData.push({
-          month: `Tháng ${month}`,
-          count: response.data.result.loanTransactionCount || 0,
-        });
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const data = await dashboardService.getLoanStatistics();
+        setStatistics(data);
+        setError(null);
+      } catch (err) {
+        setError('Không thể tải thống kê mượn sách');
+        console.error('Lỗi khi tải thống kê mượn sách:', err);
+      } finally {
+        setLoading(false);
       }
-      setData((prevData) => ({
-        ...prevData,
-        borrowReturnByMonth: monthlyData,
-      }));
-    } catch (error) {
-      console.log('Error fetching borrow/return data by year:', error);
-    }
-  };
+    };
 
-
-  const fetchBorrowReturnActivities = async () => {
-    if (!startDate || !endDate) return;
-    try {
-      const response = await apiService.get<{
-        code: number;
-        result: {
-          statusSummary: { RETURNED: number; PENDING: number; REJECTED: number };
-        };
-      }>(`/api/v1/dashboards/loans/activities?startDate=${startDate}&endDate=${endDate}`);
-      setStatusSummary(response.data.result.statusSummary);
-    } catch (error) {
-      console.log('Error fetching activities data:', error);
-    }
-  };
-
-  // Hàm gọi API cho biểu đồ tròn mới
-  const fetchLoanStatistics = async () => {
-    try {
-      const response = await apiService.get<{
-        code: number;
-        result: LoanStatistics;
-      }>(`/api/v1/dashboards/loans/statistics`);
-      const { loansByMonth, violatorsCount } = response.data.result;
-
-      setViolatorsCount(violatorsCount);
-      const totalLoanCount = loansByMonth.reduce((sum, item) => sum + item.loanCount, 0);
-      setTotalLoans(totalLoanCount);
-    } catch (error) {
-      console.log('Error fetching loan statistics:', error);
-    }
-  };
-
-  // Tự động gọi API khi chọn đủ ngày
-  useEffect(() => {
-    if (startDate && endDate) {
-      fetchBorrowReturnActivities();
-    }
-  }, [startDate, endDate]);
-
-  // Gọi API loan statistics khi khởi động trang
-  useEffect(() => {
-    fetchLoanStatistics();
+    fetchData();
   }, []);
 
-  const handleViewYear = () => {
-    setViewYear(year);
-    fetchBorrowReturnByYear();
-  };
+  if (loading) {
+    return (
+      <Box display="flex">
+        <Sidebar />
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh" flexGrow={1}>
+          <CircularProgress />
+        </Box>
+      </Box>
+    );
+  }
 
-  const barData = {
-    labels: data.borrowReturnByMonth.map((item) => item.month),
-    datasets: [
-      {
-        label: 'Borrow/Return by Month',
-        data: data.borrowReturnByMonth.map((item) => item.count),
-        backgroundColor: '#3f51b5',
-      },
-    ],
-  };
+  if (error) {
+    return (
+      <Box display="flex">
+        <Sidebar />
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh" flexGrow={1}>
+          <Typography color="error">{error}</Typography>
+        </Box>
+      </Box>
+    );
+  }
 
-  const pieChartData = {
-    labels: ['Returned', 'Pending', 'Rejected'],
-    datasets: [
-      {
-        data: [statusSummary.RETURNED, statusSummary.PENDING, statusSummary.REJECTED],
-        backgroundColor: ['#4caf50', '#ff9800', '#f44336'],
-      },
-    ],
-  };
+  if (!statistics) {
+    return null;
+  }
 
-  const loanPieChartData = {
-    labels: ['Loans Without Violations', 'Loans With Violations'],
-    datasets: [
-      {
-        data: [totalLoans - violatorsCount, violatorsCount],
-        backgroundColor: ['#4caf50', '#f44336'],
-      },
-    ],
-  };
+  const loanData = [
+    { name: 'Active Loans', value: statistics.activeLoans },
+    { name: 'Overdue Loans', value: statistics.overdueLoans },
+    { name: 'Recent Loans', value: statistics.recentLoans },
+  ];
 
   return (
-    <Box display="flex" height="100vh" bgcolor={mode === 'light' ? '#ffffff' : '#222428'}>
+    <Box display="flex">
       <Sidebar />
-      <Box flex={1} padding={3}>
-        <Grid container spacing={2}>
-          {/* Biểu đồ cột */}
-          <Grid item xs={12} md={6}>
-            <Card sx={{ padding: 3 }}>
-              <Typography variant="h6">Borrow/Return by Month</Typography>
-              <Box display="flex" alignItems="center" mb={2}>
-                <TextField
-                  label="Year"
-                  type="number"
-                  fullWidth
-                  value={year}
-                  onChange={(e) => setYear(e.target.value)}
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                />
-                <Button
-                  variant="contained"
-                  sx={{ ml: 2 }}
-                  onClick={handleViewYear}
-                >
-                  View
-                </Button>
-              </Box>
-              <Box height="300px">
-                <Bar data={barData} options={{ responsive: true, maintainAspectRatio: false }} />
-              </Box>
+      <Box sx={{ flexGrow: 1, p: 3, backgroundColor: theme.palette.background.default }}>
+        <Typography variant="h4" gutterBottom sx={{ 
+          color: theme.palette.primary.main,
+          fontWeight: 'bold',
+          mb: 4 
+        }}>
+          Loan Management Dashboard
+        </Typography>
+
+        {/* Summary Cards */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ 
+              height: '100%',
+              transition: 'transform 0.2s',
+              '&:hover': {
+                transform: 'translateY(-5px)',
+                boxShadow: theme.shadows[4]
+              }
+            }}>
+              <CardContent>
+                <Box display="flex" alignItems="center" mb={2}>
+                  <BookIcon sx={{ fontSize: 40, color: theme.palette.primary.main, mr: 2 }} />
+                  <Typography color="textSecondary" variant="h6">
+                    Total Loans
+                  </Typography>
+                </Box>
+                <Typography variant="h3" sx={{ fontWeight: 'bold', color: theme.palette.primary.main }}>
+                  {statistics.totalLoans}
+                </Typography>
+              </CardContent>
             </Card>
           </Grid>
-
-          {/* Biểu đồ tròn cũ */}
-          <Grid item xs={12} md={6}>
-            <Card sx={{ padding: 3 }}>
-              <Typography variant="h6">On Time vs Late Returns</Typography>
-              <Box display="flex" mb={2}>
-                <TextField
-                  label="Start Date"
-                  type="date"
-                  fullWidth
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-                <TextField
-                  label="End Date"
-                  type="date"
-                  fullWidth
-                  sx={{ ml: 2 }}
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </Box>
-              <Box height="300px">
-                <Pie data={pieChartData} options={{ responsive: true, maintainAspectRatio: false }} />
-              </Box>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ 
+              height: '100%',
+              transition: 'transform 0.2s',
+              '&:hover': {
+                transform: 'translateY(-5px)',
+                boxShadow: theme.shadows[4]
+              }
+            }}>
+              <CardContent>
+                <Box display="flex" alignItems="center" mb={2}>
+                  <AccessTimeIcon sx={{ fontSize: 40, color: theme.palette.info.main, mr: 2 }} />
+                  <Typography color="textSecondary" variant="h6">
+                    Active Loans
+                  </Typography>
+                </Box>
+                <Typography variant="h3" sx={{ fontWeight: 'bold', color: theme.palette.info.main }}>
+                  {statistics.activeLoans}
+                </Typography>
+              </CardContent>
             </Card>
           </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ 
+              height: '100%',
+              transition: 'transform 0.2s',
+              '&:hover': {
+                transform: 'translateY(-5px)',
+                boxShadow: theme.shadows[4]
+              }
+            }}>
+              <CardContent>
+                <Box display="flex" alignItems="center" mb={2}>
+                  <WarningIcon sx={{ fontSize: 40, color: theme.palette.error.main, mr: 2 }} />
+                  <Typography color="textSecondary" variant="h6">
+                    Overdue Loans
+                  </Typography>
+                </Box>
+                <Typography variant="h3" sx={{ fontWeight: 'bold', color: theme.palette.error.main }}>
+                  {statistics.overdueLoans}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ 
+              height: '100%',
+              transition: 'transform 0.2s',
+              '&:hover': {
+                transform: 'translateY(-5px)',
+                boxShadow: theme.shadows[4]
+              }
+            }}>
+              <CardContent>
+                <Box display="flex" alignItems="center" mb={2}>
+                  <HistoryIcon sx={{ fontSize: 40, color: theme.palette.success.main, mr: 2 }} />
+                  <Typography color="textSecondary" variant="h6">
+                    Recent Loans
+                  </Typography>
+                </Box>
+                <Typography variant="h3" sx={{ fontWeight: 'bold', color: theme.palette.success.main }}>
+                  {statistics.recentLoans}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
 
-          {/* Biểu đồ tròn mới */}
+        {/* Charts */}
+        <Grid container spacing={3}>
+          {/* Loan Distribution */}
           <Grid item xs={12}>
-            <Card sx={{ padding: 3 }}>
-              <Typography variant="h6">Loan Statistics for the Month</Typography>
-              <Typography variant="subtitle1">
-                Total Loans: {totalLoans}, Violators: {violatorsCount}
+            <Paper sx={{ 
+              p: 3,
+              borderRadius: 2,
+              boxShadow: theme.shadows[2],
+              '&:hover': {
+                boxShadow: theme.shadows[4]
+              }
+            }}>
+              <Typography variant="h5" gutterBottom sx={{ 
+                color: theme.palette.primary.main,
+                fontWeight: 'bold',
+                mb: 3 
+              }}>
+                Loan Distribution Overview
               </Typography>
-              <Box height="300px">
-                <Pie data={loanPieChartData} options={{ responsive: true, maintainAspectRatio: false }} />
-              </Box>
-            </Card>
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={loanData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip 
+                    formatter={(value: number) => [`${value} lượt mượn`, 'Số lượng']}
+                    contentStyle={{
+                      backgroundColor: theme.palette.background.paper,
+                      border: `1px solid ${theme.palette.divider}`,
+                      borderRadius: 4,
+                    }}
+                  />
+                  <Legend />
+                  <Bar 
+                    dataKey="value" 
+                    fill={theme.palette.primary.main}
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </Paper>
           </Grid>
         </Grid>
       </Box>
@@ -242,4 +234,4 @@ const BorrowReturnDashboard: React.FC = () => {
   );
 };
 
-export default BorrowReturnDashboard;
+export default LoanDashBoard;

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import apiService from '../../untils/api';
 import { useRouter } from 'next/navigation';
 import {jwtDecode} from 'jwt-decode';  // Import thư viện jwt-decode
+import { AxiosError } from 'axios'; // Import AxiosError
 
 // Định nghĩa interface cho response của API
 interface LoginResponse {
@@ -21,13 +22,21 @@ interface UserInfoResponse {
   };
 }
 
-
+interface IntrospectResponse {
+  code: number;
+  success: boolean;
+  message: string;
+  data: {
+    active: boolean;
+  };
+}
 
 interface AuthContextType {
   token: string | null;
   login: (username: string, password: string) => Promise<void>;
   signup: (username: string, password: string) => Promise<void>;
   logout: () => void;
+  checkTokenValidity: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -80,17 +89,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     sessionStorage.clear(); // Xóa tất cả dữ liệu phiên
     localStorage.clear(); // Xóa token khỏi localStorage
     router.push('/login');
-    try {
-      await apiService.post('/api/v1/auth/logout', {
-        headers: {
-          'Authorization': `Bearer ${token}`, // Gửi token trong header
-          'Content-Type': 'application/json',
-        },
-      });
-    } catch (error) {
-      console.log('Đăng xuất thất bại:', error);
-      //alert('Đăng xuất thất bại. Vui lòng thử lại.');
-    }
     setToken(null);
   };
 
@@ -115,10 +113,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       alert('Đăng ký thất bại. Vui lòng thử lại.');
     }
   };
-  
+
+  const checkTokenValidity = async () => {
+    const currentToken = localStorage.getItem('access_token');
+
+    if (!currentToken) {
+      logout();
+      return;
+    }
+
+    try {
+      const response = await apiService.post<IntrospectResponse>('/api/v1/auth/introspect', {
+        token: currentToken,
+      });
+      console.log('response token check: ', response);
+      console.log(response.data?.data?.active);
+      
+      if (!response.data?.success || !response.data?.data?.active) {
+        console.log('Token is invalid or inactive. Logging out.');
+        logout();
+      } else {
+        console.log('Token is valid and active.');
+      }
+
+    } catch (error: any) {
+      console.error('Error checking token validity:', error);
+      console.log('API call to check token validity failed. Logging out.');
+      logout();
+    }
+  };
 
   return (
-    <AuthContext.Provider value={{ token, login, logout , signup}}>
+    <AuthContext.Provider value={{ token, login, logout , signup, checkTokenValidity }}>
       {children}
     </AuthContext.Provider>
   );
