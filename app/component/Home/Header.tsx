@@ -41,7 +41,7 @@ import dayjs from 'dayjs';
 import { Brightness4, Brightness7 } from '@mui/icons-material';
 import useWebSocket from '../../services/useWebSocket';
 import SearchIcon from '@mui/icons-material/Search';
-import { startHomeTour, startHomeTourLoggedIn } from '../Tutorial/tutorial';
+import startTour from '../Tutorial/tutorial';
 
 interface Notification {
   id: string;
@@ -135,11 +135,7 @@ const Header: React.FC = () => {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const handleStartTour = () => {
-    if(username) {
-      startHomeTourLoggedIn();
-    } else {
-      startHomeTour();
-    }
+    startTour();
   };
 
   useEffect(() => {

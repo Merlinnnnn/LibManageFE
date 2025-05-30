@@ -6,7 +6,6 @@ import { Box, CircularProgress, Typography, IconButton, Slider, Paper } from '@m
 import { NavigateNext, NavigateBefore, ZoomIn, ZoomOut } from '@mui/icons-material';
 import apiService from '@/app/untils/api';
 import { Document, Page, pdfjs } from 'react-pdf';
-import * as mammoth from 'mammoth';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -102,7 +101,7 @@ async function decryptContentBufferToBuffer(encryptedBuffer: ArrayBuffer, conten
 
 const DEFAULT_PDF_WIDTH = 800;
 
-const ReadBookPage = () => {
+const ReadPdfPage = () => {
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
   const [loading, setLoading] = useState(true);
@@ -120,7 +119,6 @@ const ReadBookPage = () => {
   const [pdfVersion, setPdfVersion] = useState<string>('');
   const [decryptedBuffer, setDecryptedBuffer] = useState<ArrayBuffer | null>(null);
   const [fileType, setFileType] = useState<string>('');
-  const [docxHtml, setDocxHtml] = useState<string>('');
   const [pdfPageWidth, setPdfPageWidth] = useState(DEFAULT_PDF_WIDTH);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -204,31 +202,20 @@ const ReadBookPage = () => {
         setBookContentUrl(url);
       } else if (isWord) {
         console.log('✅ Word detected');
-        mammoth.convertToHtml({ arrayBuffer: decryptedBuffer })
-          .then((result) => {
-            setDocxHtml(result.value);
-          })
-          .catch((err) => {
-            console.error('❌ mammoth error:', err);
-          });
+        // mammoth.convertToHtml({ arrayBuffer: decryptedBuffer })
+        //   .then((result) => {
+        //     setDocxHtml(result.value);
+        //   })
+        //   .catch((err) => {
+        //     console.error('❌ mammoth error:', err);
+        //   });
       } else {
         console.error('❌ Unable to detect file type for application/octet-stream');
       }
       return;
     }
 
-    if (fileType.includes('word')) {
-      console.log('🔍 Processing Word document...');
-      mammoth.convertToHtml({ arrayBuffer: decryptedBuffer })
-        .then((result) => {
-          console.log('✅ Word file converted to HTML');
-          setDocxHtml(result.value);
-        })
-        .catch((err) => {
-          console.error('❌ mammoth error:', err);
-        });
-    }
-    else if (fileType.includes('pdf')) {
+    if (fileType.includes('pdf')) {
       console.log('🔍 Processing PDF document...');
       const blob = new Blob([decryptedBuffer], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
@@ -312,7 +299,7 @@ const ReadBookPage = () => {
       margin: '0 auto',
       minHeight: '100vh',
       position: 'relative',
-      backgroundColor: '#232323',
+      backgroundColor: '#1a1a1a',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -325,261 +312,209 @@ const ReadBookPage = () => {
         width: '100vw',
         height: '100vh',
         zIndex: 0,
-        backgroundColor: 'rgba(30,30,30,0.85)',
-        backdropFilter: 'blur(2px)',
+        backgroundColor: 'rgba(0,0,0,0.85)',
+        backdropFilter: 'blur(8px)',
         pointerEvents: 'none',
       },
     }}>
       <Paper elevation={3} sx={{ 
         p: 3, 
         mb: 3, 
-        backgroundColor: '#1e1e1e', 
+        backgroundColor: '#2d2d2d', 
         color: '#fff', 
         zIndex: 1, 
         width: '100%', 
-        maxWidth: 900 
+        maxWidth: 900,
+        borderRadius: '12px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
       }}>
-        <Typography variant="h4" gutterBottom>
-          Reading book with ID: {id}
+        <Typography variant="h4" gutterBottom sx={{ 
+          fontWeight: 'bold',
+          color: '#fff',
+          textAlign: 'center',
+          mb: 2
+        }}>
+          Đọc tài liệu PDF
         </Typography>
-        <Typography variant="body2" color="#b0b0b0">
-          Using PDF.js version: {pdfVersion}
+        <Typography variant="body1" color="#b0b0b0" sx={{ textAlign: 'center' }}>
+          ID: {id}
+        </Typography>
+        <Typography variant="body2" color="#b0b0b0" sx={{ textAlign: 'center', mt: 1 }}>
+          Sử dụng PDF.js version: {pdfVersion}
         </Typography>
       </Paper>
 
-      {fileType.includes('word') && docxHtml ? (
-        <Paper elevation={3} sx={{ 
-          p: 3, 
-          backgroundColor: '#1e1e1e', 
-          color: '#fff', 
-          zIndex: 1, 
-          width: '100%', 
-          maxWidth: 900 
+      <Paper elevation={3} sx={{ 
+        p: 3, 
+        backgroundColor: '#2d2d2d', 
+        color: '#fff', 
+        zIndex: 1, 
+        width: '100%', 
+        maxWidth: 900,
+        borderRadius: '12px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+      }}>
+        <Box sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          mb: 2,
+          gap: 2,
+          flexWrap: 'wrap',
+          backgroundColor: '#232323',
+          p: 2,
+          borderRadius: '8px'
         }}>
-          <Typography variant="h5" gutterBottom>📄 Document Content:</Typography>
-          <Box sx={{ 
-            p: 2, 
-            backgroundColor: '#232323', 
-            borderRadius: 1, 
-            color: '#fff',
-            '& *': {
-              color: '#fff !important',
-            }
-          }}>
-            <div dangerouslySetInnerHTML={{ __html: docxHtml }} />
-          </Box>
-        </Paper>
-      ) : (
-        <Paper elevation={3} sx={{ 
-          p: 3, 
-          backgroundColor: '#1e1e1e', 
-          color: '#fff', 
-          zIndex: 1, 
-          width: '100%', 
-          maxWidth: 900 
-        }}>
-          <Box sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            mb: 2,
-            gap: 2,
-            flexWrap: 'wrap',
-          }}>
-            <IconButton
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage <= 1}
-              sx={{ color: '#fff' }}
-            >
-              <NavigateBefore />
-            </IconButton>
-            <Typography>
-              Page {currentPage} of {numPages}
-            </Typography>
-            <IconButton
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage >= (numPages || 1)}
-              sx={{ color: '#fff' }}
-            >
-              <NavigateNext />
-            </IconButton>
-            <Box sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              ml: 2,
-              minWidth: 200,
-            }}>
-              <IconButton
-                onClick={handleZoomOut}
-                disabled={parseFloat(scale.toFixed(2)) <= minScale}
-                sx={{ color: '#fff' }}
-              >
-                <ZoomOut />
-              </IconButton>
-              <Slider
-                value={scale}
-                min={minScale}
-                max={maxScale}
-                step={0.05}
-                onChange={handleScaleChange}
-                sx={{
-                  width: 100,
-                  color: '#fff',
-                  '& .MuiSlider-thumb': {
-                    backgroundColor: '#fff',
-                  },
-                  '& .MuiSlider-track': {
-                    backgroundColor: '#fff',
-                  },
-                  '& .MuiSlider-rail': {
-                    backgroundColor: '#555',
-                  },
-                }}
-                aria-labelledby="zoom-slider"
-              />
-              <IconButton
-                onClick={handleZoomIn}
-                disabled={parseFloat(scale.toFixed(2)) >= maxScale}
-                sx={{ color: '#fff' }}
-              >
-                <ZoomIn />
-              </IconButton>
-            </Box>
-          </Box>
-          <Box
-            ref={containerRef}
-            sx={{
-              display: 'flex',
-              justifyContent: 'center',
-              backgroundColor: '#1e1e1e',
-              borderRadius: 1,
-              p: 2,
-              overflow: 'hidden',
-              position: 'relative',
-              zIndex: 1,
-              '& .react-pdf__Document': {
-                maxWidth: '100%',
-                overflow: 'hidden',
-                backgroundColor: '#1e1e1e',
-              },
-              '& .react-pdf__Page': {
-                maxWidth: '100%',
-                backgroundColor: '#1e1e1e',
-                '& canvas': {
-                  maxWidth: '100%',
-                  height: 'auto !important',
-                  backgroundColor: '#1e1e1e',
-                },
-              },
+          <IconButton
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage <= 1}
+            sx={{ 
+              color: '#fff',
+              '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' },
+              '&.Mui-disabled': { color: 'rgba(255,255,255,0.3)' }
             }}
           >
-            <Document
-              file={bookContentUrl}
-              onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-              onLoadError={(err) => console.error('PDF load error:', err)}
+            <NavigateBefore />
+          </IconButton>
+          <Typography sx={{ 
+            minWidth: '100px',
+            textAlign: 'center',
+            fontWeight: 'medium'
+          }}>
+            Trang {currentPage} / {numPages}
+          </Typography>
+          <IconButton
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage >= (numPages || 1)}
+            sx={{ 
+              color: '#fff',
+              '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' },
+              '&.Mui-disabled': { color: 'rgba(255,255,255,0.3)' }
+            }}
+          >
+            <NavigateNext />
+          </IconButton>
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            ml: 2,
+            minWidth: 200,
+            backgroundColor: '#2d2d2d',
+            p: 1,
+            borderRadius: '8px'
+          }}>
+            <IconButton
+              onClick={handleZoomOut}
+              disabled={parseFloat(scale.toFixed(2)) <= minScale}
+              sx={{ 
+                color: '#fff',
+                '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' },
+                '&.Mui-disabled': { color: 'rgba(255,255,255,0.3)' }
+              }}
+            >
+              <ZoomOut />
+            </IconButton>
+            <Slider
+              value={scale}
+              min={minScale}
+              max={maxScale}
+              step={0.05}
+              onChange={handleScaleChange}
+              sx={{
+                width: 100,
+                color: '#fff',
+                '& .MuiSlider-thumb': {
+                  backgroundColor: '#fff',
+                  '&:hover': { boxShadow: '0 0 0 8px rgba(255,255,255,0.16)' }
+                },
+                '& .MuiSlider-track': {
+                  backgroundColor: '#fff',
+                },
+                '& .MuiSlider-rail': {
+                  backgroundColor: '#555',
+                },
+              }}
+              aria-labelledby="zoom-slider"
+            />
+            <IconButton
+              onClick={handleZoomIn}
+              disabled={parseFloat(scale.toFixed(2)) >= maxScale}
+              sx={{ 
+                color: '#fff',
+                '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' },
+                '&.Mui-disabled': { color: 'rgba(255,255,255,0.3)' }
+              }}
+            >
+              <ZoomIn />
+            </IconButton>
+          </Box>
+        </Box>
+        <Box
+          ref={containerRef}
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            backgroundColor: '#232323',
+            borderRadius: '8px',
+            p: 2,
+            overflow: 'hidden',
+            position: 'relative',
+            zIndex: 1,
+            '& .react-pdf__Document': {
+              maxWidth: '100%',
+              overflow: 'hidden',
+              backgroundColor: '#232323',
+            },
+            '& .react-pdf__Page': {
+              maxWidth: '100%',
+              backgroundColor: '#232323',
+              '& canvas': {
+                maxWidth: '100%',
+                height: 'auto !important',
+                backgroundColor: '#232323',
+                borderRadius: '4px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+              },
+            },
+          }}
+        >
+          <Document
+            file={bookContentUrl}
+            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+            onLoadError={(err) => console.error('PDF load error:', err)}
+            loading={
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                py: 4,
+                backgroundColor: '#232323',
+              }}>
+                <CircularProgress sx={{ color: '#fff' }} />
+              </Box>
+            }
+          >
+            <Page
+              pageNumber={currentPage}
+              scale={scale}
+              width={pdfPageWidth}
+              onLoadSuccess={handlePageLoadSuccess}
               loading={
                 <Box sx={{
                   display: 'flex',
                   justifyContent: 'center',
                   py: 4,
-                  backgroundColor: '#1e1e1e',
+                  backgroundColor: '#232323',
                 }}>
-                  <CircularProgress sx={{ color: '#fff' }} />
+                  <CircularProgress size={24} sx={{ color: '#fff' }} />
                 </Box>
               }
-            >
-              <Page
-                pageNumber={currentPage}
-                scale={scale}
-                width={pdfPageWidth}
-                onLoadSuccess={handlePageLoadSuccess}
-                loading={
-                  <Box sx={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    py: 4,
-                    backgroundColor: '#1e1e1e',
-                  }}>
-                    <CircularProgress size={24} sx={{ color: '#fff' }} />
-                  </Box>
-                }
-              />
-            </Document>
-          </Box>
-          <Box sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            mb: 2,
-            gap: 2,
-            flexWrap: 'wrap',
-          }}>
-            <IconButton
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage <= 1}
-              sx={{ color: '#fff' }}
-            >
-              <NavigateBefore />
-            </IconButton>
-            <Typography>
-              Page {currentPage} of {numPages}
-            </Typography>
-            <IconButton
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage >= (numPages || 1)}
-              sx={{ color: '#fff' }}
-            >
-              <NavigateNext />
-            </IconButton>
-            <Box sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              ml: 2,
-              minWidth: 200,
-            }}>
-              <IconButton
-                onClick={handleZoomOut}
-                disabled={parseFloat(scale.toFixed(2)) <= minScale}
-                sx={{ color: '#fff' }}
-              >
-                <ZoomOut />
-              </IconButton>
-              <Slider
-                value={scale}
-                min={minScale}
-                max={maxScale}
-                step={0.05}
-                onChange={handleScaleChange}
-                sx={{
-                  width: 100,
-                  color: '#fff',
-                  '& .MuiSlider-thumb': {
-                    backgroundColor: '#fff',
-                  },
-                  '& .MuiSlider-track': {
-                    backgroundColor: '#fff',
-                  },
-                  '& .MuiSlider-rail': {
-                    backgroundColor: '#555',
-                  },
-                }}
-                aria-labelledby="zoom-slider"
-              />
-              <IconButton
-                onClick={handleZoomIn}
-                disabled={parseFloat(scale.toFixed(2)) >= maxScale}
-                sx={{ color: '#fff' }}
-              >
-                <ZoomIn />
-              </IconButton>
-            </Box>
-          </Box>
-        </Paper>
-      )}
+            />
+          </Document>
+        </Box>
+      </Paper>
     </Box>
   );
 };
 
-export default ReadBookPage;
+export default ReadPdfPage;

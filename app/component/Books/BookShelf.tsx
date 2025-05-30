@@ -39,6 +39,9 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
+import startTour from '../Tutorial/tutorial';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
 // Custom theme with vibrant colors
 const theme = createTheme({
@@ -251,6 +254,8 @@ export default function BookShelf() {
   const [openDetailDiolog, setOpenDetailDiolog] = useState(false)
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [openTypeFilter, setOpenTypeFilter] = useState(true);
+  const [openCourseFilter, setOpenCourseFilter] = useState(true);
 
   const booksPerPage = 5;
   const muiTheme = useTheme();
@@ -377,10 +382,10 @@ export default function BookShelf() {
     setSelectedBookId(null);
   };
 
-  const handleFileOpen = (fileUrl: string) => {
+  const handleFileOpen = (fileUrl: string, digitalDocumentId: number) => {
     // Convert backslash to forward slash for URLs
     const formattedUrl = fileUrl.replace(/\\/g, '/');
-    window.open(`/${formattedUrl}`, '_blank');
+    window.open(`/api/v1/digital-documents/${digitalDocumentId}/download?filePath=${encodeURIComponent(formattedUrl)}`, '_blank');
   };
 
   const renderFileButtons = (book: Book) => {
@@ -389,13 +394,13 @@ export default function BookShelf() {
         if (upload.fileType === 'application/pdf' || upload.fileType === 'pdf') {
           return (
             <Button
-              key={upload.uploadId}
+              key={`${book.digitalDocument?.digitalDocumentId}-pdf`}
               variant="contained"
               startIcon={<PictureAsPdfIcon />}
-              onClick={() => handleFileOpen(upload.filePath)}
+              onClick={() => handleFileOpen(upload.filePath, book.digitalDocument?.digitalDocumentId || 0)}
               sx={{ textTransform: 'none', mr: 1 }}
             >
-              Đọc PDF
+              PDF
             </Button>
           );
         } else if (upload.fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
@@ -403,13 +408,13 @@ export default function BookShelf() {
           upload.fileType === 'docx') {
           return (
             <Button
-              key={upload.uploadId}
+              key={`${book.digitalDocument?.digitalDocumentId}-word`}
               variant="contained"
               startIcon={<DescriptionIcon />}
-              onClick={() => handleFileOpen(upload.filePath)}
+              onClick={() => handleFileOpen(upload.filePath, book.digitalDocument?.digitalDocumentId || 0)}
               sx={{ textTransform: 'none', mr: 1 }}
             >
-              Đọc Word
+              Word
             </Button>
           );
         }
@@ -422,29 +427,11 @@ export default function BookShelf() {
   const searchBooks = async (title: string) => {
     setLoading(true);
     try {
-      const response = await apiService.get<SearchApiResponse>(`/api/v1/documents/search?title=${encodeURIComponent(title)}`);
+      const response = await apiService.get<BooksApiResponse>(`/api/v1/documents/search?title=${encodeURIComponent(title)}`);
 
-      if (response.data) {
-        // Convert the single search result to match the Book interface
-        const searchResult: Book = {
-          documentId: response.data.documentId,
-          documentName: response.data.documentName,
-          author: response.data.author,
-          publisher: response.data.publisher,
-          publishedDate: response.data.publishedDate,
-          language: response.data.language,
-          quantity: response.data.quantity,
-          description: response.data.description,
-          coverImage: response.data.coverImage,
-          documentCategory: response.data.documentCategory,
-          documentTypes: response.data.documentTypes,
-          courses: response.data.courses,
-          physicalDocument: response.data.physicalDocument,
-          digitalDocument: response.data.digitalDocument
-        };
-
-        setBooks([searchResult]);
-        setTotalPages(1);
+      if (response.data?.data?.content) {
+        setBooks(response.data.data.content);
+        setTotalPages(response.data.data.totalPages);
         setCurrentPage(0);
       }
     } catch (error) {
@@ -535,6 +522,10 @@ export default function BookShelf() {
     setCurrentSlide((prev) => Math.min(Math.ceil(recommendedBooks.length / 3) - 1, prev + 1));
   };
 
+  // useEffect(() => {
+  //   startTour();
+  // }, []);
+
   return (
     <ThemeProvider theme={theme}>
       <Header />
@@ -570,6 +561,7 @@ export default function BookShelf() {
               mx: 'auto'
             }}>
               <TextField
+                id="search-box"
                 fullWidth
                 variant="outlined"
                 placeholder="Tìm kiếm sách, tác giả, môn học..."
@@ -613,7 +605,7 @@ export default function BookShelf() {
 
           {/* Featured Books Carousel */}
           {recommendedBooks.length > 0 && (
-            <Box sx={{ mb: 6, position: 'relative' }}>
+            <Box id="recommended-books" sx={{ mb: 6, position: 'relative' }}>
               <Typography variant="h5" sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
                 <StarIcon color="secondary" sx={{ mr: 1 }} />
                 Sách Đề Cử Cho Bạn
@@ -765,61 +757,77 @@ export default function BookShelf() {
           {/* Main Content */}
           <Grid container spacing={4}>
             {/* Filters Sidebar */}
-            <Grid item xs={12} md={3}>
-              <Paper sx={{
+            <Grid item xs={12} md={3.5}>
+              <Paper id="filter-section" sx={{
                 p: 3,
                 borderRadius: 3,
                 position: 'sticky',
                 top: { xs: 80, sm: 88 },
                 boxShadow: 3,
                 maxHeight: 'calc(100vh - 100px)',
-                overflowY: 'auto'
+                overflowY: 'auto',
+                minWidth: 320,
+                width: '100%',
               }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                   <FilterListIcon color="primary" sx={{ mr: 1 }} />
                   <Typography variant="h6">Bộ Lọc</Typography>
                 </Box>
 
+                {/* Loại tài liệu filter với expand/collapse */}
                 <Box sx={{ mb: 3 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Box
+                    sx={{ display: 'flex', alignItems: 'center', mb: 1, cursor: 'pointer', userSelect: 'none' }}
+                    onClick={() => setOpenTypeFilter((prev) => !prev)}
+                  >
                     <CategoryIcon color="action" sx={{ mr: 1, fontSize: 20 }} />
-                    <Typography variant="subtitle1">Loại Tài Liệu</Typography>
+                    <Typography variant="subtitle1" sx={{ flex: 1 }}>Loại Tài Liệu</Typography>
+                    {openTypeFilter ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                   </Box>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {documentTypes.map((type) => (
-                      <Chip
-                        key={type.documentTypeId}
-                        label={type.typeName}
-                        clickable
-                        variant={selectedTypes.includes(type.documentTypeId) ? 'filled' : 'outlined'}
-                        color={selectedTypes.includes(type.documentTypeId) ? 'primary' : 'default'}
-                        onClick={() => handleTypeToggle(type.documentTypeId)}
-                        sx={{ mb: 1 }}
-                      />
-                    ))}
-                  </Box>
+                  {openTypeFilter && (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {documentTypes.map((type) => (
+                        <Chip
+                          key={type.documentTypeId}
+                          label={type.typeName}
+                          clickable
+                          variant={selectedTypes.includes(type.documentTypeId) ? 'filled' : 'outlined'}
+                          color={selectedTypes.includes(type.documentTypeId) ? 'primary' : 'default'}
+                          onClick={() => handleTypeToggle(type.documentTypeId)}
+                          sx={{ mb: 1 }}
+                        />
+                      ))}
+                    </Box>
+                  )}
                 </Box>
 
                 <Divider sx={{ my: 2 }} />
 
+                {/* Môn học filter với expand/collapse */}
                 <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Box
+                    sx={{ display: 'flex', alignItems: 'center', mb: 1, cursor: 'pointer', userSelect: 'none' }}
+                    onClick={() => setOpenCourseFilter((prev) => !prev)}
+                  >
                     <SchoolIcon color="action" sx={{ mr: 1, fontSize: 20 }} />
-                    <Typography variant="subtitle1">Môn Học</Typography>
+                    <Typography variant="subtitle1" sx={{ flex: 1 }}>Môn Học</Typography>
+                    {openCourseFilter ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                   </Box>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {courses.map((course) => (
-                      <Chip
-                        key={course.courseId}
-                        label={course.courseName}
-                        clickable
-                        variant={selectedCourses.includes(course.courseId) ? 'filled' : 'outlined'}
-                        color={selectedCourses.includes(course.courseId) ? 'primary' : 'default'}
-                        onClick={() => handleCourseToggle(course.courseId)}
-                        sx={{ mb: 1 }}
-                      />
-                    ))}
-                  </Box>
+                  {openCourseFilter && (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {courses.map((course) => (
+                        <Chip
+                          key={course.courseId}
+                          label={course.courseName}
+                          clickable
+                          variant={selectedCourses.includes(course.courseId) ? 'filled' : 'outlined'}
+                          color={selectedCourses.includes(course.courseId) ? 'primary' : 'default'}
+                          onClick={() => handleCourseToggle(course.courseId)}
+                          sx={{ mb: 1 }}
+                        />
+                      ))}
+                    </Box>
+                  )}
                 </Box>
 
                 {/* <Button
@@ -835,8 +843,8 @@ export default function BookShelf() {
             </Grid>
 
             {/* Books List */}
-            <Grid item xs={12} md={9}>
-              <Paper sx={{
+            <Grid item xs={12} md={8.5}>
+              <Paper id="book-list" sx={{
                 p: 3,
                 borderRadius: 3,
                 minHeight: '60vh',
@@ -862,13 +870,13 @@ export default function BookShelf() {
                   <>
                     <Box sx={{ mb: 4 }}>
                       {books.map((book) => (
-                        <Box key={book.documentId} mb={3}>
-                          <BookInfo id={book.documentId.toString()} books={books} />
+                        <Box key={book?.documentId} mb={3}>
+                          <BookInfo id={book?.documentId?.toString() || ''} books={books} />
                         </Box>
                       ))}
                     </Box>
 
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                    <Box id="pagination" sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
                       <Pagination
                         count={totalPages}
                         page={currentPage + 1}

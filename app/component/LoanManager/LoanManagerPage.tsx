@@ -1,12 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Box,
-  Grid,
-  Card,
   Typography,
   Tabs,
   Tab,
-  IconButton,
   Dialog,
   DialogActions,
   DialogContent,
@@ -15,53 +12,69 @@ import {
   Snackbar,
   Alert,
   useTheme,
+  useMediaQuery,
+  Paper,
+  Container,
+  Divider
 } from '@mui/material';
 import Sidebar from '../SideBar';
 import NewStudentsTable from './NewStudentsTable';
 import RecentLoansTable from './RecentLoansTable';
-import FineTable from './FineManagerTable';
+import FineManagerTable from './FineManagerTable';
 import RecentSubscriptionsTable from './RecentSubscriptionsTable';
 import apiService from '@/app/untils/api';
-import QrCodeIcon from '@mui/icons-material/QrCode';
-import BookIcon from '@mui/icons-material/Book';
-import MoneyOffIcon from '@mui/icons-material/MoneyOff';
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 
-// Import html5-qrcode
-import { Html5QrcodeScanner } from 'html5-qrcode';
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
 
-interface DocumentCountResponse {
-  result: {
-    documentCount: number;
+interface ScanResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ p: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+}
+
+function a11yProps(index: number) {
+  return {
+    id: `simple-tab-${index}`,
+    'aria-controls': `simple-tabpanel-${index}`,
   };
-}
-
-interface FinesUnpaidCountResponse {
-  result: number;
-}
-
-interface UnreturnedDocumentsCountResponse {
-  result: number;
 }
 
 const LoanManagerPage: React.FC = () => {
   const theme = useTheme();
-  const [tabIndex, setTabIndex] = useState(0);
-  const [documentCount, setDocumentCount] = useState<number | null>(null);
-  const [unpaidFinesCount, setUnpaidFinesCount] = useState<number | null>(null);
-  const [borrowedDocCount, setBorrowedDocCount] = useState<number | null>(null);
-  const [openDialog, setOpenDialog] = useState(false); // Để mở Dialog QR Scanner
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [value, setValue] = useState(0);
+  const [openDialog, setOpenDialog] = useState(false);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
-
+  const [scanningMode, setScanningMode] = useState<'reserved' | 'return'>('reserved');
+  const [selectedLoanId, setSelectedLoanId] = useState<number | null>(null);
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
-
-  useEffect(() => {
-    fetchDocCount();
-    fetchNewUserCount();
-    fetchBorrowedDocCount();
-  }, []);
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setSnackbarSeverity(type);
@@ -69,189 +82,219 @@ const LoanManagerPage: React.FC = () => {
     setOpenSnackbar(true);
   };
 
-  const fetchDocCount = async () => {
-    try {
-      const response = await apiService.get<DocumentCountResponse>('/api/v1/dashboards/documents/count');
-      setDocumentCount(response.data.result.documentCount);
-    } catch (error: any) {
-      showNotification('error', error?.response?.data?.message || 'Có lỗi xảy ra khi lấy số lượng sách');
-    }
-  };
-
-  const fetchNewUserCount = async () => {
-    try {
-      const response = await apiService.get<FinesUnpaidCountResponse>('/api/v1/dashboards/fines/unpaid/count');
-      setUnpaidFinesCount(response.data.result);
-    } catch (error: any) {
-      showNotification('error', error?.response?.data?.message || 'Có lỗi xảy ra khi lấy khoản phạt');
-    }
-  };
-
-  const fetchBorrowedDocCount = async () => {
-    try {
-      const response = await apiService.get<UnreturnedDocumentsCountResponse>('/api/v1/dashboards/documents/unreturned/count');
-      setBorrowedDocCount(response.data.result);
-    } catch (error: any) {
-      showNotification('error', error?.response?.data?.message || 'Có lỗi xảy ra khi lấy số lượng sách đang mượn');
-    }
-  };
-
-  const handleOpenDialog = () => {
+  const handleOpenDialog = (mode: 'reserved' | 'return', loanId: number) => {
+    setScanningMode(mode);
+    setSelectedLoanId(loanId);
     setOpenDialog(true);
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
     if (scannerRef.current) {
-      scannerRef.current.clear(); // Dừng quét QR khi đóng Dialog
+      scannerRef.current.clear();
+      scannerRef.current = null;
     }
   };
 
-  const handleScan = async (decodedText: string, decodedResult: any) => {
-    //console.log('QR Code data:', decodedText);
-    showNotification('success', `Quét mã thành công: ${decodedText}`);
-    const data = {
-      barcodeData: decodedText
-    }
-    
+  const handleScan = async (decodedText: string) => {
+    if (!selectedLoanId) return;
+
     try {
-      const response = await apiService.post('/api/v1/loans/scan-qrcode', data);
-      console.log(response)
-      //setBorrowedDocCount(response.data.result);
-      handleCloseDialog();
+      const response = await apiService.get<ScanResponse>(`/api/v1/loans/scan?${decodedText}`);
+      console.log(decodedText);
+      console.log(response);
+
+      if (response.data.success) {
+        showNotification('success', response.data.message || `Xác nhận ${scanningMode === 'reserved' ? 'nhận' : 'trả'} sách thành công`);
+        handleCloseDialog();
+        // Refresh the loans list
+        if (value === 0) {
+          const loansTable = document.querySelector('#recent-loans-table');
+          if (loansTable) {
+            (loansTable as any).fetchLoans();
+          }
+        }
+      } else {
+        showNotification('error', response.data.message || 'Có lỗi xảy ra');
+      }
     } catch (error: any) {
-      showNotification('error', error?.response?.data?.message || 'Có lỗi xảy ra khi lấy số lượng sách đang mượn');
+      console.error('Error scanning QR:', error);
+      showNotification('error', error?.response?.data?.message || 'Có lỗi xảy ra khi xử lý mã QR');
     }
   };
 
   const handleError = (error: string) => {
-    console.log('Lỗi quét QR:', error);
-    showNotification('error', 'Không thể quét mã QR');
+    console.error('Lỗi quét QR:', error);
+    let errorMessage = 'Không thể quét mã QR. ';
+    
+    if (error.includes('NotFoundException')) {
+      errorMessage += 'Vui lòng đảm bảo:\n' +
+        '- Mã QR nằm trong khung hình\n' +
+        '- Ánh sáng đủ và không bị chói\n' +
+        '- Khoảng cách quét phù hợp (khoảng 20-30cm)\n' +
+        '- Mã QR không bị mờ hoặc hỏng';
+    }
+    
+    showNotification('error', errorMessage);
   };
 
   useEffect(() => {
     if (openDialog) {
-      // Đảm bảo phần tử "qr-code-scanner" đã có trong DOM khi khởi tạo scanner
       setTimeout(() => {
         if (!scannerRef.current) {
-          // Tạo mới Html5QrcodeScanner nếu chưa có
           const scanner = new Html5QrcodeScanner(
             'qr-code-scanner',
-            { fps: 10, qrbox: { width: 250, height: 250 } },
+            { 
+              fps: 10, 
+              qrbox: { width: 300, height: 300 },
+              aspectRatio: 1.0,
+              formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ],
+              showTorchButtonIfSupported: true,
+              showZoomSliderIfSupported: true,
+              defaultZoomValueIfSupported: 2
+            },
             false
           );
           scanner.render(handleScan, handleError);
           scannerRef.current = scanner;
         }
-      }, 500); // Đợi một chút để phần tử được render
-    } else if (scannerRef.current) {
-      // Clear khi đóng dialog
-      scannerRef.current.clear();
-      scannerRef.current = null;
+      }, 500);
     }
   }, [openDialog]);
-  
-  return (
-    <Box display="flex" height="100vh">
-      <Sidebar />
-      <Box flex={1} p={3} overflow="auto" height="100vh">
-        <Typography variant="h4" gutterBottom sx={{ color: theme.palette.text.primary }}>
-          Dashboard
-        </Typography>
-        <Grid container spacing={3}>
-          <Grid item xs={4}>
-            <Card
-              sx={{
-                padding: 2,
-                textAlign: 'center',
-                backgroundColor: theme.palette.background.paper,
-                color: theme.palette.text.primary,
-              }}
-            >
-              <Typography variant="subtitle1">TOTAL BOOKS</Typography>
-              <Typography variant="h4">
-                {documentCount !== null ? documentCount : 'Loading...'}
-              </Typography>
-              <IconButton sx={{ color: theme.palette.primary.main, marginTop: 1 }}>
-                <BookIcon fontSize="large" />
-              </IconButton>
-            </Card>
-          </Grid>
-          <Grid item xs={4}>
-            <Card
-              sx={{
-                padding: 2,
-                textAlign: 'center',
-                backgroundColor: theme.palette.background.paper,
-                color: theme.palette.text.primary,
-              }}
-            >
-              <Typography variant="subtitle1">BORROWED BOOKS</Typography>
-              <Typography variant="h4">
-                {borrowedDocCount !== null ? borrowedDocCount : 'Loading...'}
-              </Typography>
-              <IconButton sx={{ color: theme.palette.primary.main, marginTop: 1 }}>
-                <SwapHorizIcon fontSize="large" />
-              </IconButton>
-            </Card>
-          </Grid>
-          <Grid item xs={4}>
-            <Card
-              sx={{
-                padding: 2,
-                textAlign: 'center',
-                backgroundColor: theme.palette.background.paper,
-                color: theme.palette.text.primary,
-              }}
-            >
-              <Typography variant="subtitle1">UNPAID</Typography>
-              <Typography variant="h4">
-                {unpaidFinesCount !== null ? unpaidFinesCount : 'Loading...'}
-              </Typography>
-              <IconButton sx={{ color: theme.palette.primary.main, marginTop: 1 }}>
-                <MoneyOffIcon fontSize="large" />
-              </IconButton>
-            </Card>
-          </Grid>
-        </Grid>
 
-        <Box mt={4}>
-          <Tabs value={tabIndex} onChange={(event, newValue) => setTabIndex(newValue)} indicatorColor="primary" textColor="primary">
-            <Tab label="NEW STUDENTS" />
-            <Tab label="RECENT LOANS" />
-            <Tab label="RETURN REQUEST" />
-            <Tab label="FINES" />
-          </Tabs>
-          <Box mt={2}>
-            {tabIndex === 0 && <NewStudentsTable />}
-            {tabIndex === 1 && <RecentLoansTable />}
-            {tabIndex === 2 && <RecentSubscriptionsTable />}
-            {tabIndex === 3 && <FineTable />}
-          </Box>
+  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+    setValue(newValue);
+  };
+
+  return (
+    <Box display="flex" height="100vh" bgcolor="background.default">
+      <Sidebar />
+      <Container maxWidth="xl" sx={{ py: 4, px: { xs: 2, sm: 3, md: 4 } }}>
+        <Box sx={{ mb: 4 }}>
+          <Typography 
+            variant="h4" 
+            gutterBottom 
+            sx={{ 
+              color: theme.palette.text.primary,
+              fontWeight: 600,
+              mb: 3
+            }}
+          >
+            Quản lý mượn trả sách
+          </Typography>
+
+          <Paper 
+            elevation={0}
+            sx={{ 
+              borderRadius: 2,
+              overflow: 'hidden',
+              border: `1px solid ${theme.palette.divider}`
+            }}
+          >
+            <Tabs 
+              value={value} 
+              onChange={handleChange} 
+              aria-label="loan management tabs"
+              variant={isMobile ? "fullWidth" : "standard"}
+              sx={{
+                borderBottom: `1px solid ${theme.palette.divider}`,
+                '& .MuiTab-root': {
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  minWidth: 120,
+                  px: 3,
+                  py: 2
+                }
+              }}
+            >
+              <Tab label="Quản lý mượn sách" {...a11yProps(0)} />
+              <Tab label="Quản lý phạt" {...a11yProps(1)} />
+              <Tab label="Quản lý đăng ký" {...a11yProps(2)} />
+              <Tab label="Sinh viên mới" {...a11yProps(3)} />
+            </Tabs>
+
+            <TabPanel value={value} index={0}>
+              <RecentLoansTable onScanQR={handleOpenDialog} />
+            </TabPanel>
+            <TabPanel value={value} index={1}>
+              <FineManagerTable />
+            </TabPanel>
+            <TabPanel value={value} index={2}>
+              <RecentSubscriptionsTable />
+            </TabPanel>
+            <TabPanel value={value} index={3}>
+              <NewStudentsTable />
+            </TabPanel>
+          </Paper>
         </Box>
 
-        <IconButton onClick={handleOpenDialog} sx={{ position: 'absolute', bottom: 40, right: 40 }}>
-          <QrCodeIcon />
-        </IconButton>
-
-        <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-          <DialogTitle>QR Code Scanner</DialogTitle>
-          <DialogContent>
-            <div id="qr-code-scanner" style={{ width: '100%', height: '250px' }} />
+        <Dialog 
+          open={openDialog} 
+          onClose={handleCloseDialog} 
+          maxWidth="sm" 
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: 2,
+              overflow: 'hidden'
+            }
+          }}
+        >
+          <DialogTitle sx={{ 
+            backgroundColor: scanningMode === 'reserved' ? 'primary.main' : 'secondary.main',
+            color: 'white',
+            py: 2
+          }}>
+            {scanningMode === 'reserved' ? 'Quét mã QR nhận sách' : 'Quét mã QR trả sách'}
+          </DialogTitle>
+          <DialogContent sx={{ p: 3 }}>
+            <Box sx={{ 
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 2
+            }}>
+              <div id="qr-code-scanner" style={{ width: '100%', height: '300px' }} />
+              <Typography variant="body2" color="text.secondary" align="center">
+                {scanningMode === 'reserved' 
+                  ? 'Đặt mã QR vào khung hình để quét và xác nhận nhận sách'
+                  : 'Đặt mã QR vào khung hình để quét và xác nhận trả sách'}
+              </Typography>
+            </Box>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseDialog} color="primary">
-              Close
+          <DialogActions sx={{ p: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
+            <Button 
+              onClick={handleCloseDialog}
+              variant="outlined"
+              sx={{ 
+                borderRadius: 1,
+                px: 3
+              }}
+            >
+              Đóng
             </Button>
           </DialogActions>
         </Dialog>
 
-        <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={() => setOpenSnackbar(false)}>
-          <Alert onClose={() => setOpenSnackbar(false)} severity={snackbarSeverity}>
+        <Snackbar 
+          open={openSnackbar} 
+          autoHideDuration={6000} 
+          onClose={() => setOpenSnackbar(false)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          <Alert 
+            onClose={() => setOpenSnackbar(false)} 
+            severity={snackbarSeverity}
+            variant="filled"
+            sx={{ 
+              borderRadius: 1,
+              boxShadow: theme.shadows[2]
+            }}
+          >
             {snackbarMessage}
           </Alert>
         </Snackbar>
-      </Box>
+      </Container>
     </Box>
   );
 };

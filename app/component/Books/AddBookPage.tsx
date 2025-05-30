@@ -17,6 +17,9 @@ import {
     DialogTitle,
     Snackbar,
     Alert,
+    Card,
+    CardContent,
+    Divider,
 } from '@mui/material';
 import Sidebar from '../SideBar';
 import apiService from '../../untils/api';
@@ -337,280 +340,277 @@ const AddBookPage: React.FC = () => {
 
 
     return (
-        <Box display="flex">
+        <Box display="flex" bgcolor="#f5f6fa" minHeight="100vh">
             <Sidebar />
-            {/* Main Content */}
-            <Box flex={1} display="flex" justifyContent="center" p={3}>
-                <Paper sx={{ padding: 3, maxWidth: 1200 }}>
-                    <Typography variant="h4" align="center" gutterBottom>
-                        Thêm sách mới
-                    </Typography>
-                    <Grid container spacing={2} justifyContent="center">
-                        {/* Image Upload Section */}
-                        <Grid item xs={12} sm={4}>
-                            <Box
-                                width={200}
-                                height={300}
-                                border="1px dashed #ccc"
-                                borderRadius={2}
-                                display="flex"
-                                alignItems="center"
-                                justifyContent="center"
-                                sx={{
-                                    cursor: 'pointer',
-                                    '&:hover': { borderColor: '#888' },
-                                    margin: '0 auto',
-                                }}
-                            >
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    style={{ display: 'none' }}
-                                    id="upload-avatar"
-                                    onChange={handleFileChange}
-                                />
-                                <label htmlFor="upload-avatar">
-                                    {preview ? (
-                                        <Avatar
-                                            src={preview}
-                                            alt="Selected File"
-                                            sx={{ width: '100%', height: '100%', borderRadius: 1 }}
+            <Box flex={1} display="flex" justifyContent="center" alignItems="flex-start" p={0}>
+                <Card sx={{ width: '98%', minHeight: '90vh', borderRadius: 4, boxShadow: 4, m: 3, p: 4, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <CardContent sx={{ p: 4 }}>
+                        <Typography variant="h4" align="center" fontWeight={700} gutterBottom color="primary.main">
+                            Thêm Sách Mới
+                        </Typography>
+                        <Divider sx={{ mb: 3 }} />
+                        <Grid container spacing={4}>
+                            {/* Trái: Ảnh bìa và PDF */}
+                            <Grid item xs={12} md={4}>
+                                <Box display="flex" flexDirection="column" alignItems="center" gap={3}>
+                                    <Box
+                                        width={220}
+                                        height={320}
+                                        border="2px dashed #bdbdbd"
+                                        borderRadius={3}
+                                        display="flex"
+                                        alignItems="center"
+                                        justifyContent="center"
+                                        sx={{ cursor: 'pointer', bgcolor: '#fafafa', '&:hover': { borderColor: 'primary.main' } }}
+                                    >
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            style={{ display: 'none' }}
+                                            id="upload-avatar"
+                                            onChange={handleFileChange}
                                         />
-                                    ) : (
-                                        <Box display="flex" flexDirection="column" alignItems="center">
-                                            <UploadFileIcon fontSize="large" color="action" />
-                                            <Typography variant="caption">Upload Cover Image</Typography>
-                                        </Box>
-                                    )}
-                                </label>
-                            </Box>
-                            <Typography variant="caption" sx={{ mt: 1, color: '#888', textAlign: 'center', display: 'block' }}>
-                                *.jpeg, *.jpg, *.png <br /> Tối đa 100 KB
-                            </Typography>
-                        </Grid>
-
-                        {/* Form Section */}
-                        <Grid item xs={12} sm={8}>
-                            <Grid container spacing={2}>
-                                {/* Các trường TextField cho thông tin sách */}
-                                <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Mã ISBN" name="isbn" value={book.isbn} onChange={handleChange} />
-                                </Grid>
-                                <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Tên sách" name="documentName" value={book.documentName} onChange={handleChange} />
-                                </Grid>
-                                <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Tác giả" name="author" value={book.author} onChange={handleChange} />
-                                </Grid>
-                                <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Nhà xuất bản" name="publisher" value={book.publisher} onChange={handleChange} />
-                                </Grid>
-                                <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Ngày xuất bản" name="publishedDate" type="date" InputLabelProps={{ shrink: true }} value={book.publishedDate} onChange={handleChange} />
-                                </Grid>
-                                <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Số trang" name="pageCount" type="number" value={book.pageCount} onChange={handleChange} />
-                                </Grid>
-                                <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Ngôn ngữ" name="language" value={book.language} onChange={handleChange} />
-                                </Grid>
-                                <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Số lượng" name="quantity" type="number" value={book.quantity} onChange={handleChange} />
-                                </Grid>
-                                <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Số lượng có sẵn" name="availableCount" type="number" value={book.availableCount} onChange={handleChange} />
-                                </Grid>
-                                <Grid item xs={6}>
-                                    <TextField size="small" fullWidth label="Giá" name="price" type="number" value={book.price} onChange={handleChange} />
+                                        <label htmlFor="upload-avatar" style={{ width: '100%', height: '100%' }}>
+                                            {preview ? (
+                                                <Avatar
+                                                    src={preview}
+                                                    alt="Ảnh bìa"
+                                                    sx={{ width: '100%', height: '100%', borderRadius: 2 }}
+                                                />
+                                            ) : (
+                                                <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100%">
+                                                    <UploadFileIcon fontSize="large" color="action" />
+                                                    <Typography variant="caption" color="text.secondary">Tải ảnh bìa</Typography>
+                                                </Box>
+                                            )}
+                                        </label>
+                                    </Box>
+                                    <Typography variant="caption" color="text.secondary" align="center">
+                                        *.jpeg, *.jpg, *.png (Tối đa 100 KB)
+                                    </Typography>
+                                    <Divider sx={{ width: '100%' }} />
+                                    <Box textAlign="center" width="100%">
+                                        <input
+                                            type="file"
+                                            accept="application/pdf"
+                                            style={{ display: 'none' }}
+                                            id="upload-pdf"
+                                            onChange={handlePdfChange}
+                                        />
+                                        <label htmlFor="upload-pdf">
+                                            <Button
+                                                variant="outlined"
+                                                color="secondary"
+                                                component="span"
+                                                startIcon={<UploadFileIcon />}
+                                                fullWidth
+                                                disabled={!!selectedPdfFile}
+                                            >
+                                                Tải lên PDF
+                                            </Button>
+                                        </label>
+                                        {selectedPdfFile && (
+                                            <Box mt={1} display="flex" alignItems="center" justifyContent="center">
+                                                <Typography variant="body2" sx={{ mr: 1 }}>
+                                                    {selectedPdfFile.name}
+                                                </Typography>
+                                                <IconButton color="error" size="small" onClick={() => setSelectedPdfFile(null)}>
+                                                    <CloseIcon fontSize="small" />
+                                                </IconButton>
+                                            </Box>
+                                        )}
+                                    </Box>
+                                </Box>
+                            </Grid>
+                            {/* Phải: Thông tin sách */}
+                            <Grid item xs={12} md={8}>
+                                <Grid container spacing={3}>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField size="small" fullWidth label="Mã ISBN" name="isbn" value={book.isbn} onChange={handleChange} />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField size="small" fullWidth label="Tên sách" name="documentName" value={book.documentName} onChange={handleChange} />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField size="small" fullWidth label="Tác giả" name="author" value={book.author} onChange={handleChange} />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField size="small" fullWidth label="Nhà xuất bản" name="publisher" value={book.publisher} onChange={handleChange} />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField size="small" fullWidth label="Ngày xuất bản" name="publishedDate" type="date" InputLabelProps={{ shrink: true }} value={book.publishedDate} onChange={handleChange} />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField size="small" fullWidth label="Số trang" name="pageCount" type="number" value={book.pageCount} onChange={handleChange} />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField size="small" fullWidth label="Ngôn ngữ" name="language" value={book.language} onChange={handleChange} />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField size="small" fullWidth label="Số lượng" name="quantity" type="number" value={book.quantity} onChange={handleChange} />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField size="small" fullWidth label="Số lượng có sẵn" name="availableCount" type="number" value={book.availableCount} onChange={handleChange} />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField size="small" fullWidth label="Giá" name="price" type="number" value={book.price} onChange={handleChange} />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <TextField size="small" fullWidth label="Mô tả" name="description" value={book.description} onChange={handleChange} multiline rows={2} />
+                                    </Grid>
                                 </Grid>
                             </Grid>
                         </Grid>
-                    </Grid>
-
-                    {/* PDF Upload Section */}
-                    <Box mt={2} textAlign="center">
-                        <input
-                            type="file"
-                            accept="application/pdf"
-                            style={{ display: 'none' }}
-                            id="upload-pdf"
-                            onChange={handlePdfChange}
-                        />
-                        <label htmlFor="upload-pdf">
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                component="span"
-                                startIcon={<UploadFileIcon />}
-                                disabled={!!selectedPdfFile}
-                            >
-                                Tải lên PDF
-                            </Button>
-                        </label>
-                    </Box>
-
-                    {/* Hiển thị tên PDF file và nút x để hủy chọn */}
-                    {selectedPdfFile && (
-                        <Box mt={2} textAlign="center" display="flex" justifyContent="center" alignItems="center">
-                            <Typography variant="body2" sx={{ marginRight: 1 }}>
-                                {selectedPdfFile.name}
-                            </Typography>
-                            <IconButton
-                                color="error"
-                                size="small"
-                                onClick={() => setSelectedPdfFile(null)}
-                            >
-                                <CloseIcon fontSize="small" />
-                            </IconButton>
+                        <Divider sx={{ my: 4 }} />
+                        {/* Tags Selection */}
+                        <Box mt={2}>
+                            <Typography variant="h6" fontWeight={600} gutterBottom>Chọn loại sách</Typography>
+                            <Box mt={1} display="flex" flexWrap="wrap" gap={2}>
+                                {(Array.isArray(documentTypes) ? documentTypes : []).map((tag) => (
+                                    <Chip
+                                        key={tag.documentTypeId}
+                                        label={tag.typeName}
+                                        clickable
+                                        color={selectedTags.includes(tag.documentTypeId) ? 'primary' : 'default'}
+                                        onClick={() => handleTagToggle(tag.documentTypeId)}
+                                        onDelete={selectedTags.includes(tag.documentTypeId) ? () => handleTagToggle(tag.documentTypeId) : undefined}
+                                        sx={{ fontSize: 16, px: 2, py: 1 }}
+                                    />
+                                ))}
+                            </Box>
                         </Box>
-                    )}
-                    {/* Tags Selection */}
-                    <Box mt={3}>
-                        <Typography variant="h6">Chọn loại sách</Typography>
-                        <Box mt={1} display="flex" flexWrap="wrap" gap={1}>
-                            {(Array.isArray(documentTypes) ? documentTypes : []).map((tag) => (
-                                <Chip
-                                    key={tag.documentTypeId}
-                                    label={tag.typeName}
-                                    clickable
-                                    color={selectedTags.includes(tag.documentTypeId) ? 'primary' : 'default'}
-                                    onClick={() => handleTagToggle(tag.documentTypeId)}
-                                    onDelete={selectedTags.includes(tag.documentTypeId) ? () => handleTagToggle(tag.documentTypeId) : undefined}
-                                />
-                            ))}
+                        <Box mt={4}>
+                            <Typography variant="h6" fontWeight={600} gutterBottom>Chọn khóa học</Typography>
+                            <Box mt={1} display="flex" flexWrap="wrap" gap={2}>
+                                {courses.map((course) => (
+                                    <Chip
+                                        key={course.courseId}
+                                        label={course.courseName}
+                                        clickable
+                                        color={selectedCourses.includes(course.courseId) ? 'primary' : 'default'}
+                                        onClick={() => handleCourseToggle(course.courseId)}
+                                        onDelete={selectedCourses.includes(course.courseId) ? () => handleCourseToggle(course.courseId) : undefined}
+                                        sx={{ fontSize: 16, px: 2, py: 1 }}
+                                    />
+                                ))}
+                            </Box>
                         </Box>
-                    </Box>
-                    <Box mt={3}>
-                        <Typography variant="h6">Chọn khóa học</Typography>
-                        <Box mt={1} display="flex" flexWrap="wrap" gap={1}>
-                            {courses.map((course) => (
-                                <Chip
-                                    key={course.courseId}
-                                    label={course.courseName}
-                                    clickable
-                                    color={selectedCourses.includes(course.courseId) ? 'primary' : 'default'}
-                                    onClick={() => handleCourseToggle(course.courseId)}
-                                    onDelete={selectedCourses.includes(course.courseId) ? () => handleCourseToggle(course.courseId) : undefined}
-                                />
-                            ))}
+                        <Box mt={5} textAlign="center">
+                            <Button variant="contained" color="primary" size="large" onClick={handleAddBook} sx={{ px: 8, py: 2, fontWeight: 700, fontSize: 20 }}>
+                                Thêm sách
+                            </Button>
                         </Box>
-                    </Box>
-                    {/* Submit Button */}
-                    <Box mt={3} textAlign="center">
-                        <Button variant="contained" color="primary" onClick={handleAddBook}>
-                            Thêm sách
-                        </Button>
-                    </Box>
-                    <SpeedDial
-                        ariaLabel="Add options"
-                        sx={{ position: 'fixed', bottom: 16, right: 16 }}
-                        icon={<AddIcon />}
-                    >
-                        <SpeedDialAction
-                            icon={<LabelIcon />}
-                            tooltipTitle="Add Type"
-                            onClick={handleOpenAddTypeDialog}
-                        />
-                        <SpeedDialAction
-                            icon={<SubjectIcon />}
-                            tooltipTitle="Add Subject Code"
-                            onClick={handleAddSubjectCode}
-                        />
-                        <SpeedDialAction
-                            icon={<PublishIcon />}
-                            tooltipTitle="Add Subject Code"
-                            onClick={handleOpenImportDialog}
-                        />
-                    </SpeedDial>
-                    <Dialog open={openAddTypeDialog} onClose={handleCloseAddTypeDialog}>
-                        <DialogTitle>Thêm loại sách mới</DialogTitle>
-                        <DialogContent>
-                            <TextField
-                                autoFocus
-                                margin="dense"
-                                label="Tên loại sách"
-                                type="text"
-                                fullWidth
-                                value={newTypeName}
-                                onChange={(e) => setNewTypeName(e.target.value)}
-                            />
-                            <TextField
-                                margin="dense"
-                                label="Mô tả"
-                                type="text"
-                                fullWidth
-                                multiline
-                                rows={3}
-                                value={newDescription}
-                                onChange={(e) => setNewDescription(e.target.value)}
-                            />
-                        </DialogContent>
-                        <DialogActions>
-                            <Button onClick={handleCloseAddTypeDialog} color="primary">
-                                Hủy
-                            </Button>
-                            <Button onClick={handleAddNewType} color="primary" variant="contained">
-                                Thêm
-                            </Button>
-                        </DialogActions>
-                    </Dialog>
-                    <Dialog open={openAddCourseDialog} onClose={handleCloseAddCourseDialog}>
-                        <DialogTitle>Thêm khóa học mới</DialogTitle>
-                        <DialogContent>
-                            <TextField
-                                autoFocus
-                                margin="dense"
-                                label="Mã khóa học"
-                                type="text"
-                                fullWidth
-                                value={newCourseCode}
-                                onChange={(e) => setNewCourseCode(e.target.value)}
-                            />
-                            <TextField
-                                autoFocus
-                                margin="dense"
-                                label="Tên khóa học"
-                                type="text"
-                                fullWidth
-                                value={newTypeName}
-                                onChange={(e) => setNewTypeName(e.target.value)}
-                            />
-                            <TextField
-                                margin="dense"
-                                label="Mô tả"
-                                type="text"
-                                fullWidth
-                                multiline
-                                rows={3}
-                                value={newDescription}
-                                onChange={(e) => setNewDescription(e.target.value)}
-                            />
-                        </DialogContent>
-                        <DialogActions>
-                            <Button onClick={handleCloseAddCourseDialog} color="primary">
-                                Hủy
-                            </Button>
-                            <Button onClick={handleAddNewCourse} color="primary" variant="contained">
-                                Thêm
-                            </Button>
-                        </DialogActions>
-                    </Dialog>
-                    <ImportExcelDialog
-                        open={openImportDiolog}
-                        onClose={handleCloseImportDialog}
+                    </CardContent>
+                </Card>
+                <SpeedDial
+                    ariaLabel="Thêm nhanh"
+                    sx={{ position: 'fixed', bottom: 16, right: 16 }}
+                    icon={<AddIcon />}
+                >
+                    <SpeedDialAction
+                        icon={<LabelIcon />}
+                        tooltipTitle="Thêm loại sách"
+                        onClick={handleOpenAddTypeDialog}
                     />
-                </Paper>
+                    <SpeedDialAction
+                        icon={<SubjectIcon />}
+                        tooltipTitle="Thêm khóa học"
+                        onClick={handleAddSubjectCode}
+                    />
+                    <SpeedDialAction
+                        icon={<PublishIcon />}
+                        tooltipTitle="Nhập từ Excel"
+                        onClick={handleOpenImportDialog}
+                    />
+                </SpeedDial>
+                <Dialog open={openAddTypeDialog} onClose={handleCloseAddTypeDialog}>
+                    <DialogTitle>Thêm loại sách mới</DialogTitle>
+                    <DialogContent>
+                        <TextField
+                            autoFocus
+                            margin="dense"
+                            label="Tên loại sách"
+                            type="text"
+                            fullWidth
+                            value={newTypeName}
+                            onChange={(e) => setNewTypeName(e.target.value)}
+                        />
+                        <TextField
+                            margin="dense"
+                            label="Mô tả"
+                            type="text"
+                            fullWidth
+                            multiline
+                            rows={3}
+                            value={newDescription}
+                            onChange={(e) => setNewDescription(e.target.value)}
+                        />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={handleCloseAddTypeDialog} color="primary">
+                            Hủy
+                        </Button>
+                        <Button onClick={handleAddNewType} color="primary" variant="contained">
+                            Thêm
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+                <Dialog open={openAddCourseDialog} onClose={handleCloseAddCourseDialog}>
+                    <DialogTitle>Thêm khóa học mới</DialogTitle>
+                    <DialogContent>
+                        <TextField
+                            autoFocus
+                            margin="dense"
+                            label="Mã khóa học"
+                            type="text"
+                            fullWidth
+                            value={newCourseCode}
+                            onChange={(e) => setNewCourseCode(e.target.value)}
+                        />
+                        <TextField
+                            autoFocus
+                            margin="dense"
+                            label="Tên khóa học"
+                            type="text"
+                            fullWidth
+                            value={newTypeName}
+                            onChange={(e) => setNewTypeName(e.target.value)}
+                        />
+                        <TextField
+                            margin="dense"
+                            label="Mô tả"
+                            type="text"
+                            fullWidth
+                            multiline
+                            rows={3}
+                            value={newDescription}
+                            onChange={(e) => setNewDescription(e.target.value)}
+                        />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={handleCloseAddCourseDialog} color="primary">
+                            Hủy
+                        </Button>
+                        <Button onClick={handleAddNewCourse} color="primary" variant="contained">
+                            Thêm
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+                <ImportExcelDialog
+                    open={openImportDiolog}
+                    onClose={handleCloseImportDialog}
+                />
+                <Snackbar
+                    open={openSnackbar}
+                    autoHideDuration={3000}
+                    onClose={() => setOpenSnackbar(false)}
+                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                >
+                    <Alert onClose={() => setOpenSnackbar(false)} severity={snackbarSeverity}>
+                        {snackbarMessage}
+                    </Alert>
+                </Snackbar>
             </Box>
-            <Snackbar
-                open={openSnackbar}
-                autoHideDuration={3000}
-                onClose={() => setOpenSnackbar(false)}
-                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-            >
-                <Alert onClose={() => setOpenSnackbar(false)} severity={snackbarSeverity}>
-                    {snackbarMessage}
-                </Alert>
-            </Snackbar>
         </Box>
     );
 };

@@ -131,7 +131,7 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
         if (!books) return;
         console.log('books', books);
         checkFavor(id);
-        const foundBook = books.find((b) => b.documentId.toString() === id);
+        const foundBook = books.find((b) => b?.documentId?.toString() === id);
         if (foundBook) {
             setBook(foundBook);
             
@@ -191,9 +191,9 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
     };
 
     const handleFileOpen = (fileUrl: string) => {
-        // Convert backslash to forward slash for URLs
+        if (!book?.digitalDocument?.digitalDocumentId) return;
         const formattedUrl = fileUrl.replace(/\\/g, '/');
-        window.open(`/${formattedUrl}`, '_blank');
+        window.open(`/api/v1/digital-documents/${book.digitalDocument.digitalDocumentId}/download?filePath=${encodeURIComponent(formattedUrl)}`, '_blank');
     };
 
     const handleBorrowClick = () => {
@@ -207,7 +207,7 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
             if (book?.documentCategory === 'DIGITAL' && book.digitalDocument?.uploads?.[0]) {
                 // For digital books, use the access-requests API with uploadId
                 const payload = {
-                    uploadId: book.digitalDocument.uploads[0].uploadId
+                    digitalId: book.digitalDocument.uploads[0].uploadId
                 };
                 const res = await apiService.post('/api/v1/access-requests', payload);
                 console.log('Response:', res.data);
@@ -307,22 +307,24 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
                             <>
                                 {hasPdf && (
                                     <Button
+                                        key={`${book.digitalDocument?.digitalDocumentId}-pdf`}
                                         variant="contained"
                                         startIcon={<PictureAsPdfIcon />}
                                         onClick={() => handleFileOpen(pdfUrl)}
                                         sx={{ textTransform: 'none' }}
                                     >
-                                        Đọc PDF
+                                        PDF
                                     </Button>
                                 )}
                                 {hasWord && (
                                     <Button
+                                        key={`${book.digitalDocument?.digitalDocumentId}-word`}
                                         variant="contained"
                                         startIcon={<DescriptionIcon />}
                                         onClick={() => handleFileOpen(wordUrl)}
                                         sx={{ textTransform: 'none' }}
                                     >
-                                        Đọc Word
+                                        Word
                                     </Button>
                                 )}
                             </>

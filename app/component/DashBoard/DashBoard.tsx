@@ -8,6 +8,7 @@ import {
   Card,
   CardContent,
   useTheme,
+  Divider,
 } from '@mui/material';
 import {
   BarChart,
@@ -26,6 +27,9 @@ import {
 } from 'recharts';
 import dashboardService, { DashboardStatistics } from '../../services/dashboardService';
 import Sidebar from '../SideBar';
+import PeopleIcon from '@mui/icons-material/People';
+import PersonIcon from '@mui/icons-material/Person';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
@@ -85,100 +89,103 @@ const Dashboard: React.FC = () => {
   ];
 
   return (
-    <Box display="flex">
+    <Box display="flex" bgcolor="#f5f6fa" minHeight="100vh">
       <Sidebar />
-      <Box sx={{ flexGrow: 1, p: 3 }}>
-        <Typography variant="h4" gutterBottom>
-          Dashboard Overview
+      <Box sx={{ flexGrow: 1, p: { xs: 2, md: 5 }, backgroundColor: '#f5f6fa' }}>
+        <Typography variant="h4" gutterBottom sx={{ 
+          color: 'primary.main',
+          fontWeight: 'bold',
+          mb: 4,
+          textAlign: 'center',
+          letterSpacing: 1.5
+        }}>
+          Thống Kê Quản Trị Hệ Thống
         </Typography>
-
+        <Divider sx={{ mb: 4 }} />
         {/* Summary Cards */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
+        <Grid container spacing={4} sx={{ mb: 4 }}>
+          <Grid item xs={12} sm={4}>
+            <Card sx={{ 
+              height: '100%',
+              borderRadius: 4,
+              boxShadow: 4,
+              transition: 'transform 0.2s',
+              '&:hover': {
+                transform: 'translateY(-5px)',
+                boxShadow: 8
+              },
+              bgcolor: '#fff'
+            }}>
               <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Total Documents
-                </Typography>
-                <Typography variant="h4">
-                  {statistics.documents.totalDocuments}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Active Loans
-                </Typography>
-                <Typography variant="h4">
-                  {statistics.loans.activeLoans}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Total Users
-                </Typography>
-                <Typography variant="h4">
+                <Box display="flex" alignItems="center" mb={2}>
+                  <PeopleIcon sx={{ fontSize: 48, color: 'primary.main', mr: 2 }} />
+                  <Typography color="textSecondary" variant="h6" fontWeight={600}>
+                    Tổng người dùng
+                  </Typography>
+                </Box>
+                <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'primary.main', textAlign: 'center' }}>
                   {statistics.users.totalUsers}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
+          <Grid item xs={12} sm={4}>
+            <Card sx={{ 
+              height: '100%',
+              borderRadius: 4,
+              boxShadow: 4,
+              transition: 'transform 0.2s',
+              '&:hover': {
+                transform: 'translateY(-5px)',
+                boxShadow: 8
+              },
+              bgcolor: '#fff'
+            }}>
               <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Total Revenue
+                <Box display="flex" alignItems="center" mb={2}>
+                  <PersonIcon sx={{ fontSize: 48, color: 'success.main', mr: 2 }} />
+                  <Typography color="textSecondary" variant="h6" fontWeight={600}>
+                    Người dùng hoạt động
+                  </Typography>
+                </Box>
+                <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'success.main', textAlign: 'center' }}>
+                  {statistics.users.activeUsers}
                 </Typography>
-                <Typography variant="h4">
-                  ${statistics.payments.totalAmount}
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Card sx={{ 
+              height: '100%',
+              borderRadius: 4,
+              boxShadow: 4,
+              transition: 'transform 0.2s',
+              '&:hover': {
+                transform: 'translateY(-5px)',
+                boxShadow: 8
+              },
+              bgcolor: '#fff'
+            }}>
+              <CardContent>
+                <Box display="flex" alignItems="center" mb={2}>
+                  <PersonAddIcon sx={{ fontSize: 48, color: 'info.main', mr: 2 }} />
+                  <Typography color="textSecondary" variant="h6" fontWeight={600}>
+                    Người dùng mới
+                  </Typography>
+                </Box>
+                <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'info.main', textAlign: 'center' }}>
+                  {statistics.users.newUsers}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
         </Grid>
-
         {/* Charts */}
-        <Grid container spacing={3}>
-          {/* Document Status */}
+        <Grid container spacing={4}>
           <Grid item xs={12} md={6}>
-            <Paper sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                Document Status
-              </Typography>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={documentData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    label
-                  >
-                    {documentData.map((entry, index: number) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </Paper>
-          </Grid>
-
-          {/* Daily Activity */}
-          <Grid item xs={12} md={6}>
-            <Paper sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                Daily Activity
+            <Paper sx={{ p: 4, borderRadius: 4, boxShadow: 3, bgcolor: '#fff', '&:hover': { boxShadow: 6 } }}>
+              <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 'bold', mb: 3 }}>
+                Hoạt động hàng ngày
               </Typography>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={[statistics.daily]}>
@@ -187,52 +194,50 @@ const Dashboard: React.FC = () => {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="newLoans" fill="#8884d8" name="New Loans" />
-                  <Bar dataKey="returns" fill="#82ca9d" name="Returns" />
-                  <Bar dataKey="payments" fill="#ffc658" name="Payments" />
+                  <Bar dataKey="newLoans" fill="#8884d8" name="Mượn mới" />
+                  <Bar dataKey="returns" fill="#82ca9d" name="Trả sách" />
+                  <Bar dataKey="payments" fill="#ffc658" name="Thanh toán" />
                 </BarChart>
               </ResponsiveContainer>
             </Paper>
           </Grid>
-
-          {/* User Statistics */}
-          <Grid item xs={12}>
-            <Paper sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                User Statistics
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 4, borderRadius: 4, boxShadow: 3, bgcolor: '#fff', '&:hover': { boxShadow: 6 } }}>
+              <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 'bold', mb: 3 }}>
+                Thống kê người dùng
               </Typography>
-              <Grid container spacing={2}>
+              <Grid container spacing={3}>
                 <Grid item xs={12} sm={4}>
-                  <Card>
+                  <Card sx={{ borderRadius: 3, boxShadow: 2, bgcolor: '#f3e5f5' }}>
                     <CardContent>
-                      <Typography color="textSecondary" gutterBottom>
-                        New Users
+                      <Typography color="textSecondary" gutterBottom fontWeight={600}>
+                        Người dùng mới
                       </Typography>
-                      <Typography variant="h5">
+                      <Typography variant="h5" color="primary.main" fontWeight={700}>
                         {statistics.users.newUsers}
                       </Typography>
                     </CardContent>
                   </Card>
                 </Grid>
                 <Grid item xs={12} sm={4}>
-                  <Card>
+                  <Card sx={{ borderRadius: 3, boxShadow: 2, bgcolor: '#e3f2fd' }}>
                     <CardContent>
-                      <Typography color="textSecondary" gutterBottom>
-                        Active Users
+                      <Typography color="textSecondary" gutterBottom fontWeight={600}>
+                        Đang hoạt động
                       </Typography>
-                      <Typography variant="h5">
+                      <Typography variant="h5" color="success.main" fontWeight={700}>
                         {statistics.users.activeUsers}
                       </Typography>
                     </CardContent>
                   </Card>
                 </Grid>
                 <Grid item xs={12} sm={4}>
-                  <Card>
+                  <Card sx={{ borderRadius: 3, boxShadow: 2, bgcolor: '#fffde7' }}>
                     <CardContent>
-                      <Typography color="textSecondary" gutterBottom>
-                        Total Users
+                      <Typography color="textSecondary" gutterBottom fontWeight={600}>
+                        Tổng người dùng
                       </Typography>
-                      <Typography variant="h5">
+                      <Typography variant="h5" color="primary.main" fontWeight={700}>
                         {statistics.users.totalUsers}
                       </Typography>
                     </CardContent>

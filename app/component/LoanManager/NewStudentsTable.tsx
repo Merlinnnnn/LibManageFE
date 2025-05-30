@@ -19,11 +19,18 @@ import {
     TextField,
     Button,
     Snackbar,
-    Alert
+    Alert,
+    InputAdornment,
+    Grid,
+    useTheme,
+    Tooltip
 } from '@mui/material';
 import apiService from '../../untils/api';
 import EmailIcon from '@mui/icons-material/Email';
+import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
 import SendNotiDialog from './SendNotiDiolog';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 interface User {
     userId: string;
@@ -35,7 +42,9 @@ interface User {
 }
 
 const NewStudentsTable: React.FC = () => {
+    const theme = useTheme();
     const [students, setStudents] = useState<User[]>([]);
+    const [filteredStudents, setFilteredStudents] = useState<User[]>([]);
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -44,6 +53,7 @@ const NewStudentsTable: React.FC = () => {
     const [dialogUserId, setDialogUserId] = useState<string[]>([]);
     const [notificationTitle, setNotificationTitle] = useState("");
     const [notificationContent, setNotificationContent] = useState("");
+    const [searchQuery, setSearchQuery] = useState("");
 
     // Snackbar states
     const [openSnackbar, setOpenSnackbar] = useState(false);
@@ -60,20 +70,34 @@ const NewStudentsTable: React.FC = () => {
         }
     }, [selectedUsers]);
 
+    useEffect(() => {
+        if (searchQuery.trim() === '') {
+            setFilteredStudents(students);
+        } else {
+            const query = searchQuery.toLowerCase();
+            const filtered = students.filter(student => 
+                (student.firstName || '').toLowerCase().includes(query) ||
+                (student.lastName || '').toLowerCase().includes(query) ||
+                (student.username || '').toLowerCase().includes(query) ||
+                (student.address || '').toLowerCase().includes(query)
+            );
+            setFilteredStudents(filtered);
+        }
+    }, [searchQuery, students]);
+
     const fetchStudents = async () => {
         try {
             const response = await apiService.get<{ data: { content: User[] } }>('/api/v1/users');
             setStudents(response.data.data.content);
-            console.log("ds student", response.data.data.content);
+            setFilteredStudents(response.data.data.content);
         } catch (error) {
-
             console.log("Lỗi khi gọi API danh sách sinh viên:", error);
         }
     };
 
     const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.checked) {
-            setSelectedUsers(students.map((student) => student.userId));
+            setSelectedUsers(filteredStudents.map((student) => student.userId));
             setOpenNotiDialog(true);
         } else {
             setSelectedUsers([]);
@@ -91,17 +115,14 @@ const NewStudentsTable: React.FC = () => {
 
     const handleOpenDialog = (userId: string) => {
         setDialogUserId((prevUserIds) => [...prevUserIds, userId]);
-        console.log(userId);
         setOpenDialog(true);
     };
 
     const handleCloseOpenNoti = () => {
-        console.log('user', selectedUsers);
         setOpenNotiDialog(false);
     };
 
     const handleSend = () => {
-        console.log('user', selectedUsers);
         setDialogUserId(selectedUsers);
         setOpenDialog(true);
     };
@@ -120,17 +141,14 @@ const NewStudentsTable: React.FC = () => {
                 "title": notificationTitle,
                 "content": notificationContent
             };
-            console.log(payload);
             try {
                 const response = await apiService.post(`/api/v1/notifications`, payload);
-                console.log(response);
                 setSnackbarMessage('Thông báo đã được gửi thành công!');
                 setSnackbarSeverity('success');
                 setOpenSnackbar(true);
                 handleCloseDialog();
                 setSelectedUsers([]);
             } catch (error) {
-                //console.error("Lỗi khi gửi thông báo:", error);
                 setSnackbarMessage('Có lỗi xảy ra khi gửi thông báo');
                 setSnackbarSeverity('error');
                 setOpenSnackbar(true);
@@ -151,62 +169,157 @@ const NewStudentsTable: React.FC = () => {
         setOpenSnackbar(false);
     };
 
+    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchQuery(event.target.value);
+        setPage(0);
+    };
+
+    const handleClearSearch = () => {
+        setSearchQuery('');
+    };
+
+    // Xóa user
+    const handleDeleteUser = async (userId: string) => {
+        if (!window.confirm('Bạn có chắc chắn muốn xóa người dùng này?')) return;
+        try {
+            await apiService.delete(`/api/v1/users/${userId}`);
+            setSnackbarMessage('Xóa người dùng thành công!');
+            setSnackbarSeverity('success');
+            setOpenSnackbar(true);
+            fetchStudents();
+        } catch (error) {
+            setSnackbarMessage('Có lỗi xảy ra khi xóa người dùng');
+            setSnackbarSeverity('error');
+            setOpenSnackbar(true);
+        }
+    };
+
     return (
         <Box>
-            <TableContainer component={Paper} style={{ maxHeight: '300px', overflow: 'auto' }}>
+            <Box sx={{ mb: 3 }}>
+                <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} sm={6} md={4}>
+                        <TextField
+                            fullWidth
+                            variant="outlined"
+                            placeholder="Tìm kiếm theo tên, username hoặc địa chỉ..."
+                            value={searchQuery}
+                            onChange={handleSearchChange}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon />
+                                    </InputAdornment>
+                                ),
+                                endAdornment: searchQuery && (
+                                    <InputAdornment position="end">
+                                        <IconButton
+                                            size="small"
+                                            onClick={handleClearSearch}
+                                        >
+                                            <ClearIcon />
+                                        </IconButton>
+                                    </InputAdornment>
+                                )
+                            }}
+                        />
+                    </Grid>
+                </Grid>
+            </Box>
+
+            <TableContainer 
+                component={Paper} 
+                sx={{ 
+                    maxHeight: '300px', 
+                    overflow: 'auto',
+                    border: `1px solid ${theme.palette.divider}`,
+                    borderRadius: 2
+                }}
+            >
                 <Table stickyHeader size="small">
                     <TableHead>
-                        <TableRow>
-                            <TableCell padding="checkbox" style={{ padding: '4px 8px' }}>
+                        <TableRow sx={{ backgroundColor: theme.palette.background.default }}>
+                            <TableCell padding="checkbox" sx={{ padding: '4px 8px', fontWeight: 600 }}>
                                 <Checkbox
-                                    indeterminate={selectedUsers.length > 0 && selectedUsers.length < students.length}
-                                    checked={selectedUsers.length === students.length && students.length > 0}
+                                    indeterminate={selectedUsers.length > 0 && selectedUsers.length < filteredStudents.length}
+                                    checked={selectedUsers.length === filteredStudents.length && filteredStudents.length > 0}
                                     onChange={handleSelectAll}
                                 />
                             </TableCell>
-                            <TableCell style={{ padding: '4px 8px' }}>First Name</TableCell>
-                            <TableCell style={{ padding: '4px 8px' }}>Last Name</TableCell>
-                            <TableCell style={{ padding: '4px 8px' }}>Username</TableCell>
-                            <TableCell style={{ padding: '4px 8px' }}>Address</TableCell>
-                            <TableCell style={{ padding: '4px 8px' }}>Is Active</TableCell>
-                            <TableCell style={{ padding: '4px 8px' }}>Action</TableCell>
+                            <TableCell sx={{ padding: '4px 8px', fontWeight: 600 }}>First Name</TableCell>
+                            <TableCell sx={{ padding: '4px 8px', fontWeight: 600 }}>Last Name</TableCell>
+                            <TableCell sx={{ padding: '4px 8px', fontWeight: 600 }}>Username</TableCell>
+                            <TableCell sx={{ padding: '4px 8px', fontWeight: 600 }}>Address</TableCell>
+                            <TableCell sx={{ padding: '4px 8px', fontWeight: 600 }}>Is Active</TableCell>
+                            <TableCell sx={{ padding: '4px 8px', fontWeight: 600 }}>Action</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {students.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((student) => (
-                            <TableRow key={student.userId}>
-                                <TableCell padding="checkbox" style={{ padding: '4px 8px' }}>
-                                    <Checkbox
-                                        checked={selectedUsers.includes(student.userId)}
-                                        onChange={() => handleSelectUser(student.userId)}
-                                    />
-                                </TableCell>
-                                <TableCell style={{ padding: '4px 8px' }}>{student.firstName}</TableCell>
-                                <TableCell style={{ padding: '4px 8px' }}>{student.lastName}</TableCell>
-                                <TableCell style={{ padding: '4px 8px' }}>{student.username}</TableCell>
-                                <TableCell style={{ padding: '4px 8px' }}>{student.address}</TableCell>
-                                <TableCell style={{ padding: '4px 8px' }}>{student.isActive ? 'Yes' : 'No'}</TableCell>
-                                <TableCell style={{ padding: '4px 8px' }}>
-                                    <IconButton color="primary" onClick={() => handleOpenDialog(student.userId)}>
-                                        <EmailIcon />
-                                    </IconButton>
-                                </TableCell>
-                            </TableRow>
-                        ))}
+                        {filteredStudents
+                            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                            .map((student) => (
+                                <TableRow 
+                                    key={student.userId}
+                                    sx={{ 
+                                        '&:hover': {
+                                            backgroundColor: theme.palette.action.hover
+                                        }
+                                    }}
+                                >
+                                    <TableCell padding="checkbox" sx={{ padding: '4px 8px' }}>
+                                        <Checkbox
+                                            checked={selectedUsers.includes(student.userId)}
+                                            onChange={() => handleSelectUser(student.userId)}
+                                        />
+                                    </TableCell>
+                                    <TableCell sx={{ padding: '4px 8px' }}>{student.firstName}</TableCell>
+                                    <TableCell sx={{ padding: '4px 8px' }}>{student.lastName}</TableCell>
+                                    <TableCell sx={{ padding: '4px 8px' }}>{student.username}</TableCell>
+                                    <TableCell sx={{ padding: '4px 8px' }}>{student.address}</TableCell>
+                                    <TableCell sx={{ padding: '4px 8px' }}>{student.isActive ? 'Yes' : 'No'}</TableCell>
+                                    <TableCell sx={{ padding: '4px 8px' }}>
+                                        <Tooltip title="Gửi thông báo">
+                                            <IconButton 
+                                                color="primary" 
+                                                onClick={() => handleOpenDialog(student.userId)}
+                                                size="small"
+                                            >
+                                                <EmailIcon />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Xóa người dùng">
+                                            <IconButton
+                                                color="error"
+                                                onClick={() => handleDeleteUser(student.userId)}
+                                                size="small"
+                                            >
+                                                <DeleteIcon />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
                     </TableBody>
                 </Table>
             </TableContainer>
+
             <TablePagination
                 component="div"
-                count={students.length}
+                count={filteredStudents.length}
                 page={page}
                 onPageChange={handleChangePage}
                 rowsPerPage={rowsPerPage}
                 onRowsPerPageChange={handleChangeRowsPerPage}
                 rowsPerPageOptions={[5, 10, 25]}
             />
-            <SendNotiDialog open={openNotiDialog} handleClose={handleCloseOpenNoti} quantity={selectedUsers.length} onSend={handleSend} />
-            {/* Dialog for Sending Notification */}
+
+            <SendNotiDialog 
+                open={openNotiDialog} 
+                handleClose={handleCloseOpenNoti} 
+                quantity={selectedUsers.length} 
+                onSend={handleSend} 
+            />
+
             <Dialog open={openDialog} onClose={handleCloseDialog}>
                 <DialogTitle>Send Notification</DialogTitle>
                 <DialogContent>
@@ -243,14 +356,17 @@ const NewStudentsTable: React.FC = () => {
                 </DialogActions>
             </Dialog>
 
-            {/* Snackbar for Notifications */}
             <Snackbar
                 open={openSnackbar}
                 autoHideDuration={6000}
                 onClose={handleCloseSnackbar}
                 anchorOrigin={{vertical: 'top', horizontal: 'right'}}
             >
-                <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity}>
+                <Alert 
+                    onClose={handleCloseSnackbar} 
+                    severity={snackbarSeverity}
+                    variant="filled"
+                >
                     {snackbarMessage}
                 </Alert>
             </Snackbar>

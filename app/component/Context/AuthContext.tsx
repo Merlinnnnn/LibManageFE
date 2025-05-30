@@ -37,6 +37,7 @@ interface AuthContextType {
   signup: (username: string, password: string) => Promise<void>;
   logout: () => void;
   checkTokenValidity: () => Promise<void>;
+  loginGoogle: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -143,8 +144,56 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const loginGoogle = async () => {
+    try {
+      const response = await apiService.post('/api/v1/auth/login-google');
+      console.log(response);
+      // Mở cửa sổ popup để đăng nhập Google
+      // const width = 500;
+      // const height = 600;
+      // const left = window.screenX + (window.outerWidth - width) / 2;
+      // const top = window.screenY + (window.outerHeight - height) / 2;
+      
+      // const popup = window.open(
+      //   'http://localhost:8009/api/v1/auth/google',
+      //   'Google Login',
+      //   `width=${width},height=${height},left=${left},top=${top}`
+      // );
+
+      // // Lắng nghe message từ popup
+      // window.addEventListener('message', async (event) => {
+      //   if (event.origin !== window.location.origin) return;
+        
+      //   if (event.data.type === 'GOOGLE_LOGIN_SUCCESS') {
+      //     const { token } = event.data;
+      //     localStorage.setItem('access_token', token);
+      //     setToken(token);
+
+      //     // Lấy thông tin người dùng
+      //     const userInfoResponse = await apiService.get<UserInfoResponse>('/api/v1/users/info', {
+      //       headers: { Authorization: `Bearer ${token}` }
+      //     });
+          
+      //     const userInfo = userInfoResponse.data.data;
+      //     localStorage.setItem("info", JSON.stringify(userInfo));
+          
+      //     const roles = userInfo.roles;
+      //     const isAdmin = roles.includes('ADMIN');
+      //     if (isAdmin) {
+      //       router.push('/user_dashboard');
+      //     } else {
+      //       router.push('/home');
+      //     }
+      //   }
+      // });
+    } catch (error) {
+      console.error('Google login failed:', error);
+      alert('Đăng nhập bằng Google thất bại. Vui lòng thử lại.');
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ token, login, logout , signup, checkTokenValidity }}>
+    <AuthContext.Provider value={{ token, login, logout, signup, checkTokenValidity, loginGoogle }}>
       {children}
     </AuthContext.Provider>
   );

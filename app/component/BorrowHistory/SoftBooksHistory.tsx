@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Box, Typography, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, CircularProgress, IconButton,
-  Tooltip, useTheme, useMediaQuery
+  Box, Typography, Paper, CircularProgress, Button,
+  useTheme, useMediaQuery
 } from '@mui/material';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
+import AssignmentReturnIcon from '@mui/icons-material/AssignmentReturn';
 import apiService from '@/app/untils/api';
 import { useRouter } from 'next/navigation';
 
@@ -13,11 +13,12 @@ interface AccessRequest {
   uploadId: number;
   requesterId: string;
   ownerId: string;
-  reviewerId: string;
+  reviewerId: string | null;
   requestTime: string;
-  decisionTime: string;
-  licenseExpiry: string;
+  decisionTime: string | null;
+  licenseExpiry: string | null;
   status: string;
+  fileType?: string;
 }
 
 interface ApiResponse {
@@ -31,6 +32,10 @@ interface ApiResponse {
     totalElements: number;
     totalPages: number;
     last: boolean;
+    sortDetails: Array<{
+      property: string;
+      direction: string;
+    }>;
   };
 }
 
@@ -69,6 +74,7 @@ const SoftBooksHistory = () => {
         throw new Error('Dữ liệu trả về không hợp lệ');
       }
 
+      // Nếu API không trả về fileType, có thể cần fetch thêm hoặc đoán loại file ở đây
       setBooks(content);
     } catch (error) {
       console.error(error);
@@ -78,160 +84,158 @@ const SoftBooksHistory = () => {
     }
   };
 
-  const handleReadBook = (uploadId: number) => {
-    router.push(`/readbook?id=${uploadId}`);
+  const handleRead = (book: AccessRequest) => {
+    if (book.fileType?.includes('word')) {
+      router.push(`/readword?id=${book.uploadId}`);
+    } else {
+      router.push(`/readpdf?id=${book.uploadId}`);
+    }
+  };
+
+  const handleReturn = (book: AccessRequest) => {
+    // Implement return logic here
   };
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-        <CircularProgress color="primary" />
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+        <CircularProgress />
       </Box>
     );
   }
 
   if (error) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-        <Typography color="error" variant="h6">{error}</Typography>
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Typography color="error" variant="h6">
+          {error}
+        </Typography>
       </Box>
     );
   }
 
   if (books.length === 0) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-        <Typography variant="h6" color="text.secondary">No soft books found</Typography>
+      <Box sx={{ 
+        p: 4, 
+        textAlign: 'center',
+        backgroundColor: 'rgba(0,0,0,0.02)',
+        borderRadius: '12px'
+      }}>
+        <Typography variant="h6" color="text.secondary">
+          Chưa có sách điện tử nào được mượn
+        </Typography>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <TableContainer sx={{
-        boxShadow: 'none',
-        border: '1px solid #e0e0e0',
-        borderRadius: '10px',
-        overflow: 'hidden'
+    <Box>
+      <Box sx={{ 
+        display: 'grid', 
+        gap: 2,
+        gridTemplateColumns: {
+          xs: '1fr',
+          sm: 'repeat(2, 1fr)',
+          md: 'repeat(3, 1fr)'
+        }
       }}>
-        <Table sx={{
-          minWidth: isMobile ? 600 : 800,
-          tableLayout: 'fixed'
-        }}>
-          <TableHead>
-            <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
-              <TableCell sx={{
+        {books.map((book) => (
+          <Paper
+            key={book.id}
+            elevation={0}
+            sx={{
+              p: 2,
+              borderRadius: '12px',
+              backgroundColor: 'rgba(0,0,0,0.02)',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+              }
+            }}
+          >
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="h6" sx={{ 
                 fontWeight: 'bold',
-                py: 2,
-                width: '15%',
-                px: 2
-              }}>ID</TableCell>
-              <TableCell sx={{
-                fontWeight: 'bold',
-                py: 2,
-                width: '25%',
-                px: 2
-              }}>Request Time</TableCell>
-              <TableCell sx={{
-                fontWeight: 'bold',
-                py: 2,
-                width: '25%',
-                px: 2
-              }}>Decision Time</TableCell>
-              <TableCell sx={{
-                fontWeight: 'bold',
-                py: 2,
-                width: '20%',
-                px: 2
-              }}>Status</TableCell>
-              <TableCell sx={{
-                fontWeight: 'bold',
-                py: 2,
-                width: '15%',
-                px: 2
-              }}>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {books.map((book) => (
-              <TableRow
-                key={book.id}
-                sx={{
-                  '&:hover': {
-                    backgroundColor: '#f5f7f9',
-                    cursor: 'pointer',
-                    transform: 'translateY(-1px)',
-                    transition: 'all 0.2s ease'
-                  },
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <TableCell sx={{
-                  fontWeight: 'medium',
-                  width: '15%',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  px: 2
-                }}>{book.id}</TableCell>
-                <TableCell sx={{
-                  width: '25%',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  px: 2
-                }}>
-                  {new Date(book.requestTime).toLocaleString()}
-                </TableCell>
-                <TableCell sx={{
-                  width: '25%',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  px: 2
-                }}>
-                  {new Date(book.decisionTime).toLocaleString()}
-                </TableCell>
-                <TableCell sx={{
-                  width: '20%',
-                  whiteSpace: 'nowrap',
-                  px: 2,
-                  color: book.status === 'APPROVED' ? 'success.main' : 
-                         book.status === 'REJECTED' ? 'error.main' : 
-                         'warning.main'
-                }}>
-                  {book.status}
-                </TableCell>
-                <TableCell sx={{
-                  width: '15%',
-                  whiteSpace: 'nowrap',
-                  px: 2
-                }}>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Tooltip title="Read Book">
-                      <IconButton
-                        edge="end"
-                        aria-label="read"
-                        onClick={() => handleReadBook(book.uploadId)}
-                        sx={{
-                          color: 'primary.main',
-                          padding: '8px',
-                          backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                          '&:hover': {
-                            backgroundColor: 'rgba(25, 118, 210, 0.12)',
-                          }
-                        }}
-                      >
-                        <MenuBookIcon sx={{ fontSize: 20 }} />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                mb: 1,
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden'
+              }}>
+                Mã sách: {book.uploadId}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Trạng thái: {book.status === 'APPROVED' ? 'Đã duyệt' : 
+                           book.status === 'PENDING' ? 'Đang chờ duyệt' : 
+                           book.status === 'REJECTED' ? 'Từ chối' : book.status}
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                Ngày yêu cầu: {new Date(book.requestTime).toLocaleDateString()}
+              </Typography>
+              {book.decisionTime && (
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  Ngày duyệt: {new Date(book.decisionTime).toLocaleDateString()}
+                </Typography>
+              )}
+              {book.licenseExpiry && (
+                <Typography variant="body2" sx={{ mb: 2 }}>
+                  Ngày hết hạn: {new Date(book.licenseExpiry).toLocaleDateString()}
+                </Typography>
+              )}
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                {book.status === 'APPROVED' && (
+                  <>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={() => router.push(`/readpdf?id=${book.uploadId}`)}
+                      startIcon={<MenuBookIcon />}
+                      sx={{ 
+                        borderRadius: '8px',
+                        textTransform: 'none'
+                      }}
+                    >
+                      Đọc PDF
+                    </Button>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      color="secondary"
+                      onClick={() => router.push(`/readword?id=${book.uploadId}`)}
+                      startIcon={<MenuBookIcon />}
+                      sx={{ 
+                        borderRadius: '8px',
+                        textTransform: 'none'
+                      }}
+                    >
+                      Đọc Word
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => handleReturn(book)}
+                      startIcon={<AssignmentReturnIcon />}
+                      sx={{ 
+                        borderRadius: '8px',
+                        textTransform: 'none'
+                      }}
+                    >
+                      Trả
+                    </Button>
+                  </>
+                )}
+                {book.status === 'PENDING' && (
+                  <Typography variant="body2" color="warning.main">
+                    Đang chờ duyệt
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+          </Paper>
+        ))}
+      </Box>
     </Box>
   );
 };

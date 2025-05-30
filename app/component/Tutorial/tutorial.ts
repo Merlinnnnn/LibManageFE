@@ -1,6 +1,33 @@
 import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
 
+const startTour = () => {
+  // Kiểm tra xem người dùng đã xem tutorial chưa
+  console.log("startTour");
+  //const hasSeenTutorial = localStorage.getItem('hasSeenTutorial');
+  
+  // Lấy đường dẫn hiện tại
+  const currentPath = window.location.pathname;
+  
+  // Nếu chưa xem tutorial
+  if (true) {
+    // Kiểm tra đường dẫn và chạy tour tương ứng
+    if (currentPath === '/home') {
+      const infoString = localStorage.getItem('info');
+      if (infoString) {
+        startHomeTourLoggedIn();
+      } else {
+        startHomeTour();
+      }
+    } else if (currentPath === '/bookshelf') {
+      startBookShelfTour();
+    }
+    
+    // Đánh dấu đã xem tutorial
+    localStorage.setItem('hasSeenTutorial', 'true');
+  }
+};
+
 export const startHomeTour = () => {
   const driverObj = driver({
     showProgress: true,
@@ -51,6 +78,7 @@ export const startHomeTour = () => {
   });
   driverObj.drive();
 };
+
 export const startHomeTourLoggedIn = () => {
   const driverObj = driver({
     showProgress: true,
@@ -217,4 +245,60 @@ export const startProfileTour = () => {
     ]
   });
   driverObj.drive();
-}; 
+};
+
+export const startBookShelfTour = () => {
+  const driverObj = driver({
+    showProgress: true,
+    steps: [
+      { 
+        element: '#search-box', 
+        popover: { 
+          title: 'Tìm kiếm sách', 
+          description: 'Nhập tên sách, tác giả hoặc môn học để tìm kiếm sách trong thư viện.', 
+          side: "bottom", 
+          align: 'center' 
+        } 
+      },
+      { 
+        element: '#recommended-books', 
+        popover: { 
+          title: 'Sách đề xuất', 
+          description: 'Những cuốn sách được đề xuất dựa trên sở thích và lịch sử đọc của bạn.', 
+          side: "bottom", 
+          align: 'center' 
+        } 
+      },
+      { 
+        element: '#filter-section', 
+        popover: { 
+          title: 'Bộ lọc tìm kiếm', 
+          description: 'Lọc sách theo loại tài liệu và môn học để tìm kiếm chính xác hơn.', 
+          side: "right", 
+          align: 'center' 
+        } 
+      },
+      { 
+        element: '#book-list', 
+        popover: { 
+          title: 'Danh sách sách', 
+          description: 'Xem danh sách các sách có trong thư viện. Nhấn vào "Xem chi tiết" để biết thêm thông tin về sách.', 
+          side: "left", 
+          align: 'center' 
+        } 
+      },
+      { 
+        element: '#pagination', 
+        popover: { 
+          title: 'Phân trang', 
+          description: 'Chuyển trang để xem thêm sách.', 
+          side: "top", 
+          align: 'center' 
+        } 
+      }
+    ]
+  });
+  driverObj.drive();
+};
+
+export default startTour; 

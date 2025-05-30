@@ -176,7 +176,8 @@ const UserInfo = () => {
             margin: '0 auto',
             px: isMobile ? 2 : 4,
             display: 'flex',
-            gap: 3
+            gap: 3,
+            flexDirection: isMobile ? 'column' : 'row'
           }}
         >
           {/* Sidebar */}
@@ -184,7 +185,7 @@ const UserInfo = () => {
             elevation={0}
             sx={{
               width: isMobile ? '100%' : '280px',
-              borderRadius: '8px',
+              borderRadius: '16px',
               overflow: 'hidden',
               boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
               height: 'fit-content',
@@ -194,12 +195,31 @@ const UserInfo = () => {
               transition: 'all 0.3s ease'
             }}
           >
+            <Box sx={{ p: 3, textAlign: 'center', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
+              <Avatar
+                src={userInfo.avatar}
+                sx={{
+                  width: 100,
+                  height: 100,
+                  margin: '0 auto 16px',
+                  border: '4px solid #fff',
+                  boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
+                }}
+              />
+              <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
+                {userInfo.fullName}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {userInfo.email}
+              </Typography>
+            </Box>
+
             <List sx={{ p: 2 }}>
               <ListItem
                 component="div"
                 onClick={() => handleMainTabChange(0)}
-              sx={{
-                  borderRadius: '8px',
+                sx={{
+                  borderRadius: '12px',
                   mb: 1,
                   backgroundColor: mainTabValue === 0 ? selectedColor : 'transparent',
                   color: mainTabValue === 0 ? 'white' : textColor,
@@ -231,7 +251,7 @@ const UserInfo = () => {
                 component="div"
                 onClick={() => handleMainTabChange(1)}
                 sx={{
-                  borderRadius: '8px',
+                  borderRadius: '12px',
                   mb: 1,
                   backgroundColor: mainTabValue === 1 ? selectedColor : 'transparent',
                   color: mainTabValue === 1 ? 'white' : textColor,
@@ -251,7 +271,7 @@ const UserInfo = () => {
                   }} />
                 </ListItemIcon>
                 <ListItemText 
-                  primary="Book History" 
+                  primary="Borrowing History" 
                   primaryTypographyProps={{
                     fontWeight: mainTabValue === 1 ? 'bold' : 'medium',
                     color: mainTabValue === 1 ? 'white' : textColor
@@ -259,244 +279,168 @@ const UserInfo = () => {
                 />
               </ListItem>
             </List>
-
-            {mainTabValue === 1 && (
-              <>
-                <Divider sx={{ my: 1 }} />
-                <List sx={{ p: 2 }}>
-                  <ListItem
-                    component="div"
-                    onClick={() => handleBookHistoryTabChange(0)}
-                    sx={{
-                borderRadius: '8px',
-                      mb: 1,
-                      backgroundColor: bookHistoryTabValue === 0 ? selectedColor : 'transparent',
-                      color: bookHistoryTabValue === 0 ? 'white' : textColor,
-                                '&:hover': {
-                        backgroundColor: hoverColor,
-                        transform: 'translateX(8px)',
-                        transition: 'all 0.3s ease',
-                        cursor: 'pointer'
-                      },
-                      transition: 'all 0.3s ease'
-                    }}
-                  >
-                    <ListItemIcon>
-                      <MenuBookIcon sx={{ 
-                        color: bookHistoryTabValue === 0 ? 'white' : textColor,
-                        transition: 'all 0.3s ease'
-                      }} />
-                    </ListItemIcon>
-                    <ListItemText 
-                      primary="Soft Books" 
-                      primaryTypographyProps={{
-                        fontWeight: bookHistoryTabValue === 0 ? 'bold' : 'medium',
-                        color: bookHistoryTabValue === 0 ? 'white' : textColor
-                      }}
-                    />
-                  </ListItem>
-
-                  <ListItem
-                    component="div"
-                    onClick={() => handleBookHistoryTabChange(1)}
-                                      sx={{
-                      borderRadius: '8px',
-                      backgroundColor: bookHistoryTabValue === 1 ? selectedColor : 'transparent',
-                      color: bookHistoryTabValue === 1 ? 'white' : textColor,
-                                        '&:hover': {
-                        backgroundColor: hoverColor,
-                        transform: 'translateX(8px)',
-                        transition: 'all 0.3s ease',
-                        cursor: 'pointer'
-                      },
-                      transition: 'all 0.3s ease'
-                    }}
-                  >
-                    <ListItemIcon>
-                      <AutoStoriesIcon sx={{ 
-                        color: bookHistoryTabValue === 1 ? 'white' : textColor,
-                        transition: 'all 0.3s ease'
-                      }} />
-                    </ListItemIcon>
-                    <ListItemText 
-                      primary="Hard Books" 
-                      primaryTypographyProps={{
-                        fontWeight: bookHistoryTabValue === 1 ? 'bold' : 'medium',
-                        color: bookHistoryTabValue === 1 ? 'white' : textColor
-                      }}
-                    />
-                  </ListItem>
-                </List>
-              </>
-            )}
           </Paper>
 
           {/* Main Content */}
-          <Paper
-            elevation={0}
-            sx={{
-              flex: 1,
-              borderRadius: '8px',
-              overflow: 'hidden',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-              backgroundColor: backgroundColor,
-              transition: 'all 0.3s ease'
-            }}
-          >
-            <TabPanel value={mainTabValue} index={0}>
-              {loading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                  <CircularProgress />
-                </Box>
-              ) : (
+          <Box sx={{ flex: 1 }}>
+            <Paper
+              elevation={0}
+              sx={{
+                borderRadius: '16px',
+                overflow: 'hidden',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                backgroundColor: backgroundColor,
+                transition: 'all 0.3s ease'
+              }}
+            >
+              {/* Personal Information Tab */}
+              <TabPanel value={mainTabValue} index={0}>
                 <Box sx={{ p: 3 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-                    {isEditing ? (
-                      <IconButton 
-                        color="primary" 
-                        onClick={handleSave}
-                        disabled={loading}
-                      >
-                        <SaveIcon />
-                      </IconButton>
-                    ) : (
-                      <IconButton 
-                        color="primary" 
-                        onClick={() => setIsEditing(true)}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                    )}
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                      Personal Information
+                    </Typography>
+                    <IconButton
+                      onClick={() => setIsEditing(!isEditing)}
+                      sx={{
+                        backgroundColor: 'rgba(0,0,0,0.05)',
+                        '&:hover': { backgroundColor: 'rgba(0,0,0,0.1)' }
+                      }}
+                    >
+                      {isEditing ? <SaveIcon /> : <EditIcon />}
+                    </IconButton>
                   </Box>
-                  <Grid container spacing={4}>
-                    <Grid item xs={12} md={4} sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'center',
-                      alignItems: 'flex-start',
-                      pt: 2,
-                      px: { md: 4 }
-                    }}>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                        id="avatar-input"
-                        onChange={handleImageChange}
+
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Full Name"
+                        value={userInfo.fullName}
+                        onChange={(e) => setUserInfo({ ...userInfo, fullName: e.target.value })}
                         disabled={!isEditing}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: '12px',
+                            backgroundColor: 'rgba(0,0,0,0.02)'
+                          }
+                        }}
                       />
-                      <label htmlFor="avatar-input">
-                        <Box
-                          component="img"
-                          src={userInfo.avatar}
-                          alt="User Avatar"
-                          sx={{
-                            width: 200,
-                            height: 200,
-                            borderRadius: '50%',
-                            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                            objectFit: 'cover',
-                            transition: 'all 0.3s ease',
-                            cursor: isEditing ? 'pointer' : 'default',
-                            '&:hover': {
-                              transform: isEditing ? 'scale(1.05)' : 'none',
-                              boxShadow: isEditing ? '0 6px 25px rgba(0,0,0,0.15)' : '0 4px 20px rgba(0,0,0,0.1)'
-                            }
-                          }}
-                        />
-                      </label>
                     </Grid>
-                    <Grid item xs={12} md={8} sx={{ pt: 2 }}>
-                      <Grid container spacing={3}>
-                        <Grid item xs={12} sm={6}>
-                          <TextField
-                            fullWidth
-                            label="Full Name"
-                            value={userInfo.fullName}
-                            onChange={(e) => setUserInfo(prev => ({ ...prev, fullName: e.target.value }))}
-                            variant="outlined"
-                            disabled={!isEditing}
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                transition: 'all 0.3s ease',
-                                '&:hover': {
-                                  transform: isEditing ? 'translateY(-2px)' : 'none',
-                                  boxShadow: isEditing ? '0 4px 12px rgba(0,0,0,0.1)' : 'none'
-                                }
-                              }
-                            }}
-                          />
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                          <TextField
-                            fullWidth
-                            label="Email"
-                            value={userInfo.email}
-                            variant="outlined"
-                            disabled
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                transition: 'all 0.3s ease'
-                              }
-                            }}
-                          />
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                          <TextField
-                            fullWidth
-                            label="Phone"
-                            value={userInfo.phone}
-                            onChange={(e) => setUserInfo(prev => ({ ...prev, phone: e.target.value }))}
-                            variant="outlined"
-                            disabled={!isEditing}
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                transition: 'all 0.3s ease',
-                                '&:hover': {
-                                  transform: isEditing ? 'translateY(-2px)' : 'none',
-                                  boxShadow: isEditing ? '0 4px 12px rgba(0,0,0,0.1)' : 'none'
-                                }
-                              }
-                            }}
-                          />
-                        </Grid>
-                        <Grid item xs={12}>
-                          <TextField
-                            fullWidth
-                            label="Address"
-                            value={userInfo.address}
-                            onChange={(e) => setUserInfo(prev => ({ ...prev, address: e.target.value }))}
-                            variant="outlined"
-                            multiline
-                            rows={3}
-                            disabled={!isEditing}
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                transition: 'all 0.3s ease',
-                                '&:hover': {
-                                  transform: isEditing ? 'translateY(-2px)' : 'none',
-                                  boxShadow: isEditing ? '0 4px 12px rgba(0,0,0,0.1)' : 'none'
-                                }
-                              }
-                            }}
-                          />
-                        </Grid>
-                      </Grid>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Email"
+                        value={userInfo.email}
+                        disabled
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: '12px',
+                            backgroundColor: 'rgba(0,0,0,0.02)'
+                          }
+                        }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Phone"
+                        value={userInfo.phone}
+                        onChange={(e) => setUserInfo({ ...userInfo, phone: e.target.value })}
+                        disabled={!isEditing}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: '12px',
+                            backgroundColor: 'rgba(0,0,0,0.02)'
+                          }
+                        }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Address"
+                        value={userInfo.address}
+                        onChange={(e) => setUserInfo({ ...userInfo, address: e.target.value })}
+                        disabled={!isEditing}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: '12px',
+                            backgroundColor: 'rgba(0,0,0,0.02)'
+                          }
+                        }}
+                      />
                     </Grid>
                   </Grid>
+
+                  {isEditing && (
+                    <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                      <Button
+                        variant="outlined"
+                        onClick={() => setIsEditing(false)}
+                        sx={{ borderRadius: '12px' }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        variant="contained"
+                        onClick={handleSave}
+                        sx={{ borderRadius: '12px' }}
+                      >
+                        Save Changes
+                      </Button>
+                    </Box>
+                  )}
                 </Box>
-              )}
-            </TabPanel>
-
-            <TabPanel value={mainTabValue} index={1}>
-              <TabPanel value={bookHistoryTabValue} index={0}>
-                <SoftBooksHistory />
               </TabPanel>
 
-              <TabPanel value={bookHistoryTabValue} index={1}>
-                <HardBooksHistory />
+              {/* Borrowing History Tab */}
+              <TabPanel value={mainTabValue} index={1}>
+                <Box sx={{ p: 3 }}>
+                  <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>
+                    Borrowing History
+                  </Typography>
+                  
+                  <Box sx={{ mb: 3 }}>
+                    <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                      <Box sx={{ display: 'flex', gap: 2 }}>
+                        <Button
+                          variant={bookHistoryTabValue === 0 ? 'contained' : 'text'}
+                          onClick={() => handleBookHistoryTabChange(0)}
+                          startIcon={<MenuBookIcon />}
+                          sx={{
+                            borderRadius: '12px',
+                            textTransform: 'none',
+                            px: 3
+                          }}
+                        >
+                          Digital Books
+                        </Button>
+                        <Button
+                          variant={bookHistoryTabValue === 1 ? 'contained' : 'text'}
+                          onClick={() => handleBookHistoryTabChange(1)}
+                          startIcon={<AutoStoriesIcon />}
+                          sx={{
+                            borderRadius: '12px',
+                            textTransform: 'none',
+                            px: 3
+                          }}
+                        >
+                          Physical Books
+                        </Button>
+                      </Box>
+                    </Box>
+                  </Box>
+
+                  {bookHistoryTabValue === 0 ? (
+                    <SoftBooksHistory />
+                  ) : (
+                    <HardBooksHistory />
+                  )}
+                </Box>
               </TabPanel>
-            </TabPanel>
-          </Paper>
+            </Paper>
+          </Box>
         </Box>
       </Box>
     </>

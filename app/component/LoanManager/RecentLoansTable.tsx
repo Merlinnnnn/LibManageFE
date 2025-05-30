@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+    Box,
     Paper,
     Table,
     TableBody,
@@ -7,198 +8,302 @@ import {
     TableContainer,
     TableHead,
     TableRow,
+    Typography,
+    Button,
     IconButton,
-    Tooltip,
-    TablePagination,
-    Box,
-    Snackbar,
-    Alert,
+    Chip,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    CircularProgress,
+    useTheme,
+    useMediaQuery,
+    TextField,
+    InputAdornment,
     MenuItem,
-    Select,
-    InputLabel,
-    FormControl,
-    Grid
+    Grid,
+    Tooltip
 } from '@mui/material';
-import apiService from '../../untils/api';
-import DoneIcon from '@mui/icons-material/Done';
-import BlockIcon from '@mui/icons-material/Block';
+import QrCodeIcon from '@mui/icons-material/QrCode';
+import SearchIcon from '@mui/icons-material/Search';
+import FilterListIcon from '@mui/icons-material/FilterList';
 import ClearIcon from '@mui/icons-material/Clear';
-import useWebSocket from '@/app/services/useWebSocket';
+import apiService from '@/app/untils/api';
 
 interface Loan {
     transactionId: number;
+    documentId: string;
+    physicalDocId: number;
     documentName: string;
     username: string;
+    librarianId: string | null;
     loanDate: string;
     dueDate: string | null;
+    returnDate: string | null;
     status: string;
+    returnCondition: string | null;
 }
 
-const RecentLoansTable: React.FC = () => {
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+interface ApiResponse {
+    code: number;
+    message: string;
+    success: boolean;
+    data: {
+        content: Loan[];
+        pageNumber: number;
+        pageSize: number;
+        totalElements: number;
+        totalPages: number;
+        last: boolean;
+    };
+}
+
+interface RecentLoansTableProps {
+    onScanQR: (mode: 'reserved' | 'return', loanId: number) => void;
+}
+
+const STATUS_OPTIONS = [
+    { value: 'ALL', label: 'Tất cả' },
+    { value: 'RESERVED', label: 'Đang chờ nhận sách' },
+    { value: 'BORROWED', label: 'Đang mượn' },
+    { value: 'RETURNED', label: 'Đã trả' }
+];
+
+const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR }) => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const [loans, setLoans] = useState<Loan[]>([]);
-    const [filteredLoans, setFilteredLoans] = useState<Loan[]>([]);
-
-    // Snackbar state
-    const [openSnackbar, setOpenSnackbar] = useState(false);
-    const [snackbarMessage, setSnackbarMessage] = useState('');
-    const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
-
-    // Filter state
-    const [filterStatus, setFilterStatus] = useState<string>('ALL');
-
-    useEffect(() => {
-        fetchLoans();
-    }, []);
-
-    useEffect(() => {
-        // Lọc các khoản vay dựa trên trạng thái
-        if (filterStatus === 'ALL') {
-            setFilteredLoans(loans);
-        } else {
-            setFilteredLoans(loans.filter(loan => loan.status === filterStatus));
-        }
-    }, [filterStatus, loans]);
-
-    // useWebSocket((loan: Loan) => {
-    //     setLoans((prevLoans) => {
-    //         const existingLoanIndex = prevLoans.findIndex(existingLoan => existingLoan.transactionId === loan.transactionId);
-
-    //         if (existingLoanIndex !== -1) {
-    //             // Nếu trùng, cập nhật loan cũ
-    //             const updatedLoans = [...prevLoans];
-    //             updatedLoans[existingLoanIndex] = loan;  // Thay thế loan cũ bằng loan mới
-    //             return updatedLoans;
-    //         } else {
-    //             return [loan, ...prevLoans];
-    //         }
-    //     });
-    // });
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
+    const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+    const [showQrDialog, setShowQrDialog] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState('ALL');
+    const [showFilters, setShowFilters] = useState(false);
 
     const fetchLoans = async () => {
         try {
-            const response = await apiService.get<{ data: { content: Loan[] } }>('/api/v1/loans');
-            console.log(response);
-            setLoans(response.data.data.content);
-        } catch (error: any) {
-            const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi tải dữ liệu khoản vay';
-            setSnackbarMessage(errorMessage);
-            setSnackbarSeverity('error');
-            setOpenSnackbar(true);
-        }
-    };
-
-    const handleChangePage = (event: unknown, newPage: number) => {
-        setPage(newPage);
-    };
-
-    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setRowsPerPage(parseInt(event.target.value, 10));
-        setPage(0);
-    };
-
-    const handleLoanAction = async (transactionId: number, action: 'APPROVE' | 'REJECTED' | 'CANCEL') => {
-        try {
-            const response = await apiService.patch('/api/v1/loan-transactions', {
-                transactionId,
-                action,
+            const response = await apiService.get<ApiResponse>('/api/v1/loans', {
+                params: {
+                    page: 0,
+                    size: 10,
+                    sort: 'loanDate,desc',
+                    search: searchQuery || undefined,
+                    status: statusFilter !== 'ALL' ? statusFilter : undefined
+                }
             });
-            setLoans(loans.map(loan =>
-                loan.transactionId === transactionId ? { ...loan, status: action } : loan
-            ));
-            setSnackbarMessage(`Đã ${action.toLowerCase()} thành công!`);
-            setSnackbarSeverity('success');
-            setOpenSnackbar(true);
-        } catch (error: any) {
-            const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi thực hiện hành động';
-            setSnackbarMessage(errorMessage);
-            setSnackbarSeverity('error');
-            setOpenSnackbar(true);
+
+            if (response.data.success) {
+                setLoans(response.data.data.content);
+            } else {
+                setError(response.data.message);
+            }
+        } catch (err) {
+            setError('Có lỗi xảy ra khi tải dữ liệu');
+        } finally {
+            setLoading(false);
         }
+    };
+
+    useEffect(() => {
+        fetchLoans();
+    }, [searchQuery, statusFilter]);
+
+    const handleShowQrCode = async (loan: Loan) => {
+        try {
+            const response = await apiService.get(`/api/v1/loans/${loan.transactionId}/qrcode-image`, {
+                responseType: 'blob'
+            });
+            
+            const imageUrl = URL.createObjectURL(response.data as Blob);
+            setQrCodeUrl(imageUrl);
+            setSelectedLoan(loan);
+            setShowQrDialog(true);
+        } catch (error) {
+            console.error('Error fetching QR code:', error);
+            setError('Không thể tải mã QR');
+        }
+    };
+
+    const handleCloseQrDialog = () => {
+        setShowQrDialog(false);
+        setQrCodeUrl('');
+        setSelectedLoan(null);
+    };
+
+    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchQuery(event.target.value);
+    };
+
+    const handleStatusChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setStatusFilter(event.target.value);
+    };
+
+    const handleClearFilters = () => {
+        setSearchQuery('');
+        setStatusFilter('ALL');
     };
 
     const getStatusColor = (status: string) => {
-        const style = {
-            borderRadius: '5px',
-            padding: '4px 8px',
-            display: 'inline-block',
-            fontWeight: 'bold',
-            textTransform: 'none',
-        };
         switch (status) {
-            case 'APPROVED':
-                return { ...style, backgroundColor: '#e8f5e9', color: '#388e3c', border: '1px solid #388e3c' }; // Approved (Green)
-            case 'CANCEL':
-                return { ...style, backgroundColor: '#ffebee', color: '#d32f2f', border: '1px solid #d32f2f' }; // Cancel (Red)
-            case 'PENDING':
-                return { ...style, backgroundColor: '#e3f2fd', color: '#1976d2', border: '1px solid #1976d2' }; // Pending (Blue)
-            case 'RECEIVED':
-                return { ...style, backgroundColor: '#e8f5e9', color: '#388e3c', border: '1px solid #388e3c' }; // Received (Green)
+            case 'RESERVED':
+                return 'warning';
+            case 'BORROWED':
+                return 'info';
             case 'RETURNED':
-                return { ...style, backgroundColor: '#f3e5f5', color: '#9c27b0', border: '1px solid #9c27b0' }; // Returned (Purple)
+                return 'success';
             default:
-                return style;
+                return 'default';
         }
     };
 
+    const getStatusText = (status: string) => {
+        switch (status) {
+            case 'RESERVED':
+                return 'Đang chờ nhận sách';
+            case 'BORROWED':
+                return 'Đang mượn';
+            case 'RETURNED':
+                return 'Đã trả';
+            default:
+                return status;
+        }
+    };
+
+    if (loading) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
+
+    if (error) {
+        return (
+            <Box sx={{ p: 3, textAlign: 'center' }}>
+                <Typography color="error" variant="h6">
+                    {error}
+                </Typography>
+            </Box>
+        );
+    }
+
     return (
-        <Box>
-            <TableContainer component={Paper} style={{ maxHeight: '300px', overflow: 'auto' }}>
-                <Table stickyHeader size="small">
+        <Box id="recent-loans-table">
+            <Box sx={{ mb: 3 }}>
+                <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} sm={6} md={4}>
+                        <TextField
+                            fullWidth
+                            variant="outlined"
+                            placeholder="Tìm kiếm theo tên sách hoặc người mượn..."
+                            value={searchQuery}
+                            onChange={handleSearchChange}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon />
+                                    </InputAdornment>
+                                ),
+                                endAdornment: searchQuery && (
+                                    <InputAdornment position="end">
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => setSearchQuery('')}
+                                        >
+                                            <ClearIcon />
+                                        </IconButton>
+                                    </InputAdornment>
+                                )
+                            }}
+                        />
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            <TextField
+                                select
+                                fullWidth
+                                variant="outlined"
+                                value={statusFilter}
+                                onChange={handleStatusChange}
+                                label="Trạng thái"
+                            >
+                                {STATUS_OPTIONS.map((option) => (
+                                    <MenuItem key={option.value} value={option.value}>
+                                        {option.label}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
+                            <Tooltip title="Xóa bộ lọc">
+                                <IconButton
+                                    onClick={handleClearFilters}
+                                    color="primary"
+                                    sx={{ 
+                                        border: `1px solid ${theme.palette.divider}`,
+                                        borderRadius: 1
+                                    }}
+                                >
+                                    <ClearIcon />
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
+                    </Grid>
+                </Grid>
+            </Box>
+
+            <TableContainer component={Paper} sx={{ mt: 2 }}>
+                <Table>
                     <TableHead>
                         <TableRow>
-                            <TableCell style={{ padding: '4px 8px' }}>Mã giao dịch</TableCell>
-                            <TableCell style={{ padding: '4px 8px' }}>Tên sách</TableCell>
-                            <TableCell style={{ padding: '4px 8px' }}>Tên người dùng</TableCell>
-                            <TableCell style={{ padding: '4px 8px' }}>Ngày mượn</TableCell>
-                            <TableCell style={{ padding: '4px 8px' }}>
-                                <Grid container spacing={1} alignItems="center">
-                                    <Grid item>
-                                        Trạng thái
-                                    </Grid>
-                                </Grid>
-                            </TableCell>
-                            <TableCell style={{ padding: '4px 8px' }}>Hành động</TableCell>
+                            <TableCell>Tên sách</TableCell>
+                            <TableCell>Người mượn</TableCell>
+                            <TableCell>Ngày mượn</TableCell>
+                            <TableCell>Hạn trả</TableCell>
+                            <TableCell>Trạng thái</TableCell>
+                            <TableCell>Thao tác</TableCell>
                         </TableRow>
                     </TableHead>
-
                     <TableBody>
-                        {filteredLoans.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((loan) => (
+                        {loans.map((loan) => (
                             <TableRow key={loan.transactionId}>
-                                <TableCell style={{ padding: '4px 8px' }}>{loan.transactionId}</TableCell>
-                                <TableCell style={{ padding: '4px 8px' }}>{loan.documentName}</TableCell>
-                                <TableCell style={{ padding: '4px 8px' }}>{loan.username}</TableCell>
-                                <TableCell style={{ padding: '4px 8px' }}>{loan.loanDate}</TableCell>
-
-                                {/* Cột Status */}
-                                <TableCell style={{ padding: '4px 8px' }}>
-                                    <Box sx={getStatusColor(loan.status)}>
-                                        {loan.status}
-                                    </Box>
+                                <TableCell>{loan.documentName}</TableCell>
+                                <TableCell>{loan.username}</TableCell>
+                                <TableCell>{new Date(loan.loanDate).toLocaleDateString()}</TableCell>
+                                <TableCell>
+                                    {loan.dueDate ? new Date(loan.dueDate).toLocaleDateString() : '-'}
                                 </TableCell>
-
-                                <TableCell style={{ padding: '4px 8px' }}>
-                                    {loan.status === 'PENDING' ? (
-                                        <>
-                                            <Tooltip title="Duyệt">
-                                                <IconButton color="primary" onClick={() => handleLoanAction(loan.transactionId, 'APPROVE')}>
-                                                    <DoneIcon />
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Từ chối">
-                                                <IconButton color="secondary" onClick={() => handleLoanAction(loan.transactionId, 'REJECTED')}>
-                                                    <BlockIcon />
-                                                </IconButton>
-                                            </Tooltip>
-                                        </>
-                                    ) : loan.status === 'APPROVED' ? (
-                                        <Tooltip title="Hủy">
-                                            <IconButton color="error" onClick={() => handleLoanAction(loan.transactionId, 'CANCEL')}>
-                                                <ClearIcon />
-                                            </IconButton>
-                                        </Tooltip>
-                                    ) : null}
+                                <TableCell>
+                                    <Chip 
+                                        label={getStatusText(loan.status)}
+                                        color={getStatusColor(loan.status) as any}
+                                        size="small"
+                                    />
+                                </TableCell>
+                                <TableCell>
+                                    {loan.status === 'RESERVED' && (
+                                        <Button
+                                            variant="contained"
+                                            size="small"
+                                            onClick={() => onScanQR('reserved', loan.transactionId)}
+                                            startIcon={<QrCodeIcon />}
+                                            sx={{ mr: 1 }}
+                                        >
+                                            Quét nhận sách
+                                        </Button>
+                                    )}
+                                    {loan.status === 'BORROWED' && (
+                                        <Button
+                                            variant="contained"
+                                            size="small"
+                                            onClick={() => onScanQR('return', loan.transactionId)}
+                                            startIcon={<QrCodeIcon />}
+                                            color="secondary"
+                                        >
+                                            Quét trả sách
+                                        </Button>
+                                    )}
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -206,23 +311,62 @@ const RecentLoansTable: React.FC = () => {
                 </Table>
             </TableContainer>
 
-            <TablePagination
-                rowsPerPageOptions={[5, 10, 25]}
-                component="div"
-                count={filteredLoans.length}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                onPageChange={handleChangePage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-            />
-
-            <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={() => setOpenSnackbar(false)}>
-                <Alert severity={snackbarSeverity} onClose={() => setOpenSnackbar(false)}>
-                    {snackbarMessage}
-                </Alert>
-            </Snackbar>
+            {/* QR Code Dialog */}
+            <Dialog 
+                open={showQrDialog} 
+                onClose={handleCloseQrDialog}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>
+                    {selectedLoan?.status === 'RESERVED' ? 'Quét mã QR nhận sách' : 'Quét mã QR trả sách'}
+                </DialogTitle>
+                <DialogContent>
+                    <Box sx={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'center',
+                        gap: 2,
+                        py: 2
+                    }}>
+                        {qrCodeUrl && (
+                            <Box
+                                component="img"
+                                src={qrCodeUrl}
+                                alt="QR Code"
+                                sx={{
+                                    width: 200,
+                                    height: 200,
+                                    objectFit: 'contain'
+                                }}
+                            />
+                        )}
+                        <Typography variant="body2" color="text.secondary" align="center">
+                            {selectedLoan?.status === 'RESERVED' 
+                                ? 'Quét mã QR để xác nhận người dùng nhận sách'
+                                : 'Quét mã QR để xác nhận người dùng trả sách'}
+                        </Typography>
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseQrDialog}>
+                        Đóng
+                    </Button>
+                    <Button 
+                        variant="contained"
+                        onClick={() => {
+                            if (selectedLoan) {
+                                onScanQR(selectedLoan.status === 'RESERVED' ? 'reserved' : 'return', selectedLoan.transactionId);
+                                handleCloseQrDialog();
+                            }
+                        }}
+                    >
+                        Xác nhận
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };
 
-export default RecentLoansTable;
+export default RecentLoansTable; 
