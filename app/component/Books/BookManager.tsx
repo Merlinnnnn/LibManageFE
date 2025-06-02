@@ -241,6 +241,11 @@ export default function BookManager() {
                 placeholder="Tìm kiếm sách..."
                 value={searchQuery}
                 onChange={handleSearch}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '15px',
+                  }
+                }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -255,6 +260,12 @@ export default function BookManager() {
                   value={selectedCategory}
                   label="Loại sách"
                   onChange={handleCategoryChange}
+                  sx={{
+                    borderRadius: '15px',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderRadius: '15px',
+                    }
+                  }}
                 >
                   <MenuItem value="ALL">Tất cả</MenuItem>
                   <MenuItem value="PHYSICAL">Sách vật lý</MenuItem>
@@ -265,25 +276,29 @@ export default function BookManager() {
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
-                sx={{ minWidth: 150 }}
+                sx={{ 
+                  minWidth: 150,
+                  borderRadius: '15px',
+                  textTransform: 'none'
+                }}
               >
                 Thêm sách
               </Button>
             </Box>
 
             {/* Books Table */}
-            <TableContainer component={Paper}>
+            <TableContainer component={Paper} sx={{ borderRadius: '15px', overflow: 'hidden' }}>
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Tên sách</TableCell>
+                    <TableCell sx={{ borderRadius: '15px 0 0 0' }}>Tên sách</TableCell>
                     <TableCell>Tác giả</TableCell>
                     <TableCell>Nhà xuất bản</TableCell>
                     <TableCell>Loại sách</TableCell>
                     <TableCell>Danh mục</TableCell>
                     <TableCell>Khóa học</TableCell>
                     <TableCell>Số lượng</TableCell>
-                    <TableCell>Thao tác</TableCell>
+                    <TableCell sx={{ borderRadius: '0 15px 0 0' }}>Thao tác</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -308,6 +323,7 @@ export default function BookManager() {
                           label={book.documentCategory}
                           color={getCategoryColor(book.documentCategory)}
                           size="small"
+                          sx={{ borderRadius: '15px' }}
                         />
                       </TableCell>
                       <TableCell>
@@ -316,7 +332,7 @@ export default function BookManager() {
                             key={type.documentTypeId}
                             label={type.typeName}
                             size="small"
-                            sx={{ mr: 0.5, mb: 0.5 }}
+                            sx={{ mr: 0.5, mb: 0.5, borderRadius: '15px' }}
                           />
                         ))}
                       </TableCell>
@@ -326,7 +342,7 @@ export default function BookManager() {
                             key={course.courseId}
                             label={course.courseName}
                             size="small"
-                            sx={{ mr: 0.5, mb: 0.5 }}
+                            sx={{ mr: 0.5, mb: 0.5, borderRadius: '15px' }}
                           />
                         ))}
                       </TableCell>
@@ -344,6 +360,7 @@ export default function BookManager() {
                           onClick={() => handleViewDrmKeys(book.documentId)}
                           disabled={book.documentCategory !== 'DIGITAL' && book.documentCategory !== 'BOTH' || loadingDrm}
                           title="View DRM Keys"
+                          sx={{ borderRadius: '15px' }}
                         >
                           {loadingDrm && drmData?.digitalDocumentId === book.documentId ? <CircularProgress size={20} /> : <KeyIcon />}
                         </IconButton>
@@ -351,6 +368,7 @@ export default function BookManager() {
                         <IconButton
                           color="error"
                           onClick={() => handleDelete(book.documentId)}
+                          sx={{ borderRadius: '15px' }}
                         >
                           <DeleteIcon />
                         </IconButton>
@@ -370,6 +388,11 @@ export default function BookManager() {
                 color="primary"
                 shape="rounded"
                 size="large"
+                sx={{
+                  '& .MuiPaginationItem-root': {
+                    borderRadius: '15px',
+                  }
+                }}
               />
             </Box>
           </Box>
@@ -403,11 +426,16 @@ export default function BookManager() {
         onClose={() => setOpenDrmDialog(false)}
         maxWidth="md"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '15px',
+          }
+        }}
       >
         <DialogTitle>Thông tin DRM và Key</DialogTitle>
         <DialogContent>
           {drmData ? (
-            <TableContainer component={Paper}>
+            <TableContainer component={Paper} sx={{ borderRadius: '15px', overflow: 'hidden' }}>
               <Table size="small">
                 <TableHead>
                   <TableRow>
@@ -447,6 +475,14 @@ export default function BookManager() {
                           checked={upload.key.active}
                           onChange={() => handleToggleKeyStatus(upload.uploadId)}
                           inputProps={{ 'aria-label': 'toggle key status' }}
+                          sx={{
+                            '& .MuiSwitch-switchBase': {
+                              borderRadius: '15px',
+                            },
+                            '& .MuiSwitch-thumb': {
+                              borderRadius: '15px',
+                            }
+                          }}
                         />
                       </TableCell>
                     </TableRow>
@@ -459,7 +495,15 @@ export default function BookManager() {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDrmDialog(false)}>Đóng</Button>
+          <Button 
+            onClick={() => setOpenDrmDialog(false)}
+            sx={{ 
+              borderRadius: '15px',
+              textTransform: 'none'
+            }}
+          >
+            Đóng
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

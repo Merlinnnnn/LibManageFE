@@ -209,7 +209,7 @@ const AddBookPage: React.FC = () => {
             selectedTags.forEach((tagId) => formData.append('documentTypeIds', tagId.toString()));
             selectedCourses.forEach((courseId) => formData.append('courseIds', courseId.toString()));
             if (selectedFile) {
-                formData.append('image', selectedFile);
+                formData.append('coverImage', selectedFile);
             }
 
             if (selectedPdfFile) {

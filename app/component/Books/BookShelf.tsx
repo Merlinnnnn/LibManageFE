@@ -227,13 +227,17 @@ interface CourseRes {
 }
 
 interface RecommendationsResponse {
-  content: Book[];
-  pageNumber: number;
-  pageSize: number;
-  totalElements: number;
-  totalPages: number;
-  last: boolean;
-  sortDetails: any[];
+  code: number;
+  message: string;
+  data: {
+    content: Book[];
+    pageNumber: number;
+    pageSize: number;
+    totalElements: number;
+    totalPages: number;
+    last: boolean;
+    sortDetails: any[];
+  };
 }
 
 export default function BookShelf() {
@@ -476,8 +480,8 @@ export default function BookShelf() {
   const fetchRecommendations = async () => {
     try {
       const response = await apiService.get<RecommendationsResponse>('/api/v1/recommendations/ml');
-      if (response.data?.content) {
-        setRecommendedBooks(response.data.content);
+      if (response.data?.data?.content) {
+        setRecommendedBooks(response.data.data.content);
       }
     } catch (error) {
       console.log('Lỗi khi tải sách đề xuất:', error);
@@ -855,7 +859,13 @@ export default function BookShelf() {
                     <LocalLibraryIcon color="primary" sx={{ mr: 1 }} />
                     {searchString ? `Kết quả tìm kiếm cho "${searchString}"` : 'Tất Cả Sách'}
                   </Typography>
-                  <Typography color="text.secondary">
+                  <Typography color="text.secondary" sx={{ 
+                                        bgcolor: 'rgba(0, 0, 0, 0.04)',
+                                        px: 2,
+                                        py: 0.5,
+                                        borderRadius: '15px',
+                                        fontSize: '0.9rem'
+                                    }}>
                     Tìm thấy {books.length} {books.length === 1 ? 'quyển sách' : 'quyển sách'}
                   </Typography>
                 </Box>

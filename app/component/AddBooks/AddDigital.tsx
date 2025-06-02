@@ -239,7 +239,7 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
             fullWidth
             PaperProps={{
                 sx: {
-                    borderRadius: '12px',
+                    borderRadius: '10px',
                     boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.1)'
                 }
             }}
@@ -272,7 +272,7 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
                                 sx={{
                                     display: 'block',
                                     border: fileError ? '2px dashed #f44336' : '2px dashed #e0e0e0',
-                                    borderRadius: '8px',
+                                    borderRadius: '10px',
                                     padding: '16px',
                                     textAlign: 'center',
                                     backgroundColor: '#fafafa',
@@ -286,7 +286,7 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
                                     <Avatar
                                         src={preview}
                                         alt="Book Cover Preview"
-                                        sx={{ width: 150, height: 200, margin: '0 auto' }}
+                                        sx={{ width: 150, height: 200, margin: '0 auto', borderRadius: '10px' }}
                                         variant="rounded"
                                     />
                                 ) : (
@@ -326,7 +326,8 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
                                     justifyContent: 'flex-start',
                                     textTransform: 'none',
                                     borderColor: filesError ? '#f44336' : undefined,
-                                    mb: 2
+                                    mb: 2,
+                                    borderRadius: '10px'
                                 }}
                             >
                                 Upload Documents (PDF, Word)
@@ -343,26 +344,71 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
                                 </Typography>
                             )}
                             {selectedFiles.length > 0 && (
-                                <List>
+                                <List sx={{ 
+                                    maxHeight: '200px', 
+                                    overflowY: 'auto',
+                                    bgcolor: '#f5f5f5',
+                                    borderRadius: '10px',
+                                    p: 1
+                                }}>
                                     {selectedFiles.map((selectedFile, index) => (
                                         <ListItem
                                             key={index}
+                                            sx={{
+                                                bgcolor: 'white',
+                                                mb: 1,
+                                                borderRadius: '8px',
+                                                '&:last-child': {
+                                                    mb: 0
+                                                }
+                                            }}
                                             secondaryAction={
-                                                <IconButton edge="end" onClick={() => removeFile(index)}>
+                                                <IconButton 
+                                                    edge="end" 
+                                                    onClick={() => removeFile(index)}
+                                                    sx={{
+                                                        color: '#f44336',
+                                                        '&:hover': {
+                                                            bgcolor: 'rgba(244, 67, 54, 0.08)'
+                                                        }
+                                                    }}
+                                                >
                                                     <CloseIcon />
                                                 </IconButton>
                                             }
                                         >
                                             <ListItemIcon>
                                                 {selectedFile.type === 'pdf' ? (
-                                                    <PictureAsPdfIcon color="primary" />
+                                                    <PictureAsPdfIcon color="error" />
                                                 ) : (
                                                     <ArticleIcon color="primary" />
                                                 )}
                                             </ListItemIcon>
                                             <ListItemText
-                                                primary={selectedFile.file.name}
-                                                secondary={`${(selectedFile.file.size / 1024 / 1024).toFixed(2)} MB`}
+                                                primary={
+                                                    <Typography
+                                                        variant="body2"
+                                                        sx={{
+                                                            fontWeight: 500,
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            whiteSpace: 'nowrap',
+                                                            maxWidth: '200px'
+                                                        }}
+                                                    >
+                                                        {selectedFile.file.name}
+                                                    </Typography>
+                                                }
+                                                secondary={
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                        <Typography variant="caption" color="text.secondary">
+                                                            {(selectedFile.file.size / 1024 / 1024).toFixed(2)} MB
+                                                        </Typography>
+                                                        <Typography variant="caption" color="text.secondary">
+                                                            {selectedFile.type.toUpperCase()}
+                                                        </Typography>
+                                                    </Box>
+                                                }
                                             />
                                         </ListItem>
                                     ))}
@@ -391,6 +437,11 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
                                     </InputAdornment>
                                 ),
                             }}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: '10px'
+                                }
+                            }}
                         />
 
                         <TextField
@@ -404,6 +455,11 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
                             required
                             error={!book.author.trim()}
                             helperText={!book.author.trim() ? 'Author is required' : ''}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: '10px'
+                                }
+                            }}
                         />
 
                         <TextField
@@ -416,6 +472,11 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
                             variant="outlined"
                             multiline
                             rows={4}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: '10px'
+                                }
+                            }}
                         />
 
                         <Box mt={3}>
@@ -433,6 +494,7 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
                                         variant={book.documentTypeIds.includes(tag.id) ? 'filled' : 'outlined'}
                                         deleteIcon={<CheckCircleIcon />}
                                         onDelete={book.documentTypeIds.includes(tag.id) ? () => {} : undefined}
+                                        sx={{ borderRadius: '10px' }}
                                     />
                                 ))}
                             </Box>
@@ -453,6 +515,7 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
                                         variant={book.courseIds.includes(course.id) ? 'filled' : 'outlined'}
                                         deleteIcon={<CheckCircleIcon />}
                                         onDelete={book.courseIds.includes(course.id) ? () => {} : undefined}
+                                        sx={{ borderRadius: '10px' }}
                                     />
                                 ))}
                             </Box>
@@ -473,7 +536,7 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
                     <Button 
                         onClick={handleClose} 
                         color="inherit" 
-                        sx={{ mr: 2 }}
+                        sx={{ mr: 2, borderRadius: '10px' }}
                         disabled={isSubmitting}
                     >
                         Cancel
@@ -484,6 +547,7 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
                         variant="contained"
                         disabled={isSubmitting || !selectedFile || selectedFiles.length === 0 || !book.title.trim() || !book.author.trim()}
                         startIcon={isSubmitting ? <CircularProgress size={20} /> : undefined}
+                        sx={{ borderRadius: '10px' }}
                     >
                         {isSubmitting ? 'Adding...' : 'Add Book'}
                     </Button>

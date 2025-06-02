@@ -132,15 +132,41 @@ const FloatingChat: React.FC = () => {
 
   const handleSend = async (text: string, payload?: string | object) => {
     if (!text.trim() && !payload) return;
-    if (!payload) setMessages((prev) => [...prev, { from: 'user', text }]);
+    
+    // Add user message to chat
+    if (!payload) {
+      setMessages((prev) => [...prev, { from: 'user', text }]);
+    } else {
+      // If it's a payload action, show the action text
+      const payloadObj = typeof payload === 'string' ? JSON.parse(payload) : payload;
+      if (payloadObj.eventName === 'summarize') {
+        setMessages((prev) => [...prev, { from: 'user', text: 'Tóm tắt sách' }]);
+      } else {
+        setMessages((prev) => [...prev, { from: 'user', text }]);
+      }
+    }
     setInput('');
   
     try {
-      const res = await apiService.post<ChatResponse>('/api/chat', {
+      // Parse payload contents into main request object
+      let requestData: any = {
         message: text,
-        sessionId,
-        payload: payload ?? null, // gửi payload dạng object nếu có
-      });
+        sessionId
+      };
+
+      if (payload) {
+        const payloadObj = typeof payload === 'string' ? JSON.parse(payload) : payload;
+        if (payloadObj.eventName === 'summarize') {
+          requestData = {
+            message: 'Tóm tắt sách',
+            eventName: 'summarize',
+            bookId: payloadObj.parameters.bookId,
+            sessionId
+          };
+        }
+      }
+
+      const res = await apiService.post<ChatResponse>('/api/chat', requestData);
       console.log('res', res);
   
       const { data } = res;
@@ -166,8 +192,8 @@ const FloatingChat: React.FC = () => {
   
   const handleQuickReply = (qr: QuickReply) => {
     try {
-      const parsedPayload = JSON.parse(qr.payload); // object
-      handleSend('',parsedPayload); // ✅ ép lại thành string
+      const parsedPayload = JSON.parse(qr.payload);
+      handleSend(qr.text, parsedPayload);
     } catch (err) {
       console.error('Payload không phải JSON hợp lệ:', err);
     }
@@ -218,7 +244,7 @@ const FloatingChat: React.FC = () => {
                   </Box>
                 </Box>
 
-                {msg.cards?.length && msg.cards.length > 0 && (
+                {Array.isArray(msg.cards) && msg.cards.length > 0 && (
                   <Stack direction="column" spacing={1} mt={1} width="100%">
                     {msg.cards.map((card, idx) => (
                       <Paper key={idx} sx={{ p: 1, bgcolor: '#fff', boxShadow: 2, borderRadius: 2 }}>
@@ -250,7 +276,7 @@ const FloatingChat: React.FC = () => {
                   </Stack>
                 )}
 
-                {msg.quickReplies?.length && (
+                {Array.isArray(msg.quickReplies) && msg.quickReplies.length > 0 && (
                   <Stack direction="row" spacing={1} mt={1} flexWrap="wrap">
                     {msg.quickReplies.map((qr, j) => (
                       <Button key={j} variant="contained" onClick={() => handleQuickReply(qr)} sx={{ borderRadius: 8, textTransform: 'none', px: 2 }}>{qr.text}</Button>
@@ -258,7 +284,7 @@ const FloatingChat: React.FC = () => {
                   </Stack>
                 )}
 
-                {msg.options?.length && (
+                {Array.isArray(msg.options) && msg.options.length > 0 && (
                   <Stack
                     direction="column"
                     spacing={1.2}

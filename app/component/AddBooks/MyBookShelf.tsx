@@ -44,6 +44,8 @@ import LocalLibraryIcon from '@mui/icons-material/LocalLibrary';
 import ListIcon from '@mui/icons-material/List';
 import AccessList from './AccessList';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
 interface Upload {
     uploadId: number;
@@ -61,6 +63,7 @@ interface DigitalDocument {
     description: string;
     coverImage: string | null;
     uploads: Upload[];
+    approvalStatus: string;
 }
 
 interface Book {
@@ -75,7 +78,7 @@ interface Book {
     isPublic: boolean;
     wordFile?: string;
     pdfFile?: string;
-    mp4File?: string;
+    approvalStatus: string;
 }
 
 interface FavoriteBook {
@@ -89,7 +92,6 @@ interface FavoriteBook {
     courses: string[];
     wordFile?: string;
     pdfFile?: string;
-    mp4File?: string;
 }
 
 interface DocumentType {
@@ -122,6 +124,32 @@ interface ApiResponse<T> {
     success: boolean;
 }
 
+const getStatusColor = (status: string) => {
+    switch (status) {
+        case 'APPROVED':
+            return 'success';
+        case 'APPROVED_BY_AI':
+            return 'warning';
+        case 'REJECTED':
+            return 'error';
+        default:
+            return 'default';
+    }
+};
+
+const getStatusLabel = (status: string) => {
+    switch (status) {
+        case 'APPROVED':
+            return 'Đã duyệt';
+        case 'APPROVED_BY_AI':
+            return 'Đang chờ';
+        case 'REJECTED':
+            return 'Từ chối';
+        default:
+            return status;
+    }
+};
+
 const MyBookShelf: React.FC = () => {
     const theme = useTheme();
     const [books, setBooks] = useState<Book[]>([]);
@@ -146,6 +174,8 @@ const MyBookShelf: React.FC = () => {
     const [selectedUploadId, setSelectedUploadId] = useState<number | null>(null);
     const [allBooks, setAllBooks] = useState<Book[]>([]);
     const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
+    const [openTypeFilter, setOpenTypeFilter] = useState(true);
+    const [openCourseFilter, setOpenCourseFilter] = useState(true);
 
     // Add scroll event listener
     useEffect(() => {
@@ -199,9 +229,15 @@ const MyBookShelf: React.FC = () => {
             console.log(response);
             
             const fetchedBooks = response.data.data.content.map(doc => {
-                const wordFile = doc.uploads.find(u => u.fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || u.fileType === 'application/msword')?.filePath;
-                const pdfFile = doc.uploads.find(u => u.fileType === 'application/pdf')?.filePath;
-                const mp4File = doc.uploads.find(u => u.fileType === 'video/mp4')?.filePath;
+                const wordFile = doc.uploads.find(u => 
+                    u.fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || 
+                    u.fileType === 'application/msword' || 
+                    u.fileType === 'docx'
+                )?.filePath;
+                const pdfFile = doc.uploads.find(u => 
+                    u.fileType === 'application/pdf' || 
+                    u.fileType === 'pdf'
+                )?.filePath;
                 const firstUpload = doc.uploads[0];
 
                 return {
@@ -216,7 +252,7 @@ const MyBookShelf: React.FC = () => {
                     isPublic: true,
                     wordFile,
                     pdfFile,
-                    mp4File
+                    approvalStatus: doc.approvalStatus
                 };
             });
 
@@ -249,8 +285,7 @@ const MyBookShelf: React.FC = () => {
                     documentType: book.documentType,
                     courses: book.courses,
                     wordFile: book.wordFile,
-                    pdfFile: book.pdfFile,
-                    mp4File: book.mp4File
+                    pdfFile: book.pdfFile
                 }));
             }
             return [];
@@ -453,10 +488,10 @@ const MyBookShelf: React.FC = () => {
                         background: 'linear-gradient(45deg, #6a1b9a 30%, #9c27b0 90%)'
                     }}>
                         <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
-                            My Digital Library
+                            Thư viện ảo của tôi
                         </Typography>
                         <Typography variant="h6" sx={{ mb: 3 }}>
-                            Manage and organize your digital documents
+                            Quản lý và sắp xếp tài liệu điện tử của bạn
                         </Typography>
                         
                         <Box sx={{ 
@@ -475,7 +510,7 @@ const MyBookShelf: React.FC = () => {
                                 onKeyDown={handleSearchKeyPress}
                                 sx={{
                                     bgcolor: 'background.paper',
-                                    borderRadius: 2,
+                                    borderRadius: 4,
                                     '& fieldset': {
                                         borderRadius: 2,
                                         border: 'none'
@@ -529,17 +564,18 @@ const MyBookShelf: React.FC = () => {
                     
                     {/* Main Content */}
                     <Grid container spacing={4}>
-                        
                         {/* Filters Sidebar */}
-                        <Grid item xs={12} md={3}>
+                        <Grid item xs={12} md={3.5}>
                             <Paper sx={{ 
                                 p: 3, 
-                                borderRadius: 3,
+                                borderRadius: 4,
                                 position: 'sticky',
                                 top: { xs: 80, sm: 88 },
                                 boxShadow: 3,
                                 maxHeight: 'calc(100vh - 100px)',
-                                overflowY: 'auto'
+                                overflowY: 'auto',
+                                minWidth: 320,
+                                width: '100%',
                             }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                                     <FilterListIcon color="primary" sx={{ mr: 1 }} />
@@ -547,70 +583,153 @@ const MyBookShelf: React.FC = () => {
                                 </Box>
 
                                 <Box sx={{ mb: 3 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                    <Box
+                                        sx={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            mb: 1, 
+                                            cursor: 'pointer',
+                                            userSelect: 'none'
+                                        }}
+                                        onClick={() => setOpenTypeFilter((prev) => !prev)}
+                                    >
                                         <CategoryIcon color="action" sx={{ mr: 1, fontSize: 20 }} />
-                                        <Typography variant="subtitle1">Document Types</Typography>
+                                        <Typography variant="subtitle1" sx={{ flex: 1 }}>Document Types</Typography>
+                                        {openTypeFilter ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                                     </Box>
-                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                        {documentTypes.map((type) => (
-                                            <Chip
-                                                key={type.id}
-                                                label={type.name}
-                                                clickable
-                                                variant={selectedDocumentTypes.includes(type.id) ? 'filled' : 'outlined'}
-                                                color={selectedDocumentTypes.includes(type.id) ? 'primary' : 'default'}
-                                                onClick={() => handleDocumentTypeToggle(type.id)}
-                                                sx={{ mb: 1 }}
-                                            />
-                                        ))}
-                                    </Box>
+                                    {openTypeFilter && (
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                            {documentTypes.map((type) => (
+                                                <Chip
+                                                    key={type.id}
+                                                    label={type.name}
+                                                    clickable
+                                                    variant={selectedDocumentTypes.includes(type.id) ? 'filled' : 'outlined'}
+                                                    color={selectedDocumentTypes.includes(type.id) ? 'primary' : 'default'}
+                                                    onClick={() => handleDocumentTypeToggle(type.id)}
+                                                    sx={{ mb: 1, borderRadius: '10px' }}
+                                                />
+                                            ))}
+                                        </Box>
+                                    )}
                                 </Box>
 
                                 <Divider sx={{ my: 2 }} />
 
                                 <Box>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                    <Box
+                                        sx={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            mb: 1,
+                                            cursor: 'pointer',
+                                            userSelect: 'none'
+                                        }}
+                                        onClick={() => setOpenCourseFilter((prev) => !prev)}
+                                    >
                                         <SchoolIcon color="action" sx={{ mr: 1, fontSize: 20 }} />
-                                        <Typography variant="subtitle1">Courses</Typography>
+                                        <Typography variant="subtitle1" sx={{ flex: 1 }}>Courses</Typography>
+                                        {openCourseFilter ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                                     </Box>
-                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                        {courses.map((course) => (
-                                            <Chip
-                                                key={course.id}
-                                                label={course.name}
-                                                clickable
-                                                variant={selectedCourses.includes(course.id) ? 'filled' : 'outlined'}
-                                                color={selectedCourses.includes(course.id) ? 'primary' : 'default'}
-                                                onClick={() => handleCourseToggle(course.id)}
-                                                sx={{ mb: 1 }}
-                                            />
-                                        ))}
-                                    </Box>
+                                    {openCourseFilter && (
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                            {courses.map((course) => (
+                                                <Chip
+                                                    key={course.id}
+                                                    label={course.name}
+                                                    clickable
+                                                    variant={selectedCourses.includes(course.id) ? 'filled' : 'outlined'}
+                                                    color={selectedCourses.includes(course.id) ? 'primary' : 'default'}
+                                                    onClick={() => handleCourseToggle(course.id)}
+                                                    sx={{ mb: 1, borderRadius: '10px' }}
+                                                />
+                                            ))}
+                                        </Box>
+                                    )}
                                 </Box>
                             </Paper>
                         </Grid>
 
                         {/* Books List */}
-                        <Grid item xs={12} md={9}>
+                        <Grid item xs={12} md={8.5}>
                             <Paper sx={{ 
                                 p: 3, 
-                                borderRadius: 3,
+                                borderRadius: 4,
                                 minHeight: '60vh',
                                 boxShadow: 3
                             }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                                    <Typography variant="h5" sx={{ display: 'flex', alignItems: 'center' }}>
+                                    <Typography variant="h5" sx={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center',
+                                        fontWeight: 600,
+                                        color: 'primary.main'
+                                    }}>
                                         <LocalLibraryIcon color="primary" sx={{ mr: 1 }} />
-                                        {activeTab === 0 ? 'My Books' : 'Favorites'}
+                                        {activeTab === 0 ? 'Sách của tôi' : 'Sách ưa thích'}
                                     </Typography>
-                                    <Typography color="text.secondary">
-                                        {activeTab === 0 ? books.length : favoriteBooks.length} {activeTab === 0 ? 'books' : 'favorites'} found
+                                    <Typography color="text.secondary" sx={{ 
+                                        bgcolor: 'rgba(0, 0, 0, 0.04)',
+                                        px: 2,
+                                        py: 0.5,
+                                        borderRadius: '15px',
+                                        fontSize: '0.9rem'
+                                    }}>
+                                        {activeTab === 0 ? books.length : favoriteBooks.length} {activeTab === 0 ? 'sách' : 'sách yêu thích'} được tìm thấy
                                     </Typography>
                                 </Box>
 
-                                <Tabs value={activeTab} onChange={(event, newValue) => setActiveTab(newValue)} aria-label="book shelf tabs" sx={{ mb: 3 }}>
-                                    <Tab label="My Books" icon={<DescriptionIcon />} iconPosition="start" />
-                                    <Tab label="Favorites" icon={<FavoriteIcon />} iconPosition="start" />
+                                <Tabs 
+                                    value={activeTab} 
+                                    onChange={(event, newValue) => setActiveTab(newValue)} 
+                                    aria-label="book shelf tabs" 
+                                    sx={{ 
+                                        mb: 3,
+                                        '& .MuiTabs-indicator': {
+                                            height: 3,
+                                            borderRadius: '3px',
+                                            backgroundColor: 'primary.main',
+                                        },
+                                        '& .MuiTab-root': {
+                                            borderRadius: '15px',
+                                            mx: 1,
+                                            minHeight: 48,
+                                            textTransform: 'none',
+                                            fontWeight: 600,
+                                            fontSize: '1rem',
+                                            transition: 'all 0.3s ease',
+                                            '&.Mui-selected': {
+                                                color: 'primary.main',
+                                                bgcolor: 'rgba(25, 118, 210, 0.08)',
+                                            },
+                                            '&:hover': {
+                                                bgcolor: 'rgba(25, 118, 210, 0.04)',
+                                            }
+                                        }
+                                    }}
+                                >
+                                    <Tab 
+                                        label="My Books" 
+                                        icon={<DescriptionIcon />} 
+                                        iconPosition="start"
+                                        sx={{
+                                            '& .MuiSvgIcon-root': {
+                                                mr: 1,
+                                                fontSize: '1.2rem'
+                                            }
+                                        }}
+                                    />
+                                    <Tab 
+                                        label="Favorites" 
+                                        icon={<FavoriteIcon />} 
+                                        iconPosition="start"
+                                        sx={{
+                                            '& .MuiSvgIcon-root': {
+                                                mr: 1,
+                                                fontSize: '1.2rem'
+                                            }
+                                        }}
+                                    />
                                 </Tabs>
 
                                 {activeTab === 0 ? (
@@ -624,7 +743,18 @@ const MyBookShelf: React.FC = () => {
                                                 <Grid container spacing={3}>
                                                     {currentBooks.map((book) => (
                                                         <Grid item xs={12} key={book.id}>
-                                                            <Card sx={{ display: 'flex', boxShadow: 3, p: 2, width: '100%', borderRadius: '20px' }}>
+                                                            <Card sx={{ 
+                                                                display: 'flex', 
+                                                                boxShadow: 3, 
+                                                                p: 2, 
+                                                                width: '100%', 
+                                                                borderRadius: 4,
+                                                                transition: 'transform 0.3s ease-in-out',
+                                                                '&:hover': {
+                                                                    transform: 'translateY(-5px)',
+                                                                    boxShadow: 6
+                                                                }
+                                                            }}>
                                                                 <CardMedia
                                                                     component="img"
                                                                     sx={{
@@ -633,7 +763,7 @@ const MyBookShelf: React.FC = () => {
                                                                         objectFit: 'cover',
                                                                         bgcolor: '#f5f5f5',
                                                                         border: '1px solid black',
-                                                                        borderRadius: '20px'
+                                                                        borderRadius: 4
                                                                     }}
                                                                     image={book.coverImage || 'https://th.bing.com/th/id/OIP.cB5B7jK44BU3VNazD-SqYgHaHa?rs=1&pid=ImgDetMain'}
                                                                     alt={book.title}
@@ -650,6 +780,15 @@ const MyBookShelf: React.FC = () => {
                                                                             </Typography>
                                                                         </Box>
                                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                            <Chip
+                                                                                label={getStatusLabel(book.approvalStatus)}
+                                                                                color={getStatusColor(book.approvalStatus)}
+                                                                                size="small"
+                                                                                sx={{ 
+                                                                                    borderRadius: '10px',
+                                                                                    fontWeight: 500
+                                                                                }}
+                                                                            />
                                                                             <IconButton
                                                                                 onClick={() => handleAccessListClick(book.id)}
                                                                                 color="primary"
@@ -658,6 +797,7 @@ const MyBookShelf: React.FC = () => {
                                                                                     '&:hover': {
                                                                                         backgroundColor: 'rgba(25, 118, 210, 0.12)',
                                                                                     },
+                                                                                    borderRadius: '10px'
                                                                                 }}
                                                                             >
                                                                                 <ListIcon />
@@ -682,24 +822,32 @@ const MyBookShelf: React.FC = () => {
 
                                                                     <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
                                                                         {book.wordFile && (
-                                                                            <Button
-                                                                                variant="contained"
-                                                                                startIcon={<DescriptionIcon />}
-                                                                                onClick={() => handleFileOpen(book.wordFile!)}
-                                                                                sx={{ textTransform: 'none' }}
-                                                                            >
-                                                                                Read Word
-                                                                            </Button>
+                                                                            <Chip
+                                                                                icon={<DescriptionIcon />}
+                                                                                label="Word"
+                                                                                color="primary"
+                                                                                variant="outlined"
+                                                                                sx={{ 
+                                                                                    borderRadius: '10px',
+                                                                                    '& .MuiChip-icon': {
+                                                                                        color: 'primary.main'
+                                                                                    }
+                                                                                }}
+                                                                            />
                                                                         )}
                                                                         {book.pdfFile && (
-                                                                            <Button
-                                                                                variant="contained"
-                                                                                startIcon={<PictureAsPdfIcon />}
-                                                                                onClick={() => handleFileOpen(book.pdfFile!)}
-                                                                                sx={{ textTransform: 'none' }}
-                                                                            >
-                                                                                Read PDF
-                                                                            </Button>
+                                                                            <Chip
+                                                                                icon={<PictureAsPdfIcon />}
+                                                                                label="PDF"
+                                                                                color="error"
+                                                                                variant="outlined"
+                                                                                sx={{ 
+                                                                                    borderRadius: '10px',
+                                                                                    '& .MuiChip-icon': {
+                                                                                        color: 'error.main'
+                                                                                    }
+                                                                                }}
+                                                                            />
                                                                         )}
                                                                     </Box>
                                                                 </CardContent>
@@ -713,6 +861,8 @@ const MyBookShelf: React.FC = () => {
                                                         page={currentPage}
                                                         onChange={(event, page) => setCurrentPage(page)}
                                                         color="primary"
+                                                        shape="rounded"
+                                                        size="large"
                                                     />
                                                 </Box>
                                             </>
@@ -721,7 +871,7 @@ const MyBookShelf: React.FC = () => {
                                                 textAlign: 'center', 
                                                 py: 10,
                                                 background: 'linear-gradient(to bottom right, #f5f5f5, #e0e0e0)',
-                                                borderRadius: 3
+                                                borderRadius: 4
                                             }}>
                                                 <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
                                                     No books found
@@ -730,6 +880,10 @@ const MyBookShelf: React.FC = () => {
                                                     variant="outlined" 
                                                     color="primary"
                                                     onClick={() => setOpenUploadDialog(true)}
+                                                    sx={{
+                                                        borderRadius: '10px',
+                                                        px: 3
+                                                    }}
                                                 >
                                                     Upload Your First Book
                                                 </Button>
@@ -777,24 +931,32 @@ const MyBookShelf: React.FC = () => {
 
                                                                     <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
                                                                         {book.wordFile && (
-                                                                            <Button
-                                                                                variant="contained"
-                                                                                startIcon={<DescriptionIcon />}
-                                                                                onClick={() => handleFileOpen(book.wordFile!)}
-                                                                                sx={{ textTransform: 'none' }}
-                                                                            >
-                                                                                Read Word
-                                                                            </Button>
+                                                                            <Chip
+                                                                                icon={<DescriptionIcon />}
+                                                                                label="Word"
+                                                                                color="primary"
+                                                                                variant="outlined"
+                                                                                sx={{ 
+                                                                                    borderRadius: '10px',
+                                                                                    '& .MuiChip-icon': {
+                                                                                        color: 'primary.main'
+                                                                                    }
+                                                                                }}
+                                                                            />
                                                                         )}
                                                                         {book.pdfFile && (
-                                                                            <Button
-                                                                                variant="contained"
-                                                                                startIcon={<PictureAsPdfIcon />}
-                                                                                onClick={() => handleFileOpen(book.pdfFile!)}
-                                                                                sx={{ textTransform: 'none' }}
-                                                                            >
-                                                                                Read PDF
-                                                                            </Button>
+                                                                            <Chip
+                                                                                icon={<PictureAsPdfIcon />}
+                                                                                label="PDF"
+                                                                                color="error"
+                                                                                variant="outlined"
+                                                                                sx={{ 
+                                                                                    borderRadius: '10px',
+                                                                                    '& .MuiChip-icon': {
+                                                                                        color: 'error.main'
+                                                                                    }
+                                                                                }}
+                                                                            />
                                                                         )}
                                                                     </Box>
                                                                 </CardContent>

@@ -64,7 +64,7 @@ const HeroSection = styled(Box)(({ theme }: { theme: Theme }) => ({
 
 const ServiceCardContainer = styled('a')<{bgimage?: string}>(({ theme, bgimage }) => ({
   position: 'relative',
-  borderRadius: '8px',
+  borderRadius: '15px',
   padding: theme.spacing(4),
   height: '100%',
   minHeight: '200px',
@@ -265,7 +265,7 @@ const Home: React.FC = () => {
                     textShadow: '0 2px 4px rgba(0,0,0,0.3)'
                   }}
                 >
-                  Welcome to Our Digital Library
+                  Chào mừng đến với Thư viện Số của chúng tôi
                 </Typography>
                 <Typography 
                   variant="h5" 
@@ -291,7 +291,7 @@ const Home: React.FC = () => {
                     color: 'white',
                     px: 4,
                     py: 1.5,
-                    borderRadius: '4px',
+                    borderRadius: '15px',
                     fontWeight: 600,
                     '&:hover': {
                       backgroundColor: 'secondary.dark',
