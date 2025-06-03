@@ -23,7 +23,11 @@ import {
     InputAdornment,
     Grid,
     useTheme,
-    Tooltip
+    Tooltip,
+    MenuItem,
+    Select,
+    FormControl,
+    InputLabel
 } from '@mui/material';
 import apiService from '../../untils/api';
 import EmailIcon from '@mui/icons-material/Email';
@@ -31,6 +35,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import SendNotiDialog from './SendNotiDiolog';
 import DeleteIcon from '@mui/icons-material/Delete';
+import LockIcon from '@mui/icons-material/Lock';
 
 interface User {
     userId: string;
@@ -54,6 +59,8 @@ const NewStudentsTable: React.FC = () => {
     const [notificationTitle, setNotificationTitle] = useState("");
     const [notificationContent, setNotificationContent] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
+    const [selectedRole, setSelectedRole] = useState<string>('user');
+    const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
     // Snackbar states
     const [openSnackbar, setOpenSnackbar] = useState(false);
@@ -61,8 +68,28 @@ const NewStudentsTable: React.FC = () => {
     const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
 
     useEffect(() => {
-        fetchStudents();
+        // Lấy role từ localStorage
+        const infoString = localStorage.getItem('info');
+        if (infoString) {
+            try {
+                const info = JSON.parse(infoString);
+                if (info.roles && Array.isArray(info.roles)) {
+                    setIsAdmin(info.roles.includes('ADMIN'));
+                    if (info.roles.includes('ADMIN')) {
+                        setSelectedRole('user');
+                    } else {
+                        setSelectedRole('user');
+                    }
+                }
+            } catch (e) {
+                setIsAdmin(false);
+            }
+        }
     }, []);
+
+    useEffect(() => {
+        fetchStudents();
+    }, [selectedRole]);
 
     useEffect(() => {
         if (selectedUsers.length === 0) {
@@ -87,7 +114,10 @@ const NewStudentsTable: React.FC = () => {
 
     const fetchStudents = async () => {
         try {
-            const response = await apiService.get<{ data: { content: User[] } }>('/api/v1/users');
+            const response = await apiService.get<{ data: { content: User[] } }>(
+                '/api/v1/users',
+                // { params: { role: selectedRole } }
+            );
             setStudents(response.data.data.content);
             setFilteredStudents(response.data.data.content);
         } catch (error) {
@@ -224,6 +254,22 @@ const NewStudentsTable: React.FC = () => {
                             }}
                         />
                     </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
+                        <FormControl fullWidth size="small">
+                            <InputLabel id="role-select-label">Role</InputLabel>
+                            <Select
+                                labelId="role-select-label"
+                                id="role-select"
+                                value={selectedRole}
+                                label="Role"
+                                onChange={(e) => setSelectedRole(e.target.value)}
+                                disabled={!isAdmin}
+                            >
+                                <MenuItem value="user">User</MenuItem>
+                                {isAdmin && <MenuItem value="manager">Manager</MenuItem>}
+                            </Select>
+                        </FormControl>
+                    </Grid>
                 </Grid>
             </Box>
 
@@ -287,15 +333,16 @@ const NewStudentsTable: React.FC = () => {
                                                 <EmailIcon />
                                             </IconButton>
                                         </Tooltip>
-                                        <Tooltip title="Xóa người dùng">
-                                            <IconButton
-                                                color="error"
-                                                onClick={() => handleDeleteUser(student.userId)}
-                                                size="small"
-                                            >
-                                                <DeleteIcon />
-                                            </IconButton>
-                                        </Tooltip>
+                                        {isAdmin && (
+                                            <Tooltip title="Khóa người dùng">
+                                                <IconButton
+                                                    color="warning"
+                                                    size="small"
+                                                >
+                                                    <LockIcon />
+                                                </IconButton>
+                                            </Tooltip>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             ))}

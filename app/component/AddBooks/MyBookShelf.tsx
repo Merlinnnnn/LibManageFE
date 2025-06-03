@@ -171,7 +171,7 @@ const MyBookShelf: React.FC = () => {
     const [activeTab, setActiveTab] = useState(0);
     const booksPerPage = 5;
     const [accessListOpen, setAccessListOpen] = useState(false);
-    const [selectedUploadId, setSelectedUploadId] = useState<number | null>(null);
+    const [selectedDigitalId, setSelectedDigitalId] = useState<number | null>(null);
     const [allBooks, setAllBooks] = useState<Book[]>([]);
     const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
     const [openTypeFilter, setOpenTypeFilter] = useState(true);
@@ -204,20 +204,16 @@ const MyBookShelf: React.FC = () => {
                 userId = info.userId;
             }
 
-            // Build query parameters
             const params: Record<string, any> = {};
             
-            // Add search query if exists
             if (searchQuery.trim()) {
                 params.title = searchQuery.trim();
             }
 
-            // Add document type filters if selected
             if (selectedDocumentTypes.length > 0) {
                 params.documentTypeIds = selectedDocumentTypes.join(',');
             }
 
-            // Add course filters if selected
             if (selectedCourses.length > 0) {
                 params.courseIds = selectedCourses.join(',');
             }
@@ -226,13 +222,13 @@ const MyBookShelf: React.FC = () => {
                 `/api/v1/digital-documents/users/${userId}`,
                 { params }
             );
-            console.log(response);
             
             const fetchedBooks = response.data.data.content.map(doc => {
                 const wordFile = doc.uploads.find(u => 
                     u.fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || 
                     u.fileType === 'application/msword' || 
-                    u.fileType === 'docx'
+                    u.fileType === 'docx' ||
+                    u.fileType === 'doc'
                 )?.filePath;
                 const pdfFile = doc.uploads.find(u => 
                     u.fileType === 'application/pdf' || 
@@ -415,14 +411,14 @@ const MyBookShelf: React.FC = () => {
         setActiveTab(newValue);
     };
 
-    const handleAccessListClick = (uploadId: number) => {
-        setSelectedUploadId(uploadId);
+    const handleAccessListClick = (digitalId: number) => {
+        setSelectedDigitalId(digitalId);
         setAccessListOpen(true);
     };
 
     const handleAccessListClose = () => {
         setAccessListOpen(false);
-        setSelectedUploadId(null);
+        setSelectedDigitalId(null);
     };
 
     const currentBooks = filteredBooks.slice((currentPage - 1) * booksPerPage, currentPage * booksPerPage);
@@ -1040,11 +1036,11 @@ const MyBookShelf: React.FC = () => {
             />
 
             {/* Add AccessList Dialog */}
-            {selectedUploadId && (
+            {selectedDigitalId && (
                 <AccessList
                     open={accessListOpen}
                     onClose={handleAccessListClose}
-                    uploadId={selectedUploadId}
+                    uploadId={selectedDigitalId}
                 />
             )}
         </Box>

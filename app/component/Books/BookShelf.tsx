@@ -43,31 +43,6 @@ import startTour from '../Tutorial/tutorial';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
-// Custom theme with vibrant colors
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#6a1b9a',
-    },
-    secondary: {
-      main: '#ff8f00',
-    },
-    background: {
-      default: '#f5f5f5',
-      paper: '#ffffff',
-    },
-  },
-  typography: {
-    fontFamily: '"Poppins", "Helvetica", "Arial", sans-serif',
-    h4: {
-      fontWeight: 600,
-    },
-    h5: {
-      fontWeight: 500,
-    },
-  },
-});
-
 interface DocumentType {
   documentTypeId: number;
   typeName: string;
@@ -326,7 +301,7 @@ export default function BookShelf() {
       if (selectedCourses?.length) params.courseIds = selectedCourses.join(',');
 
       const response = await apiService.get<BooksApiResponse>('/api/v1/documents', { params });
-
+      console.log(response);
       if (response.data?.data) {
         setBooks(response.data.data.content);
         setTotalPages(response.data.data.totalPages);
@@ -394,38 +369,85 @@ export default function BookShelf() {
 
   const renderFileButtons = (book: Book) => {
     if (book.documentCategory === 'DIGITAL' && book.digitalDocument?.uploads) {
-      return book.digitalDocument.uploads.map((upload: Upload) => {
-        if (upload.fileType === 'application/pdf' || upload.fileType === 'pdf') {
-          return (
-            <Button
-              key={`${book.digitalDocument?.digitalDocumentId}-pdf`}
-              variant="contained"
-              startIcon={<PictureAsPdfIcon />}
-              onClick={() => handleFileOpen(upload.filePath, book.digitalDocument?.digitalDocumentId || 0)}
-              sx={{ textTransform: 'none', mr: 1 }}
-            >
-              PDF
-            </Button>
-          );
-        } else if (upload.fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-          upload.fileType === 'application/msword' ||
-          upload.fileType === 'docx') {
-          return (
-            <Button
-              key={`${book.digitalDocument?.digitalDocumentId}-word`}
-              variant="contained"
-              startIcon={<DescriptionIcon />}
-              onClick={() => handleFileOpen(upload.filePath, book.digitalDocument?.digitalDocumentId || 0)}
-              sx={{ textTransform: 'none', mr: 1 }}
-            >
-              Word
-            </Button>
-          );
-        }
-        return null;
-      });
+      const hasPdf = book.digitalDocument.uploads.some(upload => 
+        upload.fileType === 'application/pdf' || upload.fileType === 'pdf'
+      );
+      const hasWord = book.digitalDocument.uploads.some(upload => 
+        upload.fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+        upload.fileType === 'application/msword' ||
+        upload.fileType === 'docx' ||
+        upload.fileType === 'doc'
+      );
+
+      return (
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          {hasPdf && (
+            <Chip
+              icon={<PictureAsPdfIcon />}
+              label="PDF"
+              color="error"
+              variant="outlined"
+              sx={{ 
+                borderRadius: '10px',
+                '& .MuiChip-icon': {
+                  color: 'error.main'
+                }
+              }}
+            />
+          )}
+          {hasWord && (
+            <Chip
+              icon={<DescriptionIcon />}
+              label="Word"
+              color="primary"
+              variant="outlined"
+              sx={{ 
+                borderRadius: '10px',
+                '& .MuiChip-icon': {
+                  color: 'primary.main'
+                }
+              }}
+            />
+          )}
+          <Button
+            variant="outlined"
+            color="success"
+            //startIcon={<LocalLibraryIcon />}
+            onClick={() => handleViewDocument(book.documentId.toString())}
+            sx={{ 
+              borderRadius: '10px',
+              textTransform: 'none',
+              borderWidth: 1,
+              '&:hover': {
+                borderWidth: 1,
+                backgroundColor: 'rgba(76, 175, 80, 0.04)'
+              }
+            }}
+          >
+            Chi tiết
+          </Button>
+        </Box>
+      );
     }
-    return null;
+    return (
+      <Button
+        variant="outlined"
+        color="success"
+        startIcon={<LocalLibraryIcon />}
+        onClick={() => handleViewDocument(book.documentId.toString())}
+        sx={{ 
+          borderRadius: '10px',
+          textTransform: 'none',
+          borderWidth: 1,
+          '&:hover': {
+            borderWidth: 1,
+            backgroundColor: 'rgba(76, 175, 80, 0.04)'
+          }
+        }}
+      >
+        Mượn sách
+      </Button>
+    );
   };
 
   const searchBooks = async (title: string) => {
@@ -531,7 +553,7 @@ export default function BookShelf() {
   // }, []);
 
   return (
-    <ThemeProvider theme={theme}>
+    <Box>
       <Header />
       <Box sx={{
         background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
@@ -736,19 +758,7 @@ export default function BookShelf() {
                           }}>
                             {book?.description || 'Không có mô tả'}
                           </Typography>
-                          <Button
-                            variant="outlined"
-                            color="primary"
-                            fullWidth
-                            onClick={() => handleViewDocument(book.documentId.toString())}
-                            sx={{ 
-                              borderRadius: 2,
-                              py: 0.5,
-                              fontSize: '0.875rem'
-                            }}
-                          >
-                            Xem Chi Tiết
-                          </Button>
+                          {renderFileButtons(book)}
                         </Paper>
                       ))}
                     </Box>
@@ -949,6 +959,6 @@ export default function BookShelf() {
         </Container>
 
       </Box>
-    </ThemeProvider>
+    </Box>
   );
 }

@@ -13,7 +13,9 @@ import {
     DialogTitle,
     DialogContent,
     DialogContentText,
-    DialogActions
+    DialogActions,
+    Chip,
+    Snackbar
 } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
@@ -21,6 +23,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import LocalLibraryIcon from '@mui/icons-material/LocalLibrary';
+import CloseIcon from '@mui/icons-material/Close';
 import apiService from '../../untils/api';
 
 interface BookInfoProps {
@@ -126,6 +129,10 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
     const [wordUrl, setWordUrl] = useState<string>('');
     const [mp4Url, setMp4Url] = useState<string>('');
     const [borrowDialogOpen, setBorrowDialogOpen] = useState(false);
+    const [borrowType, setBorrowType] = useState<'physical' | 'digital' | null>(null);
+    const [openSnackbar, setOpenSnackbar] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info' | 'warning'>('success');
 
     useEffect(() => {
         if (!books) return;
@@ -155,26 +162,36 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
         }
     }, [id, books]);
 
+    const showSnackbar = (message: string, severity: 'success' | 'error' | 'info' | 'warning') => {
+        setSnackbarMessage(message);
+        setSnackbarSeverity(severity);
+        setOpenSnackbar(true);
+
+        setTimeout(() => {
+            setOpenSnackbar(false);
+        }, 3000);
+    };
+
     const handleToggleFavorite = async () => {
         try {
-            console.log(id);          let response;
+            let response;
             if (!isFavorite) {
                 response = await apiService.post(`/api/v1/documents/${id}/favorite`);
-                console.log(response);
+                showSnackbar('Đã thêm vào danh sách yêu thích!', 'success');
             } else {
                 response = await apiService.delete(`/api/v1/documents/${id}/favorite`);
-                console.log(response);
+                showSnackbar('Đã xóa khỏi danh sách yêu thích!', 'success');
             }
 
             if (response.status === 200) {
                 setIsFavorite(!isFavorite);
-            } else {
-                console.error('Lỗi khi cập nhật trạng thái yêu thích.');
             }
         } catch (error) {
             console.error('Lỗi khi cập nhật trạng thái yêu thích:', error);
+            showSnackbar('Có lỗi xảy ra khi cập nhật trạng thái yêu thích!', 'error');
         }
     };
+
     const checkFavor = async (id: string) => {
         try {
             const res = await apiService.get<FavoriteRes>(`/api/v1/favorites/${id}`)
@@ -197,38 +214,42 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
     };
 
     const handleBorrowClick = () => {
+        setBorrowType(null);
         setBorrowDialogOpen(true);
     };
 
     const handleBorrowConfirm = async () => {
         try {
-            console.log(`Mượn sách thành công với id sách: ${id}`);
+            if (book?.documentCategory === 'BOTH' && !borrowType) return;
             
-            if (book?.documentCategory === 'DIGITAL' && book.digitalDocument?.uploads?.[0]) {
-                // For digital books, use the access-requests API with uploadId
+            if (book?.documentCategory === 'DIGITAL' || (book?.documentCategory === 'BOTH' && borrowType === 'digital')) {
+                if (book?.digitalDocument?.digitalDocumentId) {
+                    const payload = {
+                        digitalId: book.digitalDocument.digitalDocumentId
+                    };
+                    const res = await apiService.post('/api/v1/access-requests', payload);
+                    showSnackbar('Yêu cầu mượn sách điện tử đã được gửi thành công!', 'success');
+                }
+            } else if (book?.documentCategory === 'PHYSICAL' || (book?.documentCategory === 'BOTH' && borrowType === 'physical')) {
                 const payload = {
-                    digitalId: book.digitalDocument.uploads[0].uploadId
-                };
-                const res = await apiService.post('/api/v1/access-requests', payload);
-                console.log('Response:', res.data);
-            } else {
-                // For physical books, use the loans API
-                const payload = {
-                    physicalDocId: id,
+                    physicalDocId: book.physicalDocument?.physicalDocumentId,
                 };
                 const res = await apiService.post('/api/v1/loans', payload);
-                console.log('Response:', res.data);
+                showSnackbar('Yêu cầu mượn sách vật lý đã được gửi thành công!', 'success');
             }
             setBorrowDialogOpen(false);
-        } catch (error) {
-            console.error('Lỗi khi mượn sách:', error);
-            // Có thể hiện thông báo lỗi cho người dùng
+            setBorrowType(null);
+        } catch (error: any) {
+            console.error('Lỗi khi mượn sách:', error.response?.data?.message );
+            const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi gửi yêu cầu mượn sách!';
+            showSnackbar(errorMessage, 'error');
         }
     };
     
 
     const handleBorrowCancel = () => {
         setBorrowDialogOpen(false);
+        setBorrowType(null);
     };
 
     if (loading) {
@@ -292,40 +313,62 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
                     <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                         {/* Borrow button - shown for all book types */}
                         <Button
-                            variant="contained"
-                            color="primary"
+                            variant="outlined"
+                            color="success"
                             startIcon={<LocalLibraryIcon />}
                             onClick={handleBorrowClick}
-                            sx={{ textTransform: 'none' }}
-                            //disabled={book.quantity <= 0}
+                            sx={{ 
+                                borderRadius: '10px',
+                                textTransform: 'none',
+                                borderWidth: 1,
+                                '&:hover': {
+                                    borderWidth: 1,
+                                    backgroundColor: 'rgba(76, 175, 80, 0.04)'
+                                }
+                            }}
                         >
                             Mượn sách
                         </Button>
 
                         {/* File action buttons - only for DIGITAL documents */}
-                        {book.documentCategory === 'DIGITAL' && book.digitalDocument?.uploads && (
+                        {book.digitalDocument?.uploads && (
                             <>
-                                {hasPdf && (
-                                    <Button
-                                        key={`${book.digitalDocument?.digitalDocumentId}-pdf`}
-                                        variant="contained"
-                                        startIcon={<PictureAsPdfIcon />}
+                                {book.digitalDocument.uploads.some(upload => 
+                                    upload.fileType === 'application/pdf' || upload.fileType === 'pdf'
+                                ) && (
+                                    <Chip
+                                        icon={<PictureAsPdfIcon />}
+                                        label="PDF"
+                                        color="error"
+                                        variant="outlined"
                                         onClick={() => handleFileOpen(pdfUrl)}
-                                        sx={{ textTransform: 'none' }}
-                                    >
-                                        PDF
-                                    </Button>
+                                        sx={{ 
+                                            borderRadius: '10px',
+                                            '& .MuiChip-icon': {
+                                                color: 'error.main'
+                                            }
+                                        }}
+                                    />
                                 )}
-                                {hasWord && (
-                                    <Button
-                                        key={`${book.digitalDocument?.digitalDocumentId}-word`}
-                                        variant="contained"
-                                        startIcon={<DescriptionIcon />}
+                                {book.digitalDocument.uploads.some(upload => 
+                                    upload.fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+                                    upload.fileType === 'application/msword' ||
+                                    upload.fileType === 'docx' ||
+                                    upload.fileType === 'doc'
+                                ) && (
+                                    <Chip
+                                        icon={<DescriptionIcon />}
+                                        label="Word"
+                                        color="primary"
+                                        variant="outlined"
                                         onClick={() => handleFileOpen(wordUrl)}
-                                        sx={{ textTransform: 'none' }}
-                                    >
-                                        Word
-                                    </Button>
+                                        sx={{ 
+                                            borderRadius: '10px',
+                                            '& .MuiChip-icon': {
+                                                color: 'primary.main'
+                                            }
+                                        }}
+                                    />
                                 )}
                             </>
                         )}
@@ -339,22 +382,135 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
                 onClose={handleBorrowCancel}
                 aria-labelledby="borrow-dialog-title"
                 aria-describedby="borrow-dialog-description"
+                PaperProps={{
+                    sx: {
+                        borderRadius: '15px',
+                        minWidth: '400px',
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+                    }
+                }}
             >
-                <DialogTitle id="borrow-dialog-title">Xác nhận mượn sách</DialogTitle>
-                <DialogContent>
-                    <DialogContentText id="borrow-dialog-description">
+                <DialogTitle 
+                    id="borrow-dialog-title"
+                    sx={{
+                        bgcolor: 'primary.main',
+                        color: 'white',
+                        py: 2,
+                        px: 3,
+                        '& .MuiTypography-root': {
+                            fontWeight: 600
+                        },
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                    }}
+                >
+                    <Typography variant="h6" component="div">
+                        Xác nhận mượn sách
+                    </Typography>
+                    <IconButton
+                        onClick={handleBorrowCancel}
+                        sx={{
+                            color: 'white',
+                            '&:hover': {
+                                backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ p: 3 }}>
+                    <DialogContentText 
+                        id="borrow-dialog-description"
+                        sx={{ 
+                            mt: 2,
+                            mb: 3,
+                            fontSize: '1.1rem',
+                            color: 'text.primary'
+                        }}
+                    >
                         Bạn có chắc chắn muốn mượn "{book.documentName}" của {book.author}?
                     </DialogContentText>
+
+                    {book.documentCategory === 'BOTH' && (
+                        <Box sx={{ mb: 3 }}>
+                            <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 500 }}>
+                                Chọn loại sách muốn mượn:
+                            </Typography>
+                            <Box sx={{ display: 'flex', gap: 2 }}>
+                                <Button
+                                    variant={borrowType === 'physical' ? 'contained' : 'outlined'}
+                                    color="primary"
+                                    onClick={() => setBorrowType('physical')}
+                                    startIcon={<LocalLibraryIcon />}
+                                    sx={{ 
+                                        flex: 1,
+                                        py: 1.5,
+                                        borderRadius: '10px',
+                                        textTransform: 'none',
+                                        fontWeight: 500
+                                    }}
+                                >
+                                    Sách vật lý
+                                </Button>
+                                <Button
+                                    variant={borrowType === 'digital' ? 'contained' : 'outlined'}
+                                    color="primary"
+                                    onClick={() => setBorrowType('digital')}
+                                    startIcon={<DescriptionIcon />}
+                                    sx={{ 
+                                        flex: 1,
+                                        py: 1.5,
+                                        borderRadius: '10px',
+                                        textTransform: 'none',
+                                        fontWeight: 500
+                                    }}
+                                >
+                                    Sách điện tử
+                                </Button>
+                            </Box>
+                        </Box>
+                    )}
                 </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleBorrowCancel} color="primary">
+                <DialogActions sx={{ p: 3, pt: 0 }}>
+                    <Button 
+                        onClick={handleBorrowCancel}
+                        sx={{ 
+                            borderRadius: '10px',
+                            textTransform: 'none',
+                            px: 3,
+                            fontWeight: 500
+                        }}
+                    >
                         Hủy
                     </Button>
-                    <Button onClick={handleBorrowConfirm} color="primary" autoFocus>
+                    <Button 
+                        onClick={handleBorrowConfirm}
+                        variant="contained"
+                        color="primary"
+                        disabled={book.documentCategory === 'BOTH' && !borrowType}
+                        sx={{ 
+                            borderRadius: '10px',
+                            textTransform: 'none',
+                            px: 3,
+                            fontWeight: 500
+                        }}
+                    >
                         Xác nhận mượn
                     </Button>
                 </DialogActions>
             </Dialog>
+            <Snackbar
+                open={openSnackbar}
+                autoHideDuration={3000}
+                onClose={() => setOpenSnackbar(false)}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Alert onClose={() => setOpenSnackbar(false)} severity={snackbarSeverity}>
+                    {snackbarMessage}
+                </Alert>
+            </Snackbar>
         </>
     );
 };

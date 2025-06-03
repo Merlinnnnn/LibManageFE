@@ -42,6 +42,7 @@ const AccessList: React.FC<AccessListProps> = ({ open, onClose, uploadId }) => {
         try {
             setLoading(true);
             const response = await apiService.get<AccessListResponse>(`/api/v1/access-requests/digital/${uploadId}`);
+            console.log('response', response);
             if (response.data.success) {
                 setAccessRequests(response.data.data.borrowers);
             } else {

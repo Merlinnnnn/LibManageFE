@@ -20,6 +20,12 @@ import {
     Card,
     CardContent,
     Divider,
+    List,
+    ListItem,
+    ListItemIcon,
+    ListItemText,
+    InputAdornment,
+    CircularProgress,
 } from '@mui/material';
 import Sidebar from '../SideBar';
 import apiService from '../../untils/api';
@@ -29,7 +35,11 @@ import CloseIcon from '@mui/icons-material/Close';
 import SubjectIcon from '@mui/icons-material/Subject';
 import LabelIcon from '@mui/icons-material/Label';
 import PublishIcon from '@mui/icons-material/Publish';
+import DescriptionIcon from '@mui/icons-material/Description';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import ArticleIcon from '@mui/icons-material/Article';
 import ImportExcelDialog from '../AddBooks/ImportExcelDiolog';
+import { styled } from '@mui/material/styles';
 
 interface Book {
     isbn: string;
@@ -76,6 +86,23 @@ interface CourseRes {
     };
 }
 
+interface SelectedFile {
+    file: File;
+    type: 'pdf' | 'word';
+}
+
+const VisuallyHiddenInput = styled('input')({
+    clip: 'rect(0 0 0 0)',
+    clipPath: 'inset(50%)',
+    height: 1,
+    overflow: 'hidden',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    whiteSpace: 'nowrap',
+    width: 1,
+});
+
 const AddBookPage: React.FC = () => {
     const [book, setBook] = useState<Book>({
         isbn: '',
@@ -115,20 +142,23 @@ const AddBookPage: React.FC = () => {
     const [selectedCourses, setSelectedCourses] = useState<number[]>([]);
     const [openSnackbar, setOpenSnackbar] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
-    const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info' | 'warning'>('success');
+    const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+    const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
+    const [filesError, setFilesError] = useState<string>('');
+    const [isAdding, setIsAdding] = useState(false);
 
     useEffect(() => {
         fetchDocumentTypes();
         fetchCourses();
     }, []);
-    const showSnackbar = (message: string, severity: 'success' | 'error' | 'info' | 'warning') => {
+    const showSnackbar = (message: string, severity: 'success' | 'error') => {
         setSnackbarMessage(message);
         setSnackbarSeverity(severity);
         setOpenSnackbar(true);
 
         setTimeout(() => {
             setOpenSnackbar(false);
-        }, 3000); // Tắt sau 3 giây
+        }, 3000);
     };
     const fetchCourses = async () => {
         try {
@@ -171,6 +201,31 @@ const AddBookPage: React.FC = () => {
         }
     };
 
+    const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            const newFiles: SelectedFile[] = Array.from(e.target.files)
+                .map(file => {
+                    if (file.type === 'application/pdf') {
+                        return { file, type: 'pdf' as const };
+                    } else if (
+                        file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+                        file.type === 'application/msword'
+                    ) {
+                        return { file, type: 'word' as const };
+                    }
+                    return null;
+                })
+                .filter((f): f is SelectedFile => f !== null);
+
+            setFilesError('');
+            setSelectedFiles(prev => [...prev, ...newFiles]);
+        }
+    };
+
+    const removeFile = (index: number) => {
+        setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
     const handleTagToggle = (tagId: number) => {
         if (selectedTags.includes(tagId)) {
             setSelectedTags(selectedTags.filter((id) => id !== tagId));
@@ -189,6 +244,7 @@ const AddBookPage: React.FC = () => {
 
     const handleAddBook = async () => {
         try {
+            setIsAdding(true);
             const formData = new FormData();
 
             formData.append('isbn', book.isbn);
@@ -212,17 +268,16 @@ const AddBookPage: React.FC = () => {
                 formData.append('coverImage', selectedFile);
             }
 
-            if (selectedPdfFile) {
-                formData.append('pdfFile', selectedPdfFile);
-            }
+            // Append all selected files
+            selectedFiles.forEach((selectedFile) => {
+                formData.append('files', selectedFile.file);
+            });
 
             const response = await apiService.post('/api/v1/documents', formData);
 
-            // Thông báo thành công
             showSnackbar('Thêm sách thành công!', 'success');
-            console.log('Book added successfully:', response);
 
-            // Reset lại các giá trị sau khi thêm thành công
+            // Reset form
             setBook({
                 isbn: '',
                 documentName: '',
@@ -246,15 +301,12 @@ const AddBookPage: React.FC = () => {
             setSelectedTags([]);
             setSelectedCourses([]);
             setSelectedFile(null);
-            setSelectedPdfFile(null);
-            setPreview(null)
-            // Tắt các thông báo (nếu có)
-            setOpenSnackbar(false);
-            showSnackbar('Thêm sách thành công!', 'success');
+            setSelectedFiles([]);
+            setPreview(null);
         } catch (error) {
-            console.log('Failed to add book:', error);
-            // Thông báo lỗi
             showSnackbar('Thêm sách thất bại!', 'error');
+        } finally {
+            setIsAdding(false);
         }
     };
 
@@ -283,7 +335,6 @@ const AddBookPage: React.FC = () => {
         try {
             const response = await apiService.post('/api/v1/document-types', payload);
             console.log('New type added successfully:', response);
-            //alert('New type added successfully!');
             showSnackbar('Thêm loại sách thành công!', 'success');
             handleCloseAddTypeDialog();
             fetchDocumentTypes();
@@ -293,7 +344,6 @@ const AddBookPage: React.FC = () => {
         } catch (error) {
             console.log('Failed to add new type:', error);
             showSnackbar('Thêm loại sách thất bại!', 'error');
-            //alert('Failed to add new type');
         }
     };
     const handleAddNewCourse = async () => {
@@ -305,7 +355,6 @@ const AddBookPage: React.FC = () => {
         try {
             const response = await apiService.post('/api/v1/courses', payload);
             console.log('New course added successfully:', response);
-            //alert('New course added successfully!');
             showSnackbar('Thêm khóa học thành công!', 'success');
             handleCloseAddCourseDialog();
             fetchDocumentTypes();
@@ -314,8 +363,7 @@ const AddBookPage: React.FC = () => {
             setNewDescription('');
         } catch (error) {
             console.log('Failed to add new course:', error);
-            //alert('Failed to add new course');
-            showSnackbar('Thêm khóa học thất bại!', 'success');
+            showSnackbar('Thêm khóa học thất bại!', 'error');
         }
     };
 
@@ -350,7 +398,7 @@ const AddBookPage: React.FC = () => {
                         </Typography>
                         <Divider sx={{ mb: 3 }} />
                         <Grid container spacing={4}>
-                            {/* Trái: Ảnh bìa và PDF */}
+                            {/* Left Column - Image and PDF Upload */}
                             <Grid item xs={12} md={4}>
                                 <Box display="flex" flexDirection="column" alignItems="center" gap={3}>
                                     <Box
@@ -390,34 +438,103 @@ const AddBookPage: React.FC = () => {
                                     </Typography>
                                     <Divider sx={{ width: '100%' }} />
                                     <Box textAlign="center" width="100%">
-                                        <input
-                                            type="file"
-                                            accept="application/pdf"
-                                            style={{ display: 'none' }}
-                                            id="upload-pdf"
-                                            onChange={handlePdfChange}
-                                        />
-                                        <label htmlFor="upload-pdf">
-                                            <Button
-                                                variant="outlined"
-                                                color="secondary"
-                                                component="span"
-                                                startIcon={<UploadFileIcon />}
-                                                fullWidth
-                                                disabled={!!selectedPdfFile}
-                                            >
-                                                Tải lên PDF
-                                            </Button>
-                                        </label>
-                                        {selectedPdfFile && (
-                                            <Box mt={1} display="flex" alignItems="center" justifyContent="center">
-                                                <Typography variant="body2" sx={{ mr: 1 }}>
-                                                    {selectedPdfFile.name}
-                                                </Typography>
-                                                <IconButton color="error" size="small" onClick={() => setSelectedPdfFile(null)}>
-                                                    <CloseIcon fontSize="small" />
-                                                </IconButton>
-                                            </Box>
+                                        <Button
+                                            component="label"
+                                            variant="outlined"
+                                            color="secondary"
+                                            startIcon={<DescriptionIcon />}
+                                            fullWidth
+                                            sx={{
+                                                height: '56px',
+                                                justifyContent: 'flex-start',
+                                                textTransform: 'none',
+                                                mb: 2,
+                                                borderRadius: '10px'
+                                            }}
+                                        >
+                                            Tải lên tài liệu (PDF, Word)
+                                            <VisuallyHiddenInput
+                                                type="file"
+                                                accept=".pdf,.doc,.docx"
+                                                multiple
+                                                onChange={handleFilesChange}
+                                            />
+                                        </Button>
+                                        {filesError && (
+                                            <Typography color="error" variant="caption" sx={{ mt: 1 }}>
+                                                {filesError}
+                                            </Typography>
+                                        )}
+                                        {selectedFiles.length > 0 && (
+                                            <List sx={{ 
+                                                maxHeight: '200px', 
+                                                overflowY: 'auto',
+                                                bgcolor: '#f5f5f5',
+                                                borderRadius: '10px',
+                                                p: 1
+                                            }}>
+                                                {selectedFiles.map((selectedFile, index) => (
+                                                    <ListItem
+                                                        key={index}
+                                                        sx={{
+                                                            bgcolor: 'white',
+                                                            mb: 1,
+                                                            borderRadius: '8px',
+                                                            '&:last-child': {
+                                                                mb: 0
+                                                            }
+                                                        }}
+                                                        secondaryAction={
+                                                            <IconButton 
+                                                                edge="end" 
+                                                                onClick={() => removeFile(index)}
+                                                                sx={{
+                                                                    color: '#f44336',
+                                                                    '&:hover': {
+                                                                        bgcolor: 'rgba(244, 67, 54, 0.08)'
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <CloseIcon />
+                                                            </IconButton>
+                                                        }
+                                                    >
+                                                        <ListItemIcon>
+                                                            {selectedFile.type === 'pdf' ? (
+                                                                <PictureAsPdfIcon color="error" />
+                                                            ) : (
+                                                                <ArticleIcon color="primary" />
+                                                            )}
+                                                        </ListItemIcon>
+                                                        <ListItemText
+                                                            primary={
+                                                                <Typography
+                                                                    variant="body2"
+                                                                    sx={{
+                                                                        fontWeight: 500,
+                                                                        overflow: 'hidden',
+                                                                        textOverflow: 'ellipsis',
+                                                                        whiteSpace: 'nowrap',
+                                                                        maxWidth: '200px'
+                                                                    }}
+                                                                >
+                                                                    {selectedFile.file.name}
+                                                                </Typography>
+                                                            }
+                                                            secondary={
+                                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                    <Typography variant="caption" color="text.secondary">
+                                                                        {(selectedFile.file.size / 1024 / 1024).toFixed(2)} MB
+                                                                    </Typography>
+                                                                    <Typography variant="caption" color="text.secondary">
+                                                                        {selectedFile.type.toUpperCase()}
+                                                                    </Typography>
+                                                                </Box>
+                                                            }
+                                                        />
+                                                    </ListItem>
+                                                ))}
+                                            </List>
                                         )}
                                     </Box>
                                 </Box>
@@ -496,8 +613,28 @@ const AddBookPage: React.FC = () => {
                             </Box>
                         </Box>
                         <Box mt={5} textAlign="center">
-                            <Button variant="contained" color="primary" size="large" onClick={handleAddBook} sx={{ px: 8, py: 2, fontWeight: 700, fontSize: 20 }}>
-                                Thêm sách
+                            <Button 
+                                variant="contained" 
+                                color="primary" 
+                                size="medium" 
+                                onClick={handleAddBook} 
+                                sx={{ px: 4, py: 1.5, fontWeight: 700, fontSize: 16, borderRadius: '15px' }}
+                                disabled={
+                                    isAdding ||
+                                    !book.documentName.trim() ||
+                                    !book.author.trim() ||
+                                    !book.publisher.trim() ||
+                                    !book.publishedDate.trim() ||
+                                    !book.pageCount ||
+                                    !book.language.trim() ||
+                                    !book.quantity ||
+                                    !book.description.trim() ||
+                                    selectedTags.length === 0 ||
+                                    selectedCourses.length === 0
+                                }
+                                startIcon={isAdding ? <CircularProgress size={20} color="inherit" /> : null}
+                            >
+                                {isAdding ? 'Đang thêm sách...' : 'Thêm sách'}
                             </Button>
                         </Box>
                     </CardContent>
@@ -606,7 +743,7 @@ const AddBookPage: React.FC = () => {
                     onClose={() => setOpenSnackbar(false)}
                     anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
                 >
-                    <Alert onClose={() => setOpenSnackbar(false)} severity={snackbarSeverity}>
+                    <Alert onClose={() => setOpenSnackbar(false)} severity={snackbarSeverity} variant="filled">
                         {snackbarMessage}
                     </Alert>
                 </Snackbar>

@@ -209,8 +209,8 @@ const LoanManagerPage: React.FC = () => {
             >
               <Tab label="Quản lý mượn sách" {...a11yProps(0)} />
               <Tab label="Quản lý phạt" {...a11yProps(1)} />
-              <Tab label="Quản lý đăng ký" {...a11yProps(2)} />
-              <Tab label="Sinh viên mới" {...a11yProps(3)} />
+              {/* <Tab label="Quản lý đăng ký" {...a11yProps(2)} /> */}
+              <Tab label="Quản lý người dùng" {...a11yProps(2)} />
             </Tabs>
 
             <TabPanel value={value} index={0}>
