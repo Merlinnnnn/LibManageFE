@@ -27,7 +27,8 @@ import {
   Pagination,
   CircularProgress,
   Switch,
-  Tooltip
+  Tooltip,
+  TablePagination
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -113,39 +114,35 @@ export default function BookManager() {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const booksPerPage = 10;
 
   const [openDrmDialog, setOpenDrmDialog] = useState(false);
   const [drmData, setDrmData] = useState<DrmApiResponse['data'] | null>(null);
   const [loadingDrm, setLoadingDrm] = useState(false);
   const [expandedDrmRow, setExpandedDrmRow] = useState<number | null>(null);
 
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
   useEffect(() => {
     fetchBooks();
-  }, [currentPage, searchQuery, selectedCategory]);
+  }, [searchQuery]);
 
   const fetchBooks = async () => {
     setLoading(true);
     try {
       const params: Record<string, any> = {
-        size: booksPerPage,
-        page: currentPage
+        size: 1000,
+        page: 0
       };
 
       if (searchQuery) {
         params.documentName = searchQuery;
-      }
-      if (selectedCategory !== 'ALL') {
-        params.documentCategory = selectedCategory;
       }
 
       const response = await apiService.get<BooksApiResponse>('/api/v1/documents', { params });
       console.log(response);
       if (response.data?.data) {
         setBooks(response.data.data.content);
-        setTotalPages(response.data.data.totalPages);
       }
     } catch (error) {
       console.error('Error fetching books:', error);
@@ -160,10 +157,6 @@ export default function BookManager() {
 
   const handleCategoryChange = (event: SelectChangeEvent) => {
     setSelectedCategory(event.target.value);
-  };
-
-  const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
-    setCurrentPage(value - 1);
   };
 
   const handleViewDrmKeys = async (documentId: number) => {
@@ -221,6 +214,12 @@ export default function BookManager() {
       }
     }
   };
+
+  const filteredBooks = selectedCategory === 'ALL'
+    ? books
+    : books.filter(book => book.documentCategory === selectedCategory);
+
+  const paginatedBooks = filteredBooks.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
     <Box display="flex">
@@ -302,7 +301,7 @@ export default function BookManager() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {books.map((book) => (
+                  {paginatedBooks.map((book) => (
                     <TableRow key={book.documentId}>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -378,21 +377,20 @@ export default function BookManager() {
                 </TableBody>
               </Table>
             </TableContainer>
-
-            {/* Pagination */}
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-              <Pagination
-                count={totalPages}
-                page={currentPage + 1}
-                onChange={handlePageChange}
-                color="primary"
-                shape="rounded"
-                size="large"
-                sx={{
-                  '& .MuiPaginationItem-root': {
-                    borderRadius: '15px',
-                  }
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+              <TablePagination
+                component="div"
+                count={filteredBooks.length}
+                page={page}
+                onPageChange={(_e, newPage) => setPage(newPage)}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={e => {
+                  setRowsPerPage(parseInt(e.target.value, 10));
+                  setPage(0);
                 }}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                labelRowsPerPage="Số hàng mỗi trang"
+                labelDisplayedRows={({ from, to, count }) => `${from}-${to} trên ${count}`}
               />
             </Box>
           </Box>

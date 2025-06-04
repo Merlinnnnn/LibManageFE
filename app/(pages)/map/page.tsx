@@ -15,4 +15,4 @@ const MapPage: React.FC = () => {
     );
 };
 
-export default RoleContext(MapPage,['ADMIN']);
+export default RoleContext(MapPage,['ADMIN','MANAGER']);

@@ -23,7 +23,8 @@ import {
     InputAdornment,
     MenuItem,
     Grid,
-    Tooltip
+    Tooltip,
+    TablePagination
 } from '@mui/material';
 import QrCodeIcon from '@mui/icons-material/QrCode';
 import SearchIcon from '@mui/icons-material/Search';
@@ -61,6 +62,7 @@ interface ApiResponse {
 
 interface RecentLoansTableProps {
     onScanQR: (mode: 'reserved' | 'return', loanId: number) => void;
+    refreshTrigger: number;
 }
 
 const STATUS_OPTIONS = [
@@ -70,10 +72,11 @@ const STATUS_OPTIONS = [
     { value: 'RETURNED', label: 'Đã trả' }
 ];
 
-const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR }) => {
+const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR, refreshTrigger }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const [loans, setLoans] = useState<Loan[]>([]);
+    const [filteredLoans, setFilteredLoans] = useState<Loan[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
@@ -82,21 +85,24 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [showFilters, setShowFilters] = useState(false);
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
 
     const fetchLoans = async () => {
+        setLoading(true);
         try {
             const response = await apiService.get<ApiResponse>('/api/v1/loans', {
                 params: {
                     page: 0,
-                    size: 10,
+                    size: 100, // Lấy nhiều dữ liệu hơn để lọc client-side
                     sort: 'loanDate,desc',
-                    search: searchQuery || undefined,
-                    status: statusFilter !== 'ALL' ? statusFilter : undefined
+                    search: searchQuery || undefined
                 }
             });
 
             if (response.data.success) {
                 setLoans(response.data.data.content);
+                setFilteredLoans(response.data.data.content);
             } else {
                 setError(response.data.message);
             }
@@ -109,7 +115,26 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR }) => {
 
     useEffect(() => {
         fetchLoans();
-    }, [searchQuery, statusFilter]);
+    }, [searchQuery, refreshTrigger]);
+
+    // Lọc dữ liệu khi statusFilter thay đổi
+    useEffect(() => {
+        if (statusFilter === 'ALL') {
+            setFilteredLoans(loans);
+        } else {
+            setFilteredLoans(loans.filter(loan => loan.status === statusFilter));
+        }
+        setPage(0); // Reset về trang đầu tiên khi lọc
+    }, [statusFilter, loans]);
+
+    const handleChangePage = (event: unknown, newPage: number) => {
+        setPage(newPage);
+    };
+
+    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setRowsPerPage(parseInt(event.target.value, 10));
+        setPage(0);
+    };
 
     const handleShowQrCode = async (loan: Loan) => {
         try {
@@ -201,6 +226,11 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR }) => {
                             placeholder="Tìm kiếm theo tên sách hoặc người mượn..."
                             value={searchQuery}
                             onChange={handleSearchChange}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: 2,
+                                }
+                            }}
                             InputProps={{
                                 startAdornment: (
                                     <InputAdornment position="start">
@@ -212,6 +242,12 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR }) => {
                                         <IconButton
                                             size="small"
                                             onClick={() => setSearchQuery('')}
+                                            sx={{ 
+                                                borderRadius: 1,
+                                                '&:hover': {
+                                                    backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                                                }
+                                            }}
                                         >
                                             <ClearIcon />
                                         </IconButton>
@@ -229,6 +265,11 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR }) => {
                                 value={statusFilter}
                                 onChange={handleStatusChange}
                                 label="Trạng thái"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 2,
+                                    }
+                                }}
                             >
                                 {STATUS_OPTIONS.map((option) => (
                                     <MenuItem key={option.value} value={option.value}>
@@ -242,7 +283,10 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR }) => {
                                     color="primary"
                                     sx={{ 
                                         border: `1px solid ${theme.palette.divider}`,
-                                        borderRadius: 1
+                                        borderRadius: 2,
+                                        '&:hover': {
+                                            backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                                        }
                                     }}
                                 >
                                     <ClearIcon />
@@ -253,20 +297,29 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR }) => {
                 </Grid>
             </Box>
 
-            <TableContainer component={Paper} sx={{ mt: 2 }}>
+            <TableContainer 
+                component={Paper} 
+                sx={{ 
+                    mt: 2,
+                    borderRadius: 2,
+                    overflow: 'hidden'
+                }}
+            >
                 <Table>
                     <TableHead>
-                        <TableRow>
-                            <TableCell>Tên sách</TableCell>
-                            <TableCell>Người mượn</TableCell>
-                            <TableCell>Ngày mượn</TableCell>
-                            <TableCell>Hạn trả</TableCell>
-                            <TableCell>Trạng thái</TableCell>
-                            <TableCell>Thao tác</TableCell>
+                        <TableRow sx={{ backgroundColor: theme.palette.grey[200] }}>
+                            <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Tên sách</TableCell>
+                            <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Người mượn</TableCell>
+                            <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Ngày mượn</TableCell>
+                            <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Hạn trả</TableCell>
+                            <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Trạng thái</TableCell>
+                            <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Thao tác</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {loans.map((loan) => (
+                        {filteredLoans
+                            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                            .map((loan) => (
                             <TableRow key={loan.transactionId}>
                                 <TableCell>{loan.documentName}</TableCell>
                                 <TableCell>{loan.username}</TableCell>
@@ -279,6 +332,7 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR }) => {
                                         label={getStatusText(loan.status)}
                                         color={getStatusColor(loan.status) as any}
                                         size="small"
+                                        sx={{ borderRadius: 1 }}
                                     />
                                 </TableCell>
                                 <TableCell>
@@ -288,7 +342,11 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR }) => {
                                             size="small"
                                             onClick={() => onScanQR('reserved', loan.transactionId)}
                                             startIcon={<QrCodeIcon />}
-                                            sx={{ mr: 1 }}
+                                            sx={{ 
+                                                mr: 1,
+                                                borderRadius: 2,
+                                                textTransform: 'none'
+                                            }}
                                         >
                                             Quét nhận sách
                                         </Button>
@@ -300,6 +358,10 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR }) => {
                                             onClick={() => onScanQR('return', loan.transactionId)}
                                             startIcon={<QrCodeIcon />}
                                             color="secondary"
+                                            sx={{ 
+                                                borderRadius: 2,
+                                                textTransform: 'none'
+                                            }}
                                         >
                                             Quét trả sách
                                         </Button>
@@ -311,12 +373,38 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR }) => {
                 </Table>
             </TableContainer>
 
+            <Box sx={{ 
+                mt: 2, 
+                display: 'flex', 
+                justifyContent: 'flex-end',
+                '& .MuiTablePagination-root': {
+                    borderRadius: 2,
+                }
+            }}>
+                <TablePagination
+                    component="div"
+                    count={filteredLoans.length}
+                    page={page}
+                    onPageChange={handleChangePage}
+                    rowsPerPage={rowsPerPage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
+                    rowsPerPageOptions={[5, 10, 25, 50]}
+                    labelRowsPerPage="Số hàng mỗi trang"
+                    labelDisplayedRows={({ from, to, count }) => `${from}-${to} trên ${count}`}
+                />
+            </Box>
+
             {/* QR Code Dialog */}
             <Dialog 
                 open={showQrDialog} 
                 onClose={handleCloseQrDialog}
                 maxWidth="sm"
                 fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2
+                    }
+                }}
             >
                 <DialogTitle>
                     {selectedLoan?.status === 'RESERVED' ? 'Quét mã QR nhận sách' : 'Quét mã QR trả sách'}
@@ -337,7 +425,8 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR }) => {
                                 sx={{
                                     width: 200,
                                     height: 200,
-                                    objectFit: 'contain'
+                                    objectFit: 'contain',
+                                    borderRadius: 2
                                 }}
                             />
                         )}
@@ -349,7 +438,13 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR }) => {
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCloseQrDialog}>
+                    <Button 
+                        onClick={handleCloseQrDialog}
+                        sx={{ 
+                            borderRadius: 2,
+                            textTransform: 'none'
+                        }}
+                    >
                         Đóng
                     </Button>
                     <Button 
@@ -359,6 +454,10 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR }) => {
                                 onScanQR(selectedLoan.status === 'RESERVED' ? 'reserved' : 'return', selectedLoan.transactionId);
                                 handleCloseQrDialog();
                             }
+                        }}
+                        sx={{ 
+                            borderRadius: 2,
+                            textTransform: 'none'
                         }}
                     >
                         Xác nhận

@@ -15,4 +15,4 @@ const AddBookPage: React.FC = () => {
     );
 };
 
-export default RoleContext(AddBookPage,['ADMIN']);
+export default RoleContext(AddBookPage,['ADMIN','MANAGER']);

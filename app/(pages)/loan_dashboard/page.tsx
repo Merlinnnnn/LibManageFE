@@ -15,4 +15,4 @@ const LoanDashBoardPage: React.FC = () => {
     );
 };
 
-export default RoleContext(LoanDashBoardPage,['ADMIN']);
+export default RoleContext(LoanDashBoardPage,['ADMIN','MANAGER']);

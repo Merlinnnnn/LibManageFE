@@ -27,7 +27,8 @@ import {
     MenuItem,
     Select,
     FormControl,
-    InputLabel
+    InputLabel,
+    Chip
 } from '@mui/material';
 import apiService from '../../untils/api';
 import EmailIcon from '@mui/icons-material/Email';
@@ -36,6 +37,7 @@ import ClearIcon from '@mui/icons-material/Clear';
 import SendNotiDialog from './SendNotiDiolog';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LockIcon from '@mui/icons-material/Lock';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
 
 interface User {
     userId: string;
@@ -43,7 +45,8 @@ interface User {
     lastName: string;
     username: string;
     address: string;
-    isActive: boolean;
+    isActive: string;
+    roles?: string[];
 }
 
 const NewStudentsTable: React.FC = () => {
@@ -61,6 +64,7 @@ const NewStudentsTable: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedRole, setSelectedRole] = useState<string>('user');
     const [isAdmin, setIsAdmin] = useState<boolean>(false);
+    const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
     // Snackbar states
     const [openSnackbar, setOpenSnackbar] = useState(false);
@@ -98,19 +102,26 @@ const NewStudentsTable: React.FC = () => {
     }, [selectedUsers]);
 
     useEffect(() => {
-        if (searchQuery.trim() === '') {
-            setFilteredStudents(students);
-        } else {
+        let filtered = students;
+        if (searchQuery.trim() !== '') {
             const query = searchQuery.toLowerCase();
-            const filtered = students.filter(student => 
+            filtered = filtered.filter(student => 
                 (student.firstName || '').toLowerCase().includes(query) ||
                 (student.lastName || '').toLowerCase().includes(query) ||
                 (student.username || '').toLowerCase().includes(query) ||
                 (student.address || '').toLowerCase().includes(query)
             );
-            setFilteredStudents(filtered);
         }
-    }, [searchQuery, students]);
+        if (statusFilter !== 'ALL') {
+            filtered = filtered.filter(student => statusFilter === 'ACTIVE' ? student.isActive === 'ACTIVE' : student.isActive === 'LOCKED');
+        }
+        if (selectedRole === 'manager') {
+            filtered = filtered.filter(student => student.roles && student.roles.includes('MANAGER'));
+        } else if (selectedRole === 'user') {
+            filtered = filtered.filter(student => !student.roles || !student.roles.includes('MANAGER'));
+        }
+        setFilteredStudents(filtered);
+    }, [searchQuery, students, statusFilter, selectedRole]);
 
     const fetchStudents = async () => {
         try {
@@ -118,6 +129,7 @@ const NewStudentsTable: React.FC = () => {
                 '/api/v1/users',
                 // { params: { role: selectedRole } }
             );
+            console.log("Response", response);
             setStudents(response.data.data.content);
             setFilteredStudents(response.data.data.content);
         } catch (error) {
@@ -224,6 +236,28 @@ const NewStudentsTable: React.FC = () => {
         }
     };
 
+    // Khóa/mở khóa user
+    const handleToggleLockUser = async (userId: string, isLocked: boolean) => {
+        try {
+            if (isLocked) {
+                // Mở khóa tài khoản
+                await apiService.patch(`/api/v1/users/${userId}/unlock`);
+                setSnackbarMessage('Đã mở khóa tài khoản thành công!');
+            } else {
+                // Khóa tài khoản
+                await apiService.patch(`/api/v1/users/${userId}/lock`);
+                setSnackbarMessage('Đã khóa tài khoản thành công!');
+            }
+            setSnackbarSeverity('success');
+            setOpenSnackbar(true);
+            fetchStudents();
+        } catch (error) {
+            setSnackbarMessage('Có lỗi xảy ra khi cập nhật trạng thái tài khoản');
+            setSnackbarSeverity('error');
+            setOpenSnackbar(true);
+        }
+    };
+
     return (
         <Box>
             <Box sx={{ mb: 3 }}>
@@ -235,6 +269,11 @@ const NewStudentsTable: React.FC = () => {
                             placeholder="Tìm kiếm theo tên, username hoặc địa chỉ..."
                             value={searchQuery}
                             onChange={handleSearchChange}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: 2,
+                                }
+                            }}
                             InputProps={{
                                 startAdornment: (
                                     <InputAdornment position="start">
@@ -246,6 +285,12 @@ const NewStudentsTable: React.FC = () => {
                                         <IconButton
                                             size="small"
                                             onClick={handleClearSearch}
+                                            sx={{ 
+                                                borderRadius: 1,
+                                                '&:hover': {
+                                                    backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                                                }
+                                            }}
                                         >
                                             <ClearIcon />
                                         </IconButton>
@@ -264,9 +309,35 @@ const NewStudentsTable: React.FC = () => {
                                 label="Role"
                                 onChange={(e) => setSelectedRole(e.target.value)}
                                 disabled={!isAdmin}
+                                sx={{
+                                    '& .MuiOutlinedInput-notchedOutline': {
+                                        borderRadius: 2,
+                                    }
+                                }}
                             >
                                 <MenuItem value="user">User</MenuItem>
                                 {isAdmin && <MenuItem value="manager">Manager</MenuItem>}
+                            </Select>
+                        </FormControl>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
+                        <FormControl fullWidth size="small">
+                            <InputLabel id="status-select-label">Trạng thái</InputLabel>
+                            <Select
+                                labelId="status-select-label"
+                                id="status-select"
+                                value={statusFilter}
+                                label="Trạng thái"
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                sx={{
+                                    '& .MuiOutlinedInput-notchedOutline': {
+                                        borderRadius: 2,
+                                    }
+                                }}
+                            >
+                                <MenuItem value="ALL">Tất cả</MenuItem>
+                                <MenuItem value="ACTIVE">Đang hoạt động</MenuItem>
+                                <MenuItem value="LOCKED">Đã khóa</MenuItem>
                             </Select>
                         </FormControl>
                     </Grid>
@@ -276,28 +347,34 @@ const NewStudentsTable: React.FC = () => {
             <TableContainer 
                 component={Paper} 
                 sx={{ 
-                    maxHeight: '300px', 
-                    overflow: 'auto',
-                    border: `1px solid ${theme.palette.divider}`,
-                    borderRadius: 2
+                    mt: 2,
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                    border: `1px solid ${theme.palette.divider}`
                 }}
             >
-                <Table stickyHeader size="small">
+                <Table>
                     <TableHead>
-                        <TableRow sx={{ backgroundColor: theme.palette.background.default }}>
-                            <TableCell padding="checkbox" sx={{ padding: '4px 8px', fontWeight: 600 }}>
+                        <TableRow sx={{ backgroundColor: theme.palette.grey[200] }}>
+                            <TableCell padding="checkbox" sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>
                                 <Checkbox
                                     indeterminate={selectedUsers.length > 0 && selectedUsers.length < filteredStudents.length}
                                     checked={selectedUsers.length === filteredStudents.length && filteredStudents.length > 0}
                                     onChange={handleSelectAll}
+                                    sx={{
+                                        '& .MuiSvgIcon-root': {
+                                            borderRadius: 1
+                                        }
+                                    }}
                                 />
                             </TableCell>
-                            <TableCell sx={{ padding: '4px 8px', fontWeight: 600 }}>First Name</TableCell>
-                            <TableCell sx={{ padding: '4px 8px', fontWeight: 600 }}>Last Name</TableCell>
-                            <TableCell sx={{ padding: '4px 8px', fontWeight: 600 }}>Username</TableCell>
-                            <TableCell sx={{ padding: '4px 8px', fontWeight: 600 }}>Address</TableCell>
-                            <TableCell sx={{ padding: '4px 8px', fontWeight: 600 }}>Is Active</TableCell>
-                            <TableCell sx={{ padding: '4px 8px', fontWeight: 600 }}>Action</TableCell>
+                            <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>First Name</TableCell>
+                            <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Last Name</TableCell>
+                            <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Username</TableCell>
+                            <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Address</TableCell>
+                            <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Role</TableCell>
+                            <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Is Active</TableCell>
+                            <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Action</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -306,40 +383,66 @@ const NewStudentsTable: React.FC = () => {
                             .map((student) => (
                                 <TableRow 
                                     key={student.userId}
-                                    sx={{ 
+                                    sx={{
                                         '&:hover': {
                                             backgroundColor: theme.palette.action.hover
-                                        }
+                                        },
+                                        fontSize: 15
                                     }}
                                 >
-                                    <TableCell padding="checkbox" sx={{ padding: '4px 8px' }}>
+                                    <TableCell padding="checkbox" sx={{ px: 2, py: 1.5 }}>
                                         <Checkbox
                                             checked={selectedUsers.includes(student.userId)}
                                             onChange={() => handleSelectUser(student.userId)}
+                                            sx={{
+                                                '& .MuiSvgIcon-root': {
+                                                    borderRadius: 1
+                                                }
+                                            }}
                                         />
                                     </TableCell>
-                                    <TableCell sx={{ padding: '4px 8px' }}>{student.firstName}</TableCell>
-                                    <TableCell sx={{ padding: '4px 8px' }}>{student.lastName}</TableCell>
-                                    <TableCell sx={{ padding: '4px 8px' }}>{student.username}</TableCell>
-                                    <TableCell sx={{ padding: '4px 8px' }}>{student.address}</TableCell>
-                                    <TableCell sx={{ padding: '4px 8px' }}>{student.isActive ? 'Yes' : 'No'}</TableCell>
-                                    <TableCell sx={{ padding: '4px 8px' }}>
+                                    <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>{student.firstName}</TableCell>
+                                    <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>{student.lastName}</TableCell>
+                                    <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>{student.username}</TableCell>
+                                    <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>{student.address}</TableCell>
+                                    <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>{(student.roles && student.roles.length > 0) ? student.roles.join(', ') : 'user'}</TableCell>
+                                    <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>
+                                        {student.isActive === 'LOCKED' ? (
+                                            <Chip label="Đã khóa" color="error" size="small" sx={{ borderRadius: 1, fontSize: 14, height: 24 }} />
+                                        ) : (
+                                            <Chip label="Đang hoạt động" color="success" size="small" sx={{ borderRadius: 1, fontSize: 14, height: 24 }} />
+                                        )}
+                                    </TableCell>
+                                    <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>
                                         <Tooltip title="Gửi thông báo">
                                             <IconButton 
                                                 color="primary" 
                                                 onClick={() => handleOpenDialog(student.userId)}
                                                 size="small"
+                                                sx={{ 
+                                                    borderRadius: 1,
+                                                    '&:hover': {
+                                                        backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                                                    }
+                                                }}
                                             >
                                                 <EmailIcon />
                                             </IconButton>
                                         </Tooltip>
                                         {isAdmin && (
-                                            <Tooltip title="Khóa người dùng">
+                                            <Tooltip title={student.isActive === 'LOCKED' ? 'Mở khóa người dùng' : 'Khóa người dùng'}>
                                                 <IconButton
-                                                    color="warning"
+                                                    color={student.isActive === 'LOCKED' ? 'success' : 'warning'}
                                                     size="small"
+                                                    sx={{ 
+                                                        borderRadius: 1,
+                                                        '&:hover': {
+                                                            backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                                                        }
+                                                    }}
+                                                    onClick={() => handleToggleLockUser(student.userId, student.isActive === 'LOCKED')}
                                                 >
-                                                    <LockIcon />
+                                                    {student.isActive === 'LOCKED' ? <LockOpenIcon /> : <LockIcon />}
                                                 </IconButton>
                                             </Tooltip>
                                         )}
@@ -350,15 +453,26 @@ const NewStudentsTable: React.FC = () => {
                 </Table>
             </TableContainer>
 
-            <TablePagination
-                component="div"
-                count={filteredStudents.length}
-                page={page}
-                onPageChange={handleChangePage}
-                rowsPerPage={rowsPerPage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-                rowsPerPageOptions={[5, 10, 25]}
-            />
+            <Box sx={{ 
+                mt: 2, 
+                display: 'flex', 
+                justifyContent: 'flex-end',
+                '& .MuiTablePagination-root': {
+                    borderRadius: 2,
+                }
+            }}>
+                <TablePagination
+                    component="div"
+                    count={filteredStudents.length}
+                    page={page}
+                    onPageChange={handleChangePage}
+                    rowsPerPage={rowsPerPage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
+                    rowsPerPageOptions={[5, 10, 25]}
+                    labelRowsPerPage="Số hàng mỗi trang"
+                    labelDisplayedRows={({ from, to, count }) => `${from}-${to} trên ${count}`}
+                />
+            </Box>
 
             <SendNotiDialog 
                 open={openNotiDialog} 
@@ -367,7 +481,16 @@ const NewStudentsTable: React.FC = () => {
                 onSend={handleSend} 
             />
 
-            <Dialog open={openDialog} onClose={handleCloseDialog}>
+            <Dialog 
+                open={openDialog} 
+                onClose={handleCloseDialog}
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        overflow: 'hidden'
+                    }
+                }}
+            >
                 <DialogTitle>Send Notification</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
@@ -381,6 +504,11 @@ const NewStudentsTable: React.FC = () => {
                         fullWidth
                         value={notificationTitle}
                         onChange={(e) => setNotificationTitle(e.target.value)}
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 2,
+                            }
+                        }}
                     />
                     <TextField
                         margin="dense"
@@ -391,13 +519,31 @@ const NewStudentsTable: React.FC = () => {
                         rows={4}
                         value={notificationContent}
                         onChange={(e) => setNotificationContent(e.target.value)}
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 2,
+                            }
+                        }}
                     />
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCloseDialog} color="primary">
+                    <Button 
+                        onClick={handleCloseDialog} 
+                        sx={{ 
+                            borderRadius: 2,
+                            textTransform: 'none'
+                        }}
+                    >
                         Cancel
                     </Button>
-                    <Button onClick={handleSendNotification} color="primary">
+                    <Button 
+                        onClick={handleSendNotification} 
+                        variant="contained"
+                        sx={{ 
+                            borderRadius: 2,
+                            textTransform: 'none'
+                        }}
+                    >
                         Send
                     </Button>
                 </DialogActions>
@@ -413,6 +559,10 @@ const NewStudentsTable: React.FC = () => {
                     onClose={handleCloseSnackbar} 
                     severity={snackbarSeverity}
                     variant="filled"
+                    sx={{ 
+                        borderRadius: 2,
+                        boxShadow: theme.shadows[2]
+                    }}
                 >
                     {snackbarMessage}
                 </Alert>

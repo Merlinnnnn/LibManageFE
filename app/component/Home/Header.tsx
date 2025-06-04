@@ -138,6 +138,15 @@ const Header: React.FC = () => {
     startTour();
   };
 
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await apiService.get<{ data: number }>('/api/v1/notifications/unread-count');
+      setUnreadCount(typeof response.data.data === 'number' ? response.data.data : 0);
+    } catch (error) {
+      setUnreadCount(0);
+    }
+  };
+
   useEffect(() => {
     const infoString = localStorage.getItem('info');
     if (infoString != null) {
@@ -150,6 +159,7 @@ const Header: React.FC = () => {
     if (savedTheme === 'light' || savedTheme === 'dark') {
       setMode(savedTheme as 'light' | 'dark');
     }
+    fetchUnreadCount();
   }, [setMode]);
 
   useWebSocket((notification: Notification) => {
@@ -183,11 +193,12 @@ const Header: React.FC = () => {
   const handleNotificationClick = (event: React.MouseEvent<HTMLElement>) => {
     fetchNotifications();
     setNotificationAnchor(event.currentTarget);
-    setUnreadCount(0);
+    fetchUnreadCount();
   };
 
   const handleNotificationClose = () => {
     setNotificationAnchor(null);
+    fetchUnreadCount();
   };
 
   const fetchNotifications = async () => {
@@ -204,8 +215,28 @@ const Header: React.FC = () => {
   const openNotifications = Boolean(notificationAnchor);
   const openMenu = Boolean(menuAnchor);
 
-  const handleExpandNotification = (id: string) => {
+  const handleExpandNotification = async (id: string) => {
     setExpandedNotificationId(id === expandedNotificationId ? null : id);
+    const notification = notifications.find(n => n.id === id);
+    if (notification && notification.status === 'UNREAD') {
+      try {
+        await apiService.patch(`/api/v1/notifications/${id}/mark-read`);
+        fetchNotifications();
+        fetchUnreadCount();
+      } catch (error) {
+        // handle error
+      }
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await apiService.patch('/api/v1/notifications/mark-all-read');
+      fetchNotifications();
+      fetchUnreadCount();
+    } catch (error) {
+      // handle error
+    }
   };
 
   return (
@@ -327,7 +358,7 @@ const Header: React.FC = () => {
                   onClick={handleNotificationClick}
                   sx={{ color: 'white' }}
                 >
-                  <StyledBadge badgeContent={unreadCount} max={9}>
+                  <StyledBadge badgeContent={unreadCount} max={99}>
                     <NotificationsIcon />
                   </StyledBadge>
                 </IconButton>
@@ -409,6 +440,16 @@ const Header: React.FC = () => {
                       </Typography>
                     </Box>
                   )}
+                </Box>
+                <Box sx={{ p: 1.5, textAlign: 'center', borderTop: `1px solid ${theme.palette.divider}` }}>
+                  <Typography
+                    variant="body2"
+                    color="secondary"
+                    sx={{ cursor: 'pointer', fontWeight: 600, '&:hover': { textDecoration: 'underline' } }}
+                    onClick={handleMarkAllRead}
+                  >
+                    Đánh dấu đã đọc tất cả
+                  </Typography>
                 </Box>
               </Popover>
 

@@ -317,7 +317,7 @@ const Home: React.FC = () => {
                 <LibraryServiceCard 
                   title="Đăng ký thẻ thư viện"
                   description="Đăng ký trực tuyến hoặc đến trực tiếp để có quyền truy cập đầy đủ vào tất cả tài nguyên số."
-                  href="/instruct"
+                  href="/instruct/register"
                   bgColor={cardImages.libraryCard}
                   icon={<LibraryCardIcon />}
                 />
@@ -326,7 +326,7 @@ const Home: React.FC = () => {
                 <LibraryServiceCard 
                   title="Mượn tài liệu"
                   description="Mượn sách điện tử, sách nói và các tài liệu số khác miễn phí."
-                  href="/how-to-borrow"
+                  href="/instruct/how-to-borrow"
                   bgColor={cardImages.borrowMaterials}
                   icon={<BorrowIcon />}
                 />
@@ -335,7 +335,7 @@ const Home: React.FC = () => {
                 <LibraryServiceCard 
                   title="Hỗ trợ nghiên cứu"
                   description="Nhận hỗ trợ từ thủ thư của chúng tôi cho nhu cầu nghiên cứu học thuật của bạn."
-                  href="/research-help"
+                  href="/instruct/research-help"
                   bgColor={cardImages.researchHelp}
                   icon={<ResearchIcon />}
                 />

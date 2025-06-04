@@ -15,4 +15,4 @@ const DashBoardPage: React.FC = () => {
     );
 };
 
-export default RoleContext(DashBoardPage,['ADMIN']);
+export default RoleContext(DashBoardPage,['ADMIN','MANAGER']);

@@ -32,9 +32,25 @@ interface TabPanelProps {
 }
 
 interface ScanResponse {
+  code: number;
   success: boolean;
   message: string;
-  data?: any;
+  data?: {
+    transactionId: number;
+    documentId: string;
+    physicalDocId: number;
+    documentName: string;
+    username: string;
+    librarianId: string;
+    loanDate: string;
+    dueDate: string;
+    returnDate: string;
+    status: string;
+    returnCondition: string;
+    fineAmount: number;
+    paymentStatus: string;
+    paidAt: string | null;
+  };
 }
 
 function TabPanel(props: TabPanelProps) {
@@ -74,6 +90,7 @@ const LoanManagerPage: React.FC = () => {
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
   const [scanningMode, setScanningMode] = useState<'reserved' | 'return'>('reserved');
   const [selectedLoanId, setSelectedLoanId] = useState<number | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
 
   const showNotification = (type: 'success' | 'error', message: string) => {
@@ -100,22 +117,17 @@ const LoanManagerPage: React.FC = () => {
     if (!selectedLoanId) return;
 
     try {
-      const response = await apiService.get<ScanResponse>(`/api/v1/loans/scan?${decodedText}`);
+      const { data: responseData } = await apiService.get<ScanResponse>(`/api/v1/loans/scan?${decodedText}`);
       console.log(decodedText);
-      console.log(response);
+      console.log(responseData);
 
-      if (response.data.success) {
-        showNotification('success', response.data.message || `Xác nhận ${scanningMode === 'reserved' ? 'nhận' : 'trả'} sách thành công`);
+      if (responseData.success) {
+        showNotification('success', responseData.message || `Xác nhận ${scanningMode === 'reserved' ? 'nhận' : 'trả'} sách thành công`);
         handleCloseDialog();
-        // Refresh the loans list
-        if (value === 0) {
-          const loansTable = document.querySelector('#recent-loans-table');
-          if (loansTable) {
-            (loansTable as any).fetchLoans();
-          }
-        }
+        // Trigger refresh of the table
+        setRefreshTrigger(prev => prev + 1);
       } else {
-        showNotification('error', response.data.message || 'Có lỗi xảy ra');
+        showNotification('error', responseData.message || 'Có lỗi xảy ra');
       }
     } catch (error: any) {
       console.error('Error scanning QR:', error);
@@ -214,15 +226,15 @@ const LoanManagerPage: React.FC = () => {
             </Tabs>
 
             <TabPanel value={value} index={0}>
-              <RecentLoansTable onScanQR={handleOpenDialog} />
+              <RecentLoansTable onScanQR={handleOpenDialog} refreshTrigger={refreshTrigger} />
             </TabPanel>
             <TabPanel value={value} index={1}>
               <FineManagerTable />
             </TabPanel>
-            <TabPanel value={value} index={2}>
+            {/* <TabPanel value={value} index={2}>
               <RecentSubscriptionsTable />
-            </TabPanel>
-            <TabPanel value={value} index={3}>
+            </TabPanel> */}
+            <TabPanel value={value} index={2}>
               <NewStudentsTable />
             </TabPanel>
           </Paper>

@@ -64,21 +64,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       localStorage.setItem('access_token', authToken);
       setToken(authToken);
 
-
       const userInfoResponse = await apiService.get<UserInfoResponse>('/api/v1/users/info', {
         headers: { Authorization: `Bearer ${authToken}` }
       });
       
-      const userInfo = userInfoResponse.data.data; // ✅ Đúng: Vì interface đã có `data`
+      const userInfo = userInfoResponse.data.data;
       localStorage.setItem("info", JSON.stringify(userInfo));
-      console.log(userInfo);
+      console.log('User info:', userInfo);
       
       const roles = userInfo.roles;
-      const isAdmin = roles.includes('ADMIN');
-      if (isAdmin) {
+      console.log('User roles:', roles);
+      const isAdminOrManager = roles.includes('ADMIN') || roles.includes('MANAGER');
+      // const isManager = roles.includes('MANAGER');
+      // console.log('Is Admin:', isAdmin, 'Is Manager:', isManager);
+      console.log('Is Admin or Manager:', isAdminOrManager);
+      
+      if (isAdminOrManager) {
+        console.log('Redirecting to user_dashboard...');
         router.push('/user_dashboard');
       } else {
-          router.push('/home');
+        console.log('Redirecting to home...');
+        router.push('/home');
       }
     } catch (error) {
       console.log('Đăng nhập thất bại:', error);

@@ -15,4 +15,4 @@ const LoanManager: React.FC = () => {
     );
 };
 
-export default RoleContext(LoanManager,['ADMIN']);
+export default RoleContext(LoanManager,['ADMIN','MANAGER']);
