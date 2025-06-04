@@ -16,7 +16,7 @@ jobs:
         password: ${{ secrets.PASSWORD }}
         port: 22
         script: |
-          cd /home/fe/LibManageFEo
+          cd /home/fe/LibManageFE
           git fetch origin
           git pull
           npm install --legacy-peer-deps
