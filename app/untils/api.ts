@@ -43,6 +43,6 @@ class ApiService {
     }
 }
 
-const apiService = new ApiService('http://localhost:8009');
+const apiService = new ApiService('http://ruoucuuvanlautamviet.click');
 
 export default apiService;
