@@ -1,18 +1,18 @@
 "use client"
 import React from 'react';
-import BookDashBoard from '../../component/DashBoard/BookDashBoard';
+import AdminReadBook from '../../component/ReadBook/AdminReadBookPage';
 import { CustomThemeProvider } from '../../component/Context/ThemeContext';
 import { AuthProvider } from '@/app/component/Context/AuthContext';
 import RoleContext from '@/app/component/Context/RoleContext';
 
-const BookDashBoardPage: React.FC = () => {
+const AdminReadBookPage: React.FC = () => {
     return (
         <AuthProvider>
             <CustomThemeProvider>
-                <BookDashBoard />
+                <AdminReadBook />
             </CustomThemeProvider>
         </AuthProvider>
     );
 };
 
-export default RoleContext(BookDashBoardPage,['ADMIN', 'MANAGER']);
+export default RoleContext(AdminReadBookPage,['ADMIN','MANAGER']);

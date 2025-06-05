@@ -129,6 +129,7 @@ const getStatusColor = (status: string) => {
         case 'APPROVED':
             return 'success';
         case 'APPROVED_BY_AI':
+        case 'PENDING':
             return 'warning';
         case 'REJECTED':
             return 'error';
@@ -142,6 +143,7 @@ const getStatusLabel = (status: string) => {
         case 'APPROVED':
             return 'Đã duyệt';
         case 'APPROVED_BY_AI':
+        case 'PENDING':
             return 'Đang chờ';
         case 'REJECTED':
             return 'Từ chối';

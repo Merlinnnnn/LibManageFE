@@ -133,6 +133,7 @@ export interface AccessRequest {
     id: number;
     uploadId: number;
     requesterId: string;
+    requesterName?: string;
     ownerId: string;
     status: string;
     requestTime: string;

@@ -14,10 +14,12 @@ import {
     CircularProgress,
     Box,
     IconButton,
-    Tooltip
+    Tooltip,
+    Chip
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import CloseIcon from '@mui/icons-material/Close';
 import apiService from '@/app/untils/api';
 import { AccessRequest, AccessListResponse } from '@/app/types/interfaces';
 
@@ -80,9 +82,40 @@ const AccessList: React.FC<AccessListProps> = ({ open, onClose, uploadId }) => {
         }
     };
 
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'PENDING':
+                return 'warning';
+            case 'APPROVED':
+                return 'success';
+            case 'REJECTED':
+                return 'error';
+            default:
+                return 'default';
+        }
+    };
+
+    const getStatusLabel = (status: string) => {
+        switch (status) {
+            case 'PENDING':
+                return 'Đang chờ';
+            case 'APPROVED':
+                return 'Đã duyệt';
+            case 'REJECTED':
+                return 'Từ chối';
+            default:
+                return status;
+        }
+    };
+
     return (
         <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-            <DialogTitle>Access Requests</DialogTitle>
+            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pr: 1 }}>
+                Access Requests
+                <IconButton aria-label="close" onClick={onClose} size="small">
+                    <CloseIcon />
+                </IconButton>
+            </DialogTitle>
             <DialogContent>
                 {loading ? (
                     <Box display="flex" justifyContent="center" p={3}>
@@ -97,8 +130,7 @@ const AccessList: React.FC<AccessListProps> = ({ open, onClose, uploadId }) => {
                         <Table>
                             <TableHead>
                                 <TableRow>
-                                    <TableCell>ID</TableCell>
-                                    <TableCell>Requester ID</TableCell>
+                                    <TableCell>Người mượn</TableCell>
                                     <TableCell>Status</TableCell>
                                     <TableCell>Request Time</TableCell>
                                     <TableCell>Decision Time</TableCell>
@@ -108,9 +140,15 @@ const AccessList: React.FC<AccessListProps> = ({ open, onClose, uploadId }) => {
                             <TableBody>
                                 {accessRequests.map((request) => (
                                     <TableRow key={request.id}>
-                                        <TableCell>{request.id}</TableCell>
-                                        <TableCell>{request.requesterId}</TableCell>
-                                        <TableCell>{request.status}</TableCell>
+                                        <TableCell>{request.requesterName || request.requesterId}</TableCell>
+                                        <TableCell>
+                                            <Chip
+                                                label={getStatusLabel(request.status)}
+                                                color={getStatusColor(request.status) as any}
+                                                size="small"
+                                                sx={{ borderRadius: 2, fontWeight: 500, fontSize: 14 }}
+                                            />
+                                        </TableCell>
                                         <TableCell>{new Date(request.requestTime).toLocaleString()}</TableCell>
                                         <TableCell>
                                             {request.decisionTime 

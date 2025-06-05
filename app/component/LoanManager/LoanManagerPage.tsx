@@ -20,7 +20,7 @@ import {
 import Sidebar from '../SideBar';
 import NewStudentsTable from './NewStudentsTable';
 import RecentLoansTable from './RecentLoansTable';
-import FineManagerTable from './FineManagerTable';
+import DigitalApproval from './DigitalApproval';
 import RecentSubscriptionsTable from './RecentSubscriptionsTable';
 import apiService from '@/app/untils/api';
 import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from 'html5-qrcode';
@@ -229,7 +229,7 @@ const LoanManagerPage: React.FC = () => {
               <RecentLoansTable onScanQR={handleOpenDialog} refreshTrigger={refreshTrigger} />
             </TabPanel>
             <TabPanel value={value} index={1}>
-              <FineManagerTable />
+              <DigitalApproval />
             </TabPanel>
             {/* <TabPanel value={value} index={2}>
               <RecentSubscriptionsTable />

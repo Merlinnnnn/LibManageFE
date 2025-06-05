@@ -204,46 +204,39 @@ const Dashboard: React.FC = () => {
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 4, borderRadius: 4, boxShadow: 3, bgcolor: '#fff', '&:hover': { boxShadow: 6 } }}>
               <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 'bold', mb: 3 }}>
-                Thống kê người dùng
+                Phân bố vai trò người dùng
               </Typography>
-              <Grid container spacing={3}>
-                <Grid item xs={12} sm={4}>
-                  <Card sx={{ borderRadius: 3, boxShadow: 2, bgcolor: '#f3e5f5' }}>
-                    <CardContent>
-                      <Typography color="textSecondary" gutterBottom fontWeight={600}>
-                        Người dùng mới
-                      </Typography>
-                      <Typography variant="h5" color="primary.main" fontWeight={700}>
-                        {statistics.users.newUsers}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <Card sx={{ borderRadius: 3, boxShadow: 2, bgcolor: '#e3f2fd' }}>
-                    <CardContent>
-                      <Typography color="textSecondary" gutterBottom fontWeight={600}>
-                        Đang hoạt động
-                      </Typography>
-                      <Typography variant="h5" color="success.main" fontWeight={700}>
-                        {statistics.users.activeUsers}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <Card sx={{ borderRadius: 3, boxShadow: 2, bgcolor: '#fffde7' }}>
-                    <CardContent>
-                      <Typography color="textSecondary" gutterBottom fontWeight={600}>
-                        Tổng người dùng
-                      </Typography>
-                      <Typography variant="h5" color="primary.main" fontWeight={700}>
-                        {statistics.users.totalUsers}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
+              <Box sx={{ height: 350, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={Array.isArray(statistics.users.roleDistribution) ? statistics.users.roleDistribution : []}
+                      dataKey="count"
+                      nameKey="role"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      label={({ role, percent }) => `${role}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {Array.isArray(statistics.users.roleDistribution) && statistics.users.roleDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value: number) => [`${value} người dùng`, 'Số lượng']}
+                      contentStyle={{
+                        backgroundColor: theme.palette.background.paper,
+                        border: `1px solid ${theme.palette.divider}`,
+                        borderRadius: 4,
+                      }}
+                    />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+                <Typography variant="subtitle1" sx={{ mt: 2, fontWeight: 500 }}>
+                  Tổng số người dùng: {statistics.users.totalUsers}
+                </Typography>
+              </Box>
             </Paper>
           </Grid>
         </Grid>

@@ -44,9 +44,13 @@ export interface DashboardStatistics {
     paymentAmount: number;
   };
   users: {
-    newUsers: number;
     totalUsers: number;
     activeUsers: number;
+    newUsers: number;
+    roleDistribution: {
+      role: string;
+      count: number;
+    }[];
   };
   drm: {
     recentLicenses: number;
@@ -72,9 +76,44 @@ const dashboardService = {
     return response.data.data;
   },
 
-  getUserStatistics: async (): Promise<DashboardStatistics['users']> => {
-    const response = await apiService.get<ApiResponse<DashboardStatistics['users']>>('/api/dashboard/users');
-    return response.data.data;
+  async getUserStatistics(): Promise<DashboardStatistics['users']> {
+    try {
+      const response = await apiService.get<{ data: { content: any[] } }>('/api/v1/users');
+      const users = response.data.data.content;
+      
+      // Tính toán thống kê
+      const totalUsers = users.length;
+      const activeUsers = users.filter(user => user.isActive === 'ACTIVE').length;
+      const newUsers = users.filter(user => {
+        const createdDate = new Date(user.createdAt);
+        const now = new Date();
+        const diffDays = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+        return diffDays <= 7; // Người dùng mới trong 7 ngày
+      }).length;
+
+      // Tính toán phân bố roles
+      const roleCounts = users.reduce((acc: { [key: string]: number }, user) => {
+        user.roles.forEach((role: string) => {
+          acc[role] = (acc[role] || 0) + 1;
+        });
+        return acc;
+      }, {});
+
+      const roleDistribution = Object.entries(roleCounts).map(([role, count]) => ({
+        role,
+        count
+      }));
+
+      return {
+        totalUsers,
+        activeUsers,
+        newUsers,
+        roleDistribution
+      };
+    } catch (error) {
+      console.error('Error fetching user statistics:', error);
+      throw error;
+    }
   },
 
   getDrmStatistics: async (): Promise<DashboardStatistics['drm']> => {

@@ -380,59 +380,53 @@ const NewStudentsTable: React.FC = () => {
                     <TableBody>
                         {filteredStudents
                             .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                            .map((student) => (
-                                <TableRow 
-                                    key={student.userId}
-                                    sx={{
-                                        '&:hover': {
-                                            backgroundColor: theme.palette.action.hover
-                                        },
-                                        fontSize: 15
-                                    }}
-                                >
-                                    <TableCell padding="checkbox" sx={{ px: 2, py: 1.5 }}>
-                                        <Checkbox
-                                            checked={selectedUsers.includes(student.userId)}
-                                            onChange={() => handleSelectUser(student.userId)}
-                                            sx={{
-                                                '& .MuiSvgIcon-root': {
-                                                    borderRadius: 1
-                                                }
-                                            }}
-                                        />
-                                    </TableCell>
-                                    <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>{student.firstName}</TableCell>
-                                    <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>{student.lastName}</TableCell>
-                                    <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>{student.username}</TableCell>
-                                    <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>{student.address}</TableCell>
-                                    <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>{(student.roles && student.roles.length > 0) ? student.roles.join(', ') : 'user'}</TableCell>
-                                    <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>
-                                        {student.isActive === 'LOCKED' ? (
-                                            <Chip label="Đã khóa" color="error" size="small" sx={{ borderRadius: 1, fontSize: 14, height: 24 }} />
-                                        ) : (
-                                            <Chip label="Đang hoạt động" color="success" size="small" sx={{ borderRadius: 1, fontSize: 14, height: 24 }} />
-                                        )}
-                                    </TableCell>
-                                    <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>
-                                        <Tooltip title="Gửi thông báo">
-                                            <IconButton 
-                                                color="primary" 
-                                                onClick={() => handleOpenDialog(student.userId)}
-                                                size="small"
-                                                sx={{ 
-                                                    borderRadius: 1,
-                                                    '&:hover': {
-                                                        backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                            .length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={8} align="center">
+                                    Không có dữ liệu nào được tìm thấy
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            filteredStudents
+                                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                                .map((student) => (
+                                    <TableRow 
+                                        key={student.userId}
+                                        sx={{
+                                            '&:hover': {
+                                                backgroundColor: theme.palette.action.hover
+                                            },
+                                            fontSize: 15
+                                        }}
+                                    >
+                                        <TableCell padding="checkbox" sx={{ px: 2, py: 1.5 }}>
+                                            <Checkbox
+                                                checked={selectedUsers.includes(student.userId)}
+                                                onChange={() => handleSelectUser(student.userId)}
+                                                sx={{
+                                                    '& .MuiSvgIcon-root': {
+                                                        borderRadius: 1
                                                     }
                                                 }}
-                                            >
-                                                <EmailIcon />
-                                            </IconButton>
-                                        </Tooltip>
-                                        {isAdmin && (
-                                            <Tooltip title={student.isActive === 'LOCKED' ? 'Mở khóa người dùng' : 'Khóa người dùng'}>
-                                                <IconButton
-                                                    color={student.isActive === 'LOCKED' ? 'success' : 'warning'}
+                                            />
+                                        </TableCell>
+                                        <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>{student.firstName}</TableCell>
+                                        <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>{student.lastName}</TableCell>
+                                        <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>{student.username}</TableCell>
+                                        <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>{student.address}</TableCell>
+                                        <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>{(student.roles && student.roles.length > 0) ? student.roles.join(', ') : 'user'}</TableCell>
+                                        <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>
+                                            {student.isActive === 'LOCKED' ? (
+                                                <Chip label="Đã khóa" color="error" size="small" sx={{ borderRadius: 2, fontSize: 14, height: 24 }} />
+                                            ) : (
+                                                <Chip label="Đang hoạt động" color="success" size="small" sx={{ borderRadius: 2, fontSize: 14, height: 24 }} />
+                                            )}
+                                        </TableCell>
+                                        <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>
+                                            <Tooltip title="Gửi thông báo">
+                                                <IconButton 
+                                                    color="primary" 
+                                                    onClick={() => handleOpenDialog(student.userId)}
                                                     size="small"
                                                     sx={{ 
                                                         borderRadius: 1,
@@ -440,15 +434,31 @@ const NewStudentsTable: React.FC = () => {
                                                             backgroundColor: 'rgba(0, 0, 0, 0.04)'
                                                         }
                                                     }}
-                                                    onClick={() => handleToggleLockUser(student.userId, student.isActive === 'LOCKED')}
                                                 >
-                                                    {student.isActive === 'LOCKED' ? <LockOpenIcon /> : <LockIcon />}
+                                                    <EmailIcon />
                                                 </IconButton>
                                             </Tooltip>
-                                        )}
-                                    </TableCell>
-                                </TableRow>
-                            ))}
+                                            {isAdmin && (
+                                                <Tooltip title={student.isActive === 'LOCKED' ? 'Mở khóa người dùng' : 'Khóa người dùng'}>
+                                                    <IconButton
+                                                        color={student.isActive === 'LOCKED' ? 'success' : 'warning'}
+                                                        size="small"
+                                                        sx={{ 
+                                                            borderRadius: 1,
+                                                            '&:hover': {
+                                                                backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                                                            }
+                                                        }}
+                                                        onClick={() => handleToggleLockUser(student.userId, student.isActive === 'LOCKED')}
+                                                    >
+                                                        {student.isActive === 'LOCKED' ? <LockOpenIcon /> : <LockIcon />}
+                                                    </IconButton>
+                                                </Tooltip>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                        )}
                     </TableBody>
                 </Table>
             </TableContainer>

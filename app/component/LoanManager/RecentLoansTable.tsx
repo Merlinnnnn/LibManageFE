@@ -319,56 +319,66 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR, refreshTr
                     <TableBody>
                         {filteredLoans
                             .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                            .map((loan) => (
-                            <TableRow key={loan.transactionId}>
-                                <TableCell>{loan.documentName}</TableCell>
-                                <TableCell>{loan.username}</TableCell>
-                                <TableCell>{new Date(loan.loanDate).toLocaleDateString()}</TableCell>
-                                <TableCell>
-                                    {loan.dueDate ? new Date(loan.dueDate).toLocaleDateString() : '-'}
-                                </TableCell>
-                                <TableCell>
-                                    <Chip 
-                                        label={getStatusText(loan.status)}
-                                        color={getStatusColor(loan.status) as any}
-                                        size="small"
-                                        sx={{ borderRadius: 1 }}
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    {loan.status === 'RESERVED' && (
-                                        <Button
-                                            variant="contained"
-                                            size="small"
-                                            onClick={() => onScanQR('reserved', loan.transactionId)}
-                                            startIcon={<QrCodeIcon />}
-                                            sx={{ 
-                                                mr: 1,
-                                                borderRadius: 2,
-                                                textTransform: 'none'
-                                            }}
-                                        >
-                                            Quét nhận sách
-                                        </Button>
-                                    )}
-                                    {loan.status === 'BORROWED' && (
-                                        <Button
-                                            variant="contained"
-                                            size="small"
-                                            onClick={() => onScanQR('return', loan.transactionId)}
-                                            startIcon={<QrCodeIcon />}
-                                            color="secondary"
-                                            sx={{ 
-                                                borderRadius: 2,
-                                                textTransform: 'none'
-                                            }}
-                                        >
-                                            Quét trả sách
-                                        </Button>
-                                    )}
+                            .length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={6} align="center">
+                                    Không có dữ liệu nào được tìm thấy
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        ) : (
+                            filteredLoans
+                                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                                .map((loan) => (
+                                    <TableRow key={loan.transactionId}>
+                                        <TableCell>{loan.documentName}</TableCell>
+                                        <TableCell>{loan.username}</TableCell>
+                                        <TableCell>{new Date(loan.loanDate).toLocaleDateString()}</TableCell>
+                                        <TableCell>
+                                            {loan.dueDate ? new Date(loan.dueDate).toLocaleDateString() : '-'}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Chip 
+                                                label={getStatusText(loan.status)}
+                                                color={getStatusColor(loan.status) as any}
+                                                size="small"
+                                                sx={{ borderRadius: 2 }}
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            {loan.status === 'RESERVED' && (
+                                                <Button
+                                                    variant="contained"
+                                                    size="small"
+                                                    onClick={() => onScanQR('reserved', loan.transactionId)}
+                                                    startIcon={<QrCodeIcon />}
+                                                    sx={{ 
+                                                        mr: 1,
+                                                        borderRadius: 2,
+                                                        textTransform: 'none'
+                                                    }}
+                                                >
+                                                    Quét nhận sách
+                                                </Button>
+                                            )}
+                                            {loan.status === 'BORROWED' && (
+                                                <Button
+                                                    variant="contained"
+                                                    size="small"
+                                                    onClick={() => onScanQR('return', loan.transactionId)}
+                                                    startIcon={<QrCodeIcon />}
+                                                    color="secondary"
+                                                    sx={{ 
+                                                        borderRadius: 2,
+                                                        textTransform: 'none'
+                                                    }}
+                                                >
+                                                    Quét trả sách
+                                                </Button>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                        )}
                     </TableBody>
                 </Table>
             </TableContainer>
