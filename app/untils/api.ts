@@ -43,6 +43,6 @@ class ApiService {
     }
 }
 
-const apiService = new ApiService('http://ruoucuuvanlautamviet.click');
+const apiService = new ApiService('https://api-modernlibrary.click');
 
 export default apiService;
