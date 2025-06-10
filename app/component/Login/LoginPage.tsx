@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Button, Checkbox, Divider, FormControlLabel, IconButton, Link, TextField, Typography } from '@mui/material';
+import { Box, Button, Checkbox, Divider, FormControlLabel, IconButton, Link, TextField, Typography, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { Visibility, VisibilityOff, Google as GoogleIcon, Home } from '@mui/icons-material';
 import { useAuth } from '../../component/Context/AuthContext';
 
@@ -25,6 +25,8 @@ interface RightFormProps {
   showPassword: boolean;
   toggleShowPassword: () => void;
   handleLogin: () => void;
+  loading: boolean;
+  handleResetPassword: (resetEmail: string) => void;
 }
 
 const RightForm: React.FC<RightFormProps> = ({
@@ -35,8 +37,38 @@ const RightForm: React.FC<RightFormProps> = ({
   showPassword,
   toggleShowPassword,
   handleLogin,
+  loading,
+  handleResetPassword,
 }) => {
   const { loginGoogle } = useAuth();
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+
+  const handleOpenResetDialog = () => {
+    setResetDialogOpen(true);
+  };
+
+  const handleCloseResetDialog = () => {
+    setResetDialogOpen(false);
+    setResetEmail('');
+  };
+
+  const handleSubmitReset = async () => {
+    if (!resetEmail) {
+      alert('Vui lòng nhập email của bạn');
+      return;
+    }
+    setResetLoading(true);
+    try {
+      await handleResetPassword(resetEmail);
+      handleCloseResetDialog();
+    } catch (error) {
+      console.error('Reset password error:', error);
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   return (
     <Box
@@ -70,12 +102,12 @@ const RightForm: React.FC<RightFormProps> = ({
       </IconButton>
 
       <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
-        Welcome Back
+        Chào mừng trở lại
       </Typography>
       <Typography variant="body2" sx={{ color: '#aaa', mb: 3 }}>
-        Don't have an account?{' '}
+        Chưa có tài khoản?{' '}
         <Link href="/signup" underline="hover" color="primary">
-          Sign up
+          Đăng ký
         </Link>
       </Typography>
 
@@ -94,7 +126,7 @@ const RightForm: React.FC<RightFormProps> = ({
 
       <TextField
         fullWidth
-        label="Password"
+        label="Mật khẩu"
         type={showPassword ? 'text' : 'password'}
         variant="filled"
         margin="normal"
@@ -111,11 +143,73 @@ const RightForm: React.FC<RightFormProps> = ({
         InputLabelProps={{ sx: { color: '#888' } }}
       />
 
-      <FormControlLabel
-        control={<Checkbox sx={{ color: '#888' }} />}
-        label={<Typography variant="body2" sx={{ color: '#aaa' }}>Remember me</Typography>}
-        sx={{ my: 1 }}
-      />
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+        <FormControlLabel
+          control={<Checkbox sx={{ color: '#888' }} />}
+          label={<Typography variant="body2" sx={{ color: '#aaa' }}>Ghi nhớ đăng nhập</Typography>}
+        />
+        <Link
+          component="button"
+          variant="body2"
+          onClick={handleOpenResetDialog}
+          sx={{ color: '#8B5CF6', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+        >
+          Quên mật khẩu?
+        </Link>
+      </Box>
+
+      {/* Reset Password Dialog */}
+      <Dialog 
+        open={resetDialogOpen} 
+        onClose={handleCloseResetDialog}
+        PaperProps={{
+          sx: {
+            backgroundColor: '#1F1F1F',
+            color: 'white',
+            minWidth: '400px'
+          }
+        }}
+      >
+        <DialogTitle sx={{ color: 'white' }}>Đặt lại mật khẩu</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ color: '#aaa', mb: 2 }}>
+            Nhập email của bạn để nhận hướng dẫn đặt lại mật khẩu
+          </Typography>
+          <TextField
+            fullWidth
+            label="Email"
+            variant="filled"
+            value={resetEmail}
+            onChange={(e) => setResetEmail(e.target.value)}
+            InputProps={{
+              sx: { backgroundColor: '#2c2c2c', color: 'white' },
+            }}
+            InputLabelProps={{ sx: { color: '#888' } }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button 
+            onClick={handleCloseResetDialog}
+            sx={{ 
+              color: '#aaa',
+              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' }
+            }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleSubmitReset}
+            variant="contained"
+            disabled={resetLoading}
+            sx={{
+              backgroundColor: '#8B5CF6',
+              '&:hover': { backgroundColor: '#7C3AED' },
+            }}
+          >
+            {resetLoading ? <CircularProgress size={24} color="inherit" /> : 'Gửi'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Button
         fullWidth
@@ -128,11 +222,12 @@ const RightForm: React.FC<RightFormProps> = ({
           backgroundColor: '#8B5CF6',
           '&:hover': { backgroundColor: '#7C3AED' },
         }}
+        disabled={loading}
       >
-        Sign In
+        {loading ? <><CircularProgress size={22} color="inherit" sx={{ mr: 1 }} /> Đang đăng nhập...</> : 'Đăng nhập'}
       </Button>
 
-      <Divider sx={{ my: 3, borderColor: '#444' }}>OR</Divider>
+      <Divider sx={{ my: 3, borderColor: '#444' }}>HOẶC</Divider>
 
       <Button
         fullWidth
@@ -149,25 +244,38 @@ const RightForm: React.FC<RightFormProps> = ({
           },
         }}
       >
-        Sign in with Google
+        Đăng nhập với Google
       </Button>
     </Box>
   );
 };
 
 const LoginForm: React.FC = () => {
-  const { login } = useAuth();
+  const { login, resetPassword } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleTogglePassword = () => setShowPassword(!showPassword);
 
   const handleLogin = async () => {
+    setLoading(true);
     try {
       await login(email, password);
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('Đăng nhập thất bại:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (resetEmail: string) => {
+    try {
+      await resetPassword(resetEmail);
+    } catch (error) {
+      console.error('Reset password error:', error);
+      throw error;
     }
   };
 
@@ -203,6 +311,8 @@ const LoginForm: React.FC = () => {
           showPassword={showPassword}
           toggleShowPassword={handleTogglePassword}
           handleLogin={handleLogin}
+          loading={loading}
+          handleResetPassword={handleResetPassword}
         />
       </Box>
     </Box>

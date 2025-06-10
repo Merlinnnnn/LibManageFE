@@ -65,6 +65,7 @@ interface DigitalDocument {
     coverImage: string | null;
     uploads: Upload[];
     approvalStatus: string;
+    visibilityStatus: string;
 }
 
 interface Book {
@@ -248,7 +249,7 @@ const MyBookShelf: React.FC = () => {
                     fileSize: '0 MB',
                     documentType: 'Textbook',
                     courses: [doc.documentName],
-                    isPublic: true,
+                    isPublic: doc.visibilityStatus === 'PUBLIC',
                     wordFile,
                     pdfFile,
                     approvalStatus: doc.approvalStatus
@@ -373,13 +374,19 @@ const MyBookShelf: React.FC = () => {
         setOpenConfirmDialog(true);
     };
 
-    const confirmTogglePublic = () => {
+    const confirmTogglePublic = async () => {
         if (bookToToggle) {
-            setBooks(books.map(book =>
-                book.id === bookToToggle.id
-                    ? { ...book, isPublic: !book.isPublic }
-                    : book
-            ));
+            try {
+                const response = await apiService.post(
+                    `/api/v1/digital-documents/${bookToToggle.id}/visibility?status=${bookToToggle.isPublic ? "RESTRICTED_VIEW" : "PUBLIC"}`,
+                );
+                console.log('Responsedsxadsadsadsa:', response);
+                // Refetch books to update UI
+                const updatedBooks = await fetchBooks();
+                setBooks(updatedBooks);
+            } catch (error) {
+                console.error('Error toggling visibility:', error);
+            }
         }
         setOpenConfirmDialog(false);
     };
@@ -804,19 +811,21 @@ const MyBookShelf: React.FC = () => {
                                                                                         fontWeight: 500
                                                                                     }}
                                                                                 />
-                                                                                <IconButton
-                                                                                    onClick={() => handleAccessListClick(book.id)}
-                                                                                    color="primary"
-                                                                                    sx={{
-                                                                                        backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                                                                                        '&:hover': {
-                                                                                            backgroundColor: 'rgba(25, 118, 210, 0.12)',
-                                                                                        },
-                                                                                        borderRadius: '10px'
-                                                                                    }}
-                                                                                >
-                                                                                    <ListIcon />
-                                                                                </IconButton>
+                                                                                {!book.isPublic && (
+                                                                                    <IconButton
+                                                                                        onClick={() => handleAccessListClick(book.id)}
+                                                                                        color="primary"
+                                                                                        sx={{
+                                                                                            backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                                                                                            '&:hover': {
+                                                                                                backgroundColor: 'rgba(25, 118, 210, 0.12)',
+                                                                                            },
+                                                                                            borderRadius: '10px'
+                                                                                        }}
+                                                                                    >
+                                                                                        <ListIcon />
+                                                                                    </IconButton>
+                                                                                )}
                                                                                 <Typography variant="body2" sx={{ mr: 1 }}>
                                                                                     {book.isPublic ? 'Public' : 'Private'}
                                                                                 </Typography>

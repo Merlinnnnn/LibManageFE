@@ -63,6 +63,7 @@ interface ChatResponse {
     error: any;
   };
 }
+
 interface QuickReplyPayload {
   eventName: string;
   parameters: Record<string, any>;
@@ -100,6 +101,28 @@ interface Book {
   courses: any[];
   physicalDocument: any | null;
   digitalDocument: any | null;
+}
+
+interface LoanResponse {
+  code: number;
+  success: boolean;
+  message: string;
+  data: {
+    transactionId: number;
+    documentId: string;
+    physicalDocId: number;
+    documentName: string;
+    username: string;
+    librarianId: number | null;
+    loanDate: string;
+    dueDate: string | null;
+    returnDate: string | null;
+    status: string;
+    returnCondition: string | null;
+    fineAmount: number;
+    paymentStatus: string;
+    paidAt: string | null;
+  };
 }
 
 const FloatingChat: React.FC = () => {
@@ -208,6 +231,44 @@ const FloatingChat: React.FC = () => {
     }
   };
 
+  const handlePostBtn = async (payload: string, url: string) => {
+    try {
+      const payloadObj = typeof payload === 'string' ? JSON.parse(payload) : payload;
+      
+      // Check if it's a loan request
+      if (url.includes('/api/v1/loans')) {
+        const response = await apiService.post<LoanResponse>(url, payloadObj);
+        if (response.data.success) {
+          const botMessage: Message = {
+            from: 'bot',
+            text: response.data.message,
+          };
+          setMessages((prev) => [...prev, botMessage]);
+        } else {
+          setMessages((prev) => [...prev, { from: 'bot', text: 'Xin lỗi, đã có lỗi xảy ra.' }]);
+        }
+      } else {
+        // Handle other POST requests with chat response format
+        const response = await apiService.post<ChatResponse>(url, payloadObj);
+        if (response.data.success) {
+          const botMessage: Message = {
+            from: 'bot',
+            text: response.data.data.reply,
+            quickReplies: response.data.data.quickReplies || undefined,
+            cards: response.data.data.cards || undefined,
+            options: response.data.data.suggestions || undefined,
+          };
+          setMessages((prev) => [...prev, botMessage]);
+        } else {
+          setMessages((prev) => [...prev, { from: 'bot', text: 'Xin lỗi, đã có lỗi xảy ra.' }]);
+        }
+      }
+    } catch (err) {
+      console.error('Error handling POST request:', err);
+      setMessages((prev) => [...prev, { from: 'bot', text: 'Lỗi mạng, vui lòng thử lại sau.' }]);
+    }
+  };
+
   const handleCloseBookDetail = () => {
     setBookDetailOpen(false);
     setSelectedBookId(null);
@@ -261,7 +322,7 @@ const FloatingChat: React.FC = () => {
                               sx={{ textTransform: 'none' }}
                               onClick={() => {
                                 if (btn.type === 'POST') {
-                                  handleSend(btn.text, btn.payload);
+                                  handlePostBtn(btn.payload, btn.url);
                                 } else if (btn.type === 'GET') {
                                   handleGetBtn(btn.url);
                                 }

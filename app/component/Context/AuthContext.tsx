@@ -31,6 +31,13 @@ interface IntrospectResponse {
   };
 }
 
+interface ResetPasswordResponse {
+  code: number;
+  success: boolean;
+  message: string;
+  data: null;
+}
+
 interface AuthContextType {
   token: string | null;
   login: (username: string, password: string) => Promise<void>;
@@ -38,6 +45,7 @@ interface AuthContextType {
   logout: () => void;
   checkTokenValidity: () => Promise<void>;
   loginGoogle: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -177,8 +185,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     window.addEventListener('message', handleMessage);
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const response = await apiService.post<ResetPasswordResponse>('/api/v1/auth/request-password-reset', {
+        email
+      });
+      
+      if (response.data.success) {
+        alert('Vui lòng kiểm tra email của bạn để đặt lại mật khẩu.');
+      } else {
+        alert('Có lỗi xảy ra. Vui lòng thử lại sau.');
+      }
+    } catch (error) {
+      console.error('Reset password error:', error);
+      alert('Có lỗi xảy ra. Vui lòng thử lại sau.');
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ token, login, logout, signup, checkTokenValidity, loginGoogle }}>
+    <AuthContext.Provider value={{ token, login, logout, signup, checkTokenValidity, loginGoogle, resetPassword }}>
       {children}
     </AuthContext.Provider>
   );
