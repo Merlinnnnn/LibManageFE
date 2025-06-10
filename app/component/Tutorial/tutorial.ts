@@ -111,7 +111,7 @@ export const startHomeTourLoggedIn = () => {
         } 
       },
       { 
-        element: '#book-list', 
+        element: '#logout', 
         popover: { 
           title: 'Đăng xuất', 
           description: 'Ấn vào để đăng xuất tài khoản', 

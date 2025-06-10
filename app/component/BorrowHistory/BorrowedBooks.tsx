@@ -37,6 +37,8 @@ interface UserInfo {
   phoneNumber: string;
   address: string;
   avatar?: string;
+  majorCode: string;
+  studentBatch: number;
 }
 
 function TabPanel(props: TabPanelProps) {
@@ -73,6 +75,8 @@ const UserInfo = () => {
     email: '',
     phone: '',
     address: '',
+    majorCode: '',
+    studentBatch: '',
     avatar: 'https://img6.thuthuatphanmem.vn/uploads/2022/11/18/anh-avatar-don-gian-cho-nu_081757692.jpg'
   });
 
@@ -103,6 +107,8 @@ const UserInfo = () => {
         email: userData.username,
         phone: userData.phoneNumber,
         address: userData.address,
+        majorCode: userData.majorCode,
+        studentBatch: userData.studentBatch.toString(),
         avatar: userData.avatar || 'https://img6.thuthuatphanmem.vn/uploads/2022/11/18/anh-avatar-don-gian-cho-nu_081757692.jpg'
       });
     } catch (error) {
@@ -123,10 +129,29 @@ const UserInfo = () => {
         firstName,
         lastName,
         phoneNumber: userInfo.phone,
-        address: userInfo.address
+        address: userInfo.address,
+        majorCode: userInfo.majorCode,
+        studentBatch: parseInt(userInfo.studentBatch)
       };
 
-      await apiService.put(`/api/v1/users/${currentUserId}`, updateData);
+      const response = await apiService.put(`/api/v1/users/${currentUserId}`, updateData);
+      
+      // Update localStorage with new user info
+      const infoRaw = localStorage.getItem('info');
+      if (infoRaw) {
+        const currentInfo = JSON.parse(infoRaw);
+        const updatedInfo = {
+          ...currentInfo,
+          firstName,
+          lastName,
+          phoneNumber: userInfo.phone,
+          address: userInfo.address,
+          majorCode: userInfo.majorCode,
+          studentBatch: parseInt(userInfo.studentBatch)
+        };
+        localStorage.setItem('info', JSON.stringify(updatedInfo));
+      }
+
       setIsEditing(false);
     } catch (error) {
       console.error('Error updating user data:', error);
@@ -362,6 +387,36 @@ const UserInfo = () => {
                         label="Address"
                         value={userInfo.address}
                         onChange={(e) => setUserInfo({ ...userInfo, address: e.target.value })}
+                        disabled={!isEditing}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: '12px',
+                            backgroundColor: 'rgba(0,0,0,0.02)'
+                          }
+                        }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Mã ngành"
+                        value={userInfo.majorCode}
+                        onChange={(e) => setUserInfo({ ...userInfo, majorCode: e.target.value })}
+                        disabled={!isEditing}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: '12px',
+                            backgroundColor: 'rgba(0,0,0,0.02)'
+                          }
+                        }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Niên Khóa"
+                        value={userInfo.studentBatch}
+                        onChange={(e) => setUserInfo({ ...userInfo, studentBatch: e.target.value })}
                         disabled={!isEditing}
                         sx={{
                           '& .MuiOutlinedInput-root': {

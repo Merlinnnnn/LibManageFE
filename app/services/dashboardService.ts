@@ -12,6 +12,8 @@ export interface DashboardStatistics {
     documentsByENABLED: number;
     totalDocuments: number;
     documentsByDISABLED: number;
+    typeDistribution?: Record<string, number>;
+    totalByType?: Record<string, number>;
   };
   loans: {
     totalLoans: number;
@@ -67,7 +69,10 @@ const dashboardService = {
   },
 
   getDocumentStatistics: async (): Promise<DashboardStatistics['documents']> => {
-    const response = await apiService.get<ApiResponse<DashboardStatistics['documents']>>('/api/dashboard/documents');
+    const response = await apiService.get<any>('/api/dashboard/documents/by-type');
+    if (Array.isArray(response.data.data)) {
+      return response.data.data[0];
+    }
     return response.data.data;
   },
 
@@ -133,6 +138,24 @@ const dashboardService = {
 
   getDailyStatistics: async (): Promise<DashboardStatistics['daily']> => {
     const response = await apiService.get<ApiResponse<DashboardStatistics['daily']>>('/api/dashboard/daily');
+    return response.data.data;
+  },
+
+  getDocumentStatusStatistics: async (): Promise<DashboardStatistics['documents']> => {
+    const response = await apiService.get<ApiResponse<DashboardStatistics['documents']>>('/api/dashboard/documents');
+    return response.data.data;
+  },
+
+  getDocumentTypeStatistics: async (): Promise<{ typeDistribution?: Record<string, number>; totalByType?: Record<string, number>; }> => {
+    const response = await apiService.get<any>('/api/dashboard/documents/by-type');
+    if (Array.isArray(response.data.data)) {
+      return response.data.data[0];
+    }
+    return response.data.data;
+  },
+
+  getLoanStatisticsByDateRange: async (startDate: string, endDate: string) => {
+    const response = await apiService.get<any>(`/api/dashboard/loans/statistics/date-range?startDate=${startDate}&endDate=${endDate}`);
     return response.data.data;
   },
 

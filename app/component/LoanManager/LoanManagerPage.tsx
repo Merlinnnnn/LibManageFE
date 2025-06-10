@@ -15,13 +15,16 @@ import {
   useMediaQuery,
   Paper,
   Container,
-  Divider
+  Divider,
+  Checkbox,
+  FormControlLabel
 } from '@mui/material';
 import Sidebar from '../SideBar';
 import NewStudentsTable from './NewStudentsTable';
 import RecentLoansTable from './RecentLoansTable';
 import DigitalApproval from './DigitalApproval';
-import RecentSubscriptionsTable from './RecentSubscriptionsTable';
+// import RecentSubscriptionsTable from './RecentSubscriptionsTable';
+import AccessListTable from './AccessListTable';
 import apiService from '@/app/untils/api';
 import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 
@@ -88,10 +91,12 @@ const LoanManagerPage: React.FC = () => {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
-  const [scanningMode, setScanningMode] = useState<'reserved' | 'return'>('reserved');
-  const [selectedLoanId, setSelectedLoanId] = useState<number | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const [bookInfoDialogOpen, setBookInfoDialogOpen] = useState(false);
+  const [scannedBook, setScannedBook] = useState<ScanResponse['data'] | null>(null);
+  const [damageChecked, setDamageChecked] = useState(false);
+  const [fineLoading, setFineLoading] = useState(false);
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setSnackbarSeverity(type);
@@ -99,9 +104,7 @@ const LoanManagerPage: React.FC = () => {
     setOpenSnackbar(true);
   };
 
-  const handleOpenDialog = (mode: 'reserved' | 'return', loanId: number) => {
-    setScanningMode(mode);
-    setSelectedLoanId(loanId);
+  const handleOpenDialog = () => {
     setOpenDialog(true);
   };
 
@@ -114,23 +117,18 @@ const LoanManagerPage: React.FC = () => {
   };
 
   const handleScan = async (decodedText: string) => {
-    if (!selectedLoanId) return;
-
     try {
       const { data: responseData } = await apiService.get<ScanResponse>(`/api/v1/loans/scan?${decodedText}`);
-      console.log(decodedText);
-      console.log(responseData);
-
-      if (responseData.success) {
-        showNotification('success', responseData.message || `Xác nhận ${scanningMode === 'reserved' ? 'nhận' : 'trả'} sách thành công`);
+      if (responseData.success && responseData.data) {
+        setScannedBook(responseData.data);
+        setBookInfoDialogOpen(true);
+        setDamageChecked(false);
         handleCloseDialog();
-        // Trigger refresh of the table
         setRefreshTrigger(prev => prev + 1);
       } else {
         showNotification('error', responseData.message || 'Có lỗi xảy ra');
       }
     } catch (error: any) {
-      console.error('Error scanning QR:', error);
       showNotification('error', error?.response?.data?.message || 'Có lỗi xảy ra khi xử lý mã QR');
     }
   };
@@ -148,6 +146,26 @@ const LoanManagerPage: React.FC = () => {
     }
     
     showNotification('error', errorMessage);
+  };
+
+  const handleCloseBookInfoDialog = () => {
+    setBookInfoDialogOpen(false);
+    setScannedBook(null);
+    setDamageChecked(false);
+  };
+
+  const handleSendFine = async () => {
+    if (!scannedBook) return;
+    setFineLoading(true);
+    try {
+      await apiService.post(`/api/v1/loans/${scannedBook.transactionId}/fine`);
+      showNotification('success', 'Đã gửi thông báo phạt thành công!');
+      handleCloseBookInfoDialog();
+    } catch (error: any) {
+      showNotification('error', error?.response?.data?.message || 'Có lỗi khi gửi phạt');
+    } finally {
+      setFineLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -220,9 +238,9 @@ const LoanManagerPage: React.FC = () => {
               }}
             >
               <Tab label="Quản lý mượn sách" {...a11yProps(0)} />
-              <Tab label="Quản lý phạt" {...a11yProps(1)} />
-              {/* <Tab label="Quản lý đăng ký" {...a11yProps(2)} /> */}
+              <Tab label="Quản lý yêu cầu đăng sách" {...a11yProps(1)} />
               <Tab label="Quản lý người dùng" {...a11yProps(2)} />
+              <Tab label="Quản lý yêu cầu truy cập" {...a11yProps(3)} />
             </Tabs>
 
             <TabPanel value={value} index={0}>
@@ -231,11 +249,11 @@ const LoanManagerPage: React.FC = () => {
             <TabPanel value={value} index={1}>
               <DigitalApproval />
             </TabPanel>
-            {/* <TabPanel value={value} index={2}>
-              <RecentSubscriptionsTable />
-            </TabPanel> */}
             <TabPanel value={value} index={2}>
               <NewStudentsTable />
+            </TabPanel>
+            <TabPanel value={value} index={3}>
+              <AccessListTable />
             </TabPanel>
           </Paper>
         </Box>
@@ -253,11 +271,11 @@ const LoanManagerPage: React.FC = () => {
           }}
         >
           <DialogTitle sx={{ 
-            backgroundColor: scanningMode === 'reserved' ? 'primary.main' : 'secondary.main',
+            backgroundColor: 'primary.main',
             color: 'white',
             py: 2
           }}>
-            {scanningMode === 'reserved' ? 'Quét mã QR nhận sách' : 'Quét mã QR trả sách'}
+            Quét mã QR
           </DialogTitle>
           <DialogContent sx={{ p: 3 }}>
             <Box sx={{ 
@@ -268,9 +286,7 @@ const LoanManagerPage: React.FC = () => {
             }}>
               <div id="qr-code-scanner" style={{ width: '100%', height: '300px' }} />
               <Typography variant="body2" color="text.secondary" align="center">
-                {scanningMode === 'reserved' 
-                  ? 'Đặt mã QR vào khung hình để quét và xác nhận nhận sách'
-                  : 'Đặt mã QR vào khung hình để quét và xác nhận trả sách'}
+                Đặt mã QR vào khung hình để quét và xác nhận giao dịch
               </Typography>
             </Box>
           </DialogContent>
@@ -285,6 +301,49 @@ const LoanManagerPage: React.FC = () => {
             >
               Đóng
             </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog
+          open={bookInfoDialogOpen}
+          onClose={handleCloseBookInfoDialog}
+          maxWidth="xs"
+          fullWidth
+          PaperProps={{ sx: { borderRadius: 2 } }}
+        >
+          <DialogTitle sx={{ fontWeight: 600 }}>Thông tin giao dịch</DialogTitle>
+          <DialogContent dividers>
+            {scannedBook && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Typography><b>Tên sách:</b> {scannedBook.documentName}</Typography>
+                <Typography><b>Người mượn:</b> {scannedBook.username}</Typography>
+                <Typography><b>Ngày mượn:</b> {new Date(scannedBook.loanDate).toLocaleDateString()}</Typography>
+                <Typography><b>Hạn trả:</b> {scannedBook.dueDate ? new Date(scannedBook.dueDate).toLocaleDateString() : '-'}</Typography>
+                <Typography><b>Trạng thái:</b> {scannedBook.status}</Typography>
+                <Typography><b>Tiền phạt:</b> {scannedBook.fineAmount ? scannedBook.fineAmount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }) : '-'}</Typography>
+                <Typography><b>Thanh toán:</b> {scannedBook.paymentStatus === 'NON_PAYMENT' ? 'Chưa thanh toán' : 'Đã thanh toán'}</Typography>
+                {scannedBook.status === 'RETURNED' && (
+                  <FormControlLabel
+                    control={<Checkbox checked={damageChecked} onChange={e => setDamageChecked(e.target.checked)} />}
+                    label="Sách bị hư hỏng"
+                    sx={{ mt: 1 }}
+                  />
+                )}
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions>
+            {scannedBook && scannedBook.status === 'RETURNED' ? (
+              <Button
+                onClick={handleSendFine}
+                variant="contained"
+                color="error"
+                disabled={!damageChecked || fineLoading}
+              >
+                {fineLoading ? 'Đang gửi...' : 'Gửi phạt'}
+              </Button>
+            ) : null}
+            <Button onClick={handleCloseBookInfoDialog} variant="outlined">Đóng</Button>
           </DialogActions>
         </Dialog>
 

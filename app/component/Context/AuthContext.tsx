@@ -104,14 +104,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const fixedData = {
         username,
         password,
-        firstName: 'John',
-        lastName: 'Doe',
-        dob: '1990-01-01',
-        phoneNumber: '1234567890',
-        address: '123 Main St',
+        confirmPassword: password,
       };
 
-      const response = await apiService.post('/api/v1/users', fixedData);
+      const response = await apiService.post('/api/v1/auth/register', fixedData);
       console.log('Đăng ký thành công:', response);
       alert('Đăng ký thành công! Vui lòng đăng nhập.');
       router.push('/login');
@@ -151,51 +147,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const loginGoogle = async () => {
-    try {
-      const response = await apiService.post('/api/v1/auth/login-google');
-      console.log(response);
-      // Mở cửa sổ popup để đăng nhập Google
-      // const width = 500;
-      // const height = 600;
-      // const left = window.screenX + (window.outerWidth - width) / 2;
-      // const top = window.screenY + (window.outerHeight - height) / 2;
-      
-      // const popup = window.open(
-      //   'http://localhost:8009/api/v1/auth/google',
-      //   'Google Login',
-      //   `width=${width},height=${height},left=${left},top=${top}`
-      // );
+    const googleLoginUrl = 'http://localhost:8009/oauth2/authorization/google';
+    const width = 500;
+    const height = 600;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
 
-      // // Lắng nghe message từ popup
-      // window.addEventListener('message', async (event) => {
-      //   if (event.origin !== window.location.origin) return;
-        
-      //   if (event.data.type === 'GOOGLE_LOGIN_SUCCESS') {
-      //     const { token } = event.data;
-      //     localStorage.setItem('access_token', token);
-      //     setToken(token);
+    // Mở popup
+    const popup = window.open(
+      googleLoginUrl,
+      'GoogleLogin',
+      `width=${width},height=${height},left=${left},top=${top}`
+    );
 
-      //     // Lấy thông tin người dùng
-      //     const userInfoResponse = await apiService.get<UserInfoResponse>('/api/v1/users/info', {
-      //       headers: { Authorization: `Bearer ${token}` }
-      //     });
-          
-      //     const userInfo = userInfoResponse.data.data;
-      //     localStorage.setItem("info", JSON.stringify(userInfo));
-          
-      //     const roles = userInfo.roles;
-      //     const isAdmin = roles.includes('ADMIN');
-      //     if (isAdmin) {
-      //       router.push('/user_dashboard');
-      //     } else {
-      //       router.push('/home');
-      //     }
-      //   }
-      // });
-    } catch (error) {
-      console.error('Google login failed:', error);
-      alert('Đăng nhập bằng Google thất bại. Vui lòng thử lại.');
-    }
+    // Lắng nghe message từ popup
+    const handleMessage = (event: MessageEvent) => {
+      // Có thể kiểm tra event.origin nếu cần
+      const { token, info } = event.data || {};
+      if (token && info) {
+        localStorage.setItem('access_token', token);
+        localStorage.setItem('info', JSON.stringify(info));
+        setToken(token);
+        router.push('/home');
+      }
+      window.removeEventListener('message', handleMessage);
+      popup?.close();
+    };
+
+    window.addEventListener('message', handleMessage);
   };
 
   return (

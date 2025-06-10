@@ -597,7 +597,9 @@ const AddBookPage: React.FC = () => {
                             </Box>
                         </Box>
                         <Box mt={4}>
-                            <Typography variant="h6" fontWeight={600} gutterBottom>Chọn khóa học</Typography>
+                            <Typography variant="h6" fontWeight={600} gutterBottom>
+                                Chọn khóa học <Typography component="span" variant="caption" color="text.secondary">(Tùy chọn)</Typography>
+                            </Typography>
                             <Box mt={1} display="flex" flexWrap="wrap" gap={2}>
                                 {courses.map((course) => (
                                     <Chip
@@ -629,8 +631,7 @@ const AddBookPage: React.FC = () => {
                                     !book.language.trim() ||
                                     !book.quantity ||
                                     !book.description.trim() ||
-                                    selectedTags.length === 0 ||
-                                    selectedCourses.length === 0
+                                    selectedTags.length === 0
                                 }
                                 startIcon={isAdding ? <CircularProgress size={20} color="inherit" /> : null}
                             >

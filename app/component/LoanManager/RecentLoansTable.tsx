@@ -24,13 +24,15 @@ import {
     MenuItem,
     Grid,
     Tooltip,
-    TablePagination
+    TablePagination,
+    Fab
 } from '@mui/material';
 import QrCodeIcon from '@mui/icons-material/QrCode';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import ClearIcon from '@mui/icons-material/Clear';
 import apiService from '@/app/untils/api';
+import useWebSocket from '@/app/services/useWebSocket';
 
 interface Loan {
     transactionId: number;
@@ -44,6 +46,8 @@ interface Loan {
     returnDate: string | null;
     status: string;
     returnCondition: string | null;
+    fineAmount?: number;
+    paymentStatus?: string;
 }
 
 interface ApiResponse {
@@ -60,8 +64,25 @@ interface ApiResponse {
     };
 }
 
+interface LoanUpdate {
+    transactionId: number;
+    documentId: string;
+    physicalDocId: number;
+    documentName: string;
+    username: string;
+    librarianId: string | null;
+    loanDate: string;
+    dueDate: string | null;
+    returnDate: string | null;
+    status: string;
+    returnCondition: string | null;
+    fineAmount?: number;
+    paymentStatus?: string;
+    action: 'CREATE' | 'UPDATE' | 'DELETE';
+}
+
 interface RecentLoansTableProps {
-    onScanQR: (mode: 'reserved' | 'return', loanId: number) => void;
+    onScanQR: () => void;
     refreshTrigger: number;
 }
 
@@ -69,7 +90,8 @@ const STATUS_OPTIONS = [
     { value: 'ALL', label: 'Tất cả' },
     { value: 'RESERVED', label: 'Đang chờ nhận sách' },
     { value: 'BORROWED', label: 'Đang mượn' },
-    { value: 'RETURNED', label: 'Đã trả' }
+    { value: 'RETURNED', label: 'Đã trả' },
+    { value: 'CANCELLED_AUTO', label: 'Bị hủy' }
 ];
 
 const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR, refreshTrigger }) => {
@@ -127,6 +149,26 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR, refreshTr
         setPage(0); // Reset về trang đầu tiên khi lọc
     }, [statusFilter, loans]);
 
+    // Xử lý cập nhật từ WebSocket
+    useWebSocket((message: any) => {
+        try {
+            // Parse message từ _body nếu là binary message
+            const messageBody = message._body || message.body;
+            const parsedMessage = JSON.parse(messageBody);
+            console.log('Parsed message:', parsedMessage);
+
+            // Kiểm tra nếu là loan message (có transactionId)
+            if (parsedMessage.transactionId) {
+                console.log('Loan update received, fetching fresh data...');
+                // Gọi lại API để lấy dữ liệu mới nhất
+                fetchLoans();
+            }
+        } catch (err) {
+            console.error('Error processing WebSocket message:', err);
+            console.error('Raw message:', message);
+        }
+    });
+
     const handleChangePage = (event: unknown, newPage: number) => {
         setPage(newPage);
     };
@@ -179,6 +221,8 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR, refreshTr
                 return 'info';
             case 'RETURNED':
                 return 'success';
+            case 'CANCELLED_AUTO':
+                return 'error';
             default:
                 return 'default';
         }
@@ -192,8 +236,23 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR, refreshTr
                 return 'Đang mượn';
             case 'RETURNED':
                 return 'Đã trả';
+            case 'CANCELLED_AUTO':
+                return 'Bị hủy';
             default:
                 return status;
+        }
+    };
+
+    const getPaymentStatus = (status: string) => {
+        switch (status) {
+            case 'NON_PAYMENT':
+                return { label: 'Không bị phạt', color: 'default' };
+            case 'UNPAID':
+                return { label: 'Chưa đóng phạt', color: 'warning' };
+            case 'PAID':
+                return { label: 'Đã đóng', color: 'success' };
+            default:
+                return { label: status, color: 'default' };
         }
     };
 
@@ -313,7 +372,8 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR, refreshTr
                             <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Ngày mượn</TableCell>
                             <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Hạn trả</TableCell>
                             <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Trạng thái</TableCell>
-                            <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Thao tác</TableCell>
+                            <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Tiền phạt</TableCell>
+                            <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Thanh toán</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -321,63 +381,47 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR, refreshTr
                             .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                             .length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} align="center">
+                                <TableCell colSpan={7} align="center">
                                     Không có dữ liệu nào được tìm thấy
                                 </TableCell>
                             </TableRow>
                         ) : (
                             filteredLoans
                                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                .map((loan) => (
-                                    <TableRow key={loan.transactionId}>
-                                        <TableCell>{loan.documentName}</TableCell>
-                                        <TableCell>{loan.username}</TableCell>
-                                        <TableCell>{new Date(loan.loanDate).toLocaleDateString()}</TableCell>
-                                        <TableCell>
-                                            {loan.dueDate ? new Date(loan.dueDate).toLocaleDateString() : '-'}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Chip 
-                                                label={getStatusText(loan.status)}
-                                                color={getStatusColor(loan.status) as any}
-                                                size="small"
-                                                sx={{ borderRadius: 2 }}
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            {loan.status === 'RESERVED' && (
-                                                <Button
-                                                    variant="contained"
+                                .map((loan) => {
+                                    const payment = getPaymentStatus(loan.paymentStatus || '');
+                                    return (
+                                        <TableRow key={loan.transactionId}>
+                                            <TableCell>{loan.documentName}</TableCell>
+                                            <TableCell>{loan.username}</TableCell>
+                                            <TableCell>{new Date(loan.loanDate).toLocaleDateString()}</TableCell>
+                                            <TableCell>
+                                                {loan.dueDate ? new Date(loan.dueDate).toLocaleDateString() : '-'}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Chip 
+                                                    label={getStatusText(loan.status)}
+                                                    color={getStatusColor(loan.status) as any}
                                                     size="small"
-                                                    onClick={() => onScanQR('reserved', loan.transactionId)}
-                                                    startIcon={<QrCodeIcon />}
-                                                    sx={{ 
-                                                        mr: 1,
-                                                        borderRadius: 2,
-                                                        textTransform: 'none'
-                                                    }}
-                                                >
-                                                    Quét nhận sách
-                                                </Button>
-                                            )}
-                                            {loan.status === 'BORROWED' && (
-                                                <Button
-                                                    variant="contained"
+                                                    sx={{ borderRadius: 2 }}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                {loan.fineAmount && loan.fineAmount > 0
+                                                    ? loan.fineAmount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })
+                                                    : '-'}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    label={payment.label}
+                                                    color={payment.color as any}
                                                     size="small"
-                                                    onClick={() => onScanQR('return', loan.transactionId)}
-                                                    startIcon={<QrCodeIcon />}
-                                                    color="secondary"
-                                                    sx={{ 
-                                                        borderRadius: 2,
-                                                        textTransform: 'none'
-                                                    }}
-                                                >
-                                                    Quét trả sách
-                                                </Button>
-                                            )}
-                                        </TableCell>
-                                    </TableRow>
-                                ))
+                                                    sx={{ borderRadius: 2 }}
+                                                />
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })
                         )}
                     </TableBody>
                 </Table>
@@ -404,76 +448,19 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR, refreshTr
                 />
             </Box>
 
-            {/* QR Code Dialog */}
-            <Dialog 
-                open={showQrDialog} 
-                onClose={handleCloseQrDialog}
-                maxWidth="sm"
-                fullWidth
-                PaperProps={{
-                    sx: {
-                        borderRadius: 2
-                    }
+            <Fab
+                color="primary"
+                aria-label="scan qr"
+                onClick={onScanQR}
+                sx={{
+                    position: 'fixed',
+                    bottom: 24,
+                    right: 24,
+                    zIndex: 1000
                 }}
             >
-                <DialogTitle>
-                    {selectedLoan?.status === 'RESERVED' ? 'Quét mã QR nhận sách' : 'Quét mã QR trả sách'}
-                </DialogTitle>
-                <DialogContent>
-                    <Box sx={{ 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        alignItems: 'center',
-                        gap: 2,
-                        py: 2
-                    }}>
-                        {qrCodeUrl && (
-                            <Box
-                                component="img"
-                                src={qrCodeUrl}
-                                alt="QR Code"
-                                sx={{
-                                    width: 200,
-                                    height: 200,
-                                    objectFit: 'contain',
-                                    borderRadius: 2
-                                }}
-                            />
-                        )}
-                        <Typography variant="body2" color="text.secondary" align="center">
-                            {selectedLoan?.status === 'RESERVED' 
-                                ? 'Quét mã QR để xác nhận người dùng nhận sách'
-                                : 'Quét mã QR để xác nhận người dùng trả sách'}
-                        </Typography>
-                    </Box>
-                </DialogContent>
-                <DialogActions>
-                    <Button 
-                        onClick={handleCloseQrDialog}
-                        sx={{ 
-                            borderRadius: 2,
-                            textTransform: 'none'
-                        }}
-                    >
-                        Đóng
-                    </Button>
-                    <Button 
-                        variant="contained"
-                        onClick={() => {
-                            if (selectedLoan) {
-                                onScanQR(selectedLoan.status === 'RESERVED' ? 'reserved' : 'return', selectedLoan.transactionId);
-                                handleCloseQrDialog();
-                            }
-                        }}
-                        sx={{ 
-                            borderRadius: 2,
-                            textTransform: 'none'
-                        }}
-                    >
-                        Xác nhận
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                <QrCodeIcon />
+            </Fab>
         </Box>
     );
 };

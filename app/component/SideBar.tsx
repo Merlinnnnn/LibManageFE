@@ -13,6 +13,9 @@ import {
     ListItem,
     Divider,
     Badge,
+    styled,
+    alpha,
+    Tooltip
 } from '@mui/material';
 import {
     Dashboard,
@@ -21,6 +24,8 @@ import {
     ExpandLess,
     ExpandMore,
     Menu as MenuIcon,
+    Brightness4,
+    Brightness7
 } from '@mui/icons-material';
 import AddIcon from '@mui/icons-material/Add';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
@@ -60,6 +65,25 @@ interface Res {
     result: number;
 }
 
+interface NotificationApiResponse {
+    data: {
+        data: {
+            content: Notification[];
+        };
+    };
+}
+
+const StyledBadge = styled(Badge)(({ theme }) => ({
+  '& .MuiBadge-badge': {
+    right: -3,
+    top: 13,
+    border: `2px solid ${theme.palette.background.paper}`,
+    padding: '0 4px',
+    backgroundColor: theme.palette.error.main,
+    color: theme.palette.error.contrastText,
+  },
+}));
+
 const Sidebar: React.FC = () => {
     const { mode } = useThemeContext();
     const { logout } = useAuth();
@@ -83,48 +107,83 @@ const Sidebar: React.FC = () => {
             setFullName(storedFullname);
         }
     }, []);
-    useWebSocket((notification: Notification) => {
-        console.log('New notification', notification.username);
-        console.log('fullname', fullName);
-    
-        setNotifications((prevNotifications) => {
-            // Kiểm tra nếu thông báo đã tồn tại trong danh sách dựa trên id
-            const isNotificationExists = prevNotifications.some(
-                (existingNotification) => existingNotification.id === notification.id
-            );
-            console.log('isnotifi',isNotificationExists);
-            console.log('prenotifi',prevNotifications);
-            console.log('new noti',notification);
-            
-    
-            // Nếu thông báo chưa tồn tại và thuộc về bản thân (so sánh với fullName)
-            if (notification.username === fullName.toLowerCase() && !isNotificationExists) {
-                console.log('Thông báo mới, chưa tồn tại trong danh sách');
-                fetchUnreadNotifications();
-                return [notification, ...prevNotifications]; // Thêm notification vào danh sách
-            }
-    
-            // Nếu thông báo đã tồn tại hoặc không phải của bản thân, không làm gì
-            console.log('Thông báo đã tồn tại hoặc không phải của bản thân');
-            return prevNotifications;
-        });
-    });
-    
-    
-    const fetchUnreadNotifications = async () => {
+
+    const fetchUnreadCount = async () => {
         try {
-            const response = await apiService.get<Res>('/api/v1/notifications/unread-count');
-            setUnreadCount(response.data.result);
+            const response = await apiService.get<{ data: number }>('/api/v1/notifications/unread-count');
+            setUnreadCount(typeof response.data.data === 'number' ? response.data.data : 0);
         } catch (error) {
-            console.log('Failed to fetch unread notifications:', error);
+            setUnreadCount(0);
         }
     };
 
-    
+    const fetchNotifications = async () => {
+        try {
+            const response = await apiService.get<NotificationApiResponse>('/api/v1/notifications');
+            const notificationsArr = response.data?.data?.data?.content;
+            if (Array.isArray(notificationsArr)) {
+                setNotifications(notificationsArr);
+            }
+        } catch (error) {
+            setNotifications([]);
+        }
+    };
 
     useEffect(() => {
-        fetchUnreadNotifications();
+        fetchUnreadCount();
     }, []);
+
+    useWebSocket((notification: Notification) => {
+        // Lấy thông tin user từ localStorage
+        const userInfo = JSON.parse(localStorage.getItem('info') || '{}');
+        
+        // Chỉ cập nhật nếu thông báo dành cho user hiện tại
+        if (notification.username === userInfo.username) {
+            setNotifications((prevNotifications) => {
+                const isNotificationExists = prevNotifications.some(
+                    (existingNotification) => existingNotification.id === notification.id
+                );
+                if (!isNotificationExists) {
+                    // Không tăng unreadCount ở đây nữa, sẽ để fetchUnreadCount xử lý
+                    return [notification, ...prevNotifications];
+                }
+                return prevNotifications;
+            });
+            // Gọi fetchUnreadCount để cập nhật số lượng thông báo chưa đọc từ server
+            fetchUnreadCount();
+        }
+    });
+
+    const handleNotificationClick = (event: React.MouseEvent<HTMLElement>) => {
+        fetchNotifications();
+        setNotificationAnchor(event.currentTarget);
+        fetchUnreadCount();
+    };
+
+    const handleNotificationClose = () => {
+        setNotificationAnchor(null);
+        fetchUnreadCount();
+    };
+
+    const handleExpandNotification = async (id: string) => {
+        setExpandedNotificationId(id === expandedNotificationId ? null : id);
+        const notification = notifications.find(n => n.id === id);
+        if (notification && notification.status === 'UNREAD') {
+            try {
+                await apiService.patch(`/api/v1/notifications/${id}/mark-read`);
+                fetchNotifications();
+                fetchUnreadCount();
+            } catch (error) {}
+        }
+    };
+
+    const handleMarkAllRead = async () => {
+        try {
+            await apiService.patch('/api/v1/notifications/mark-all-read');
+            fetchNotifications();
+            fetchUnreadCount();
+        } catch (error) {}
+    };
 
     useEffect(() => {
         sessionStorage.setItem("selectedIndex", selectedIndex.toString());
@@ -139,25 +198,6 @@ const Sidebar: React.FC = () => {
 
     const handleToggleSidebar = () => {
         setIsExpanded(!isExpanded);
-    };
-
-    const handleNotificationClick = async (event: React.MouseEvent<HTMLElement>) => {
-        setNotificationAnchor(event.currentTarget);
-        try {
-            const response: ApiResponse = await apiService.get('/api/v1/notifications');
-            console.log(response)
-            setNotifications(response.data.result.content);
-        } catch (error) {
-            console.log('Failed to fetch notifications:', error);
-        }
-    };
-
-    const handleNotificationClose = () => {
-        setNotificationAnchor(null);
-    };
-
-    const handleExpandNotification = (id: string) => {
-        setExpandedNotificationId(id === expandedNotificationId ? null : id);
     };
 
     const handleDashboardClick = () => setOpenDashboard(!openDashboard);
@@ -368,40 +408,16 @@ const Sidebar: React.FC = () => {
                 }}
             >
                 {isExpanded && <Typography variant="subtitle1">{fullName || 'Chưa có tên'}</Typography>}
-                <IconButton
-                    edge="end"
-                    aria-label="notifications"
-                    onClick={handleNotificationClick}
-                    sx={{
-                        color: textColor,
-                        margin: 0,
-                        padding: 0,
-                        position: 'relative',
-                    }}
-                >
-                    <NotificationsIcon />
-                    {unreadCount > 0 && (
-                        <Box
-                            sx={{
-                                position: 'absolute',
-                                top: 0,
-                                right: 0,
-                                backgroundColor: 'red',
-                                color: 'white',
-                                borderRadius: '50%',
-                                width: 18,
-                                height: 18,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '12px',
-                                fontWeight: 'bold',
-                            }}
-                        >
-                            {unreadCount}
-                        </Box>
-                    )}
-                </IconButton>
+                <Tooltip title="Thông báo">
+                    <IconButton
+                        onClick={handleNotificationClick}
+                        sx={{ color: textColor }}
+                    >
+                        <StyledBadge badgeContent={unreadCount} max={99}>
+                            <NotificationsIcon />
+                        </StyledBadge>
+                    </IconButton>
+                </Tooltip>
 
                 <Popover
                     open={Boolean(notificationAnchor)}
@@ -413,44 +429,81 @@ const Sidebar: React.FC = () => {
                     }}
                     transformOrigin={{
                         vertical: 'top',
-                        horizontal: 'left',
+                        horizontal: 'right',
+                    }}
+                    PaperProps={{
+                        sx: {
+                            width: 400,
+                            maxHeight: 500,
+                            borderRadius: 3,
+                            boxShadow: '0px 10px 30px rgba(0, 0, 0, 0.2)',
+                            overflow: 'hidden',
+                        },
                     }}
                 >
-                    <Box p={2} width={300}>
-                        <Typography variant="h6" gutterBottom>
-                            Thông báo
-                        </Typography>
-                        <List>
-                            {notifications.map((notification) => (
-                                <Box key={notification.id} mb={2}>
-                                    <ListItem disablePadding>
-                                        <ListItemButton onClick={() => handleExpandNotification(notification.id)}>
-                                            {notification.status === 'UNREAD' && (
-                                                <Box
-                                                    sx={{
-                                                        width: 10,
-                                                        height: 10,
-                                                        backgroundColor: '#99CCFF',
-                                                        borderRadius: '50%',
-                                                        marginRight: 1,
-                                                    }}
+                    <Box sx={{ p: 2, bgcolor: 'primary.main', color: 'white' }}>
+                        <Typography variant="h6">Thông báo</Typography>
+                    </Box>
+                    <Box sx={{ overflow: 'auto', maxHeight: 400 }}>
+                        {notifications.length > 0 ? (
+                            <List>
+                                {notifications.map((notification) => (
+                                    <React.Fragment key={notification.id}>
+                                        <ListItem disablePadding>
+                                            <ListItemButton 
+                                                onClick={() => handleExpandNotification(notification.id)}
+                                                sx={{
+                                                    '&:hover': {
+                                                        backgroundColor: alpha('#1976d2', 0.1),
+                                                    },
+                                                }}
+                                            >
+                                                <ListItemText
+                                                    primary={
+                                                        <Typography 
+                                                            fontWeight={notification.status === 'UNREAD' ? 600 : 400}
+                                                            sx={{ 
+                                                                cursor: 'pointer',
+                                                                '&:hover': {
+                                                                    color: 'primary.main'
+                                                                }
+                                                            }}
+                                                        >
+                                                            {notification.title}
+                                                        </Typography>
+                                                    }
+                                                    secondary={dayjs(notification.createdAt).format('DD/MM/YYYY HH:mm')}
                                                 />
-                                            )}
-                                            <ListItemText
-                                                primary={notification.title}
-                                                secondary={dayjs(notification.createdAt).format('DD/MM/YYYY HH:mm:ss')}
-                                            />
-                                        </ListItemButton>
-                                    </ListItem>
-                                    {expandedNotificationId === notification.id && (
-                                        <Typography variant="body2" color="textSecondary" sx={{ ml: 2 }}>
-                                            {notification.content}
-                                        </Typography>
-                                    )}
-                                    <Divider sx={{ mt: 1, mb: 1 }} />
-                                </Box>
-                            ))}
-                        </List>
+                                            </ListItemButton>
+                                        </ListItem>
+                                        {expandedNotificationId === notification.id && (
+                                            <Box sx={{ px: 3, py: 1, bgcolor: alpha('#1976d2', 0.05) }}>
+                                                <Typography variant="body2">
+                                                    {notification.content}
+                                                </Typography>
+                                            </Box>
+                                        )}
+                                        <Divider sx={{ my: 0.5 }} />
+                                    </React.Fragment>
+                                ))}
+                            </List>
+                        ) : (
+                            <Box sx={{ p: 3, textAlign: 'center' }}>
+                                <Typography variant="body2" color="text.secondary">
+                                    Chưa có thông báo nào
+                                </Typography>
+                            </Box>
+                        )}
+                    </Box>
+                    <Box sx={{ p: 1.5, textAlign: 'center', borderTop: `1px solid #e0e0e0` }}>
+                        <Typography
+                            variant="body2"
+                            color="secondary"
+                            sx={{ cursor: 'pointer', fontWeight: 600, '&:hover': { textDecoration: 'underline' } }}
+                            onClick={handleMarkAllRead}
+                        >
+                            Đánh dấu đã đọc tất cả
+                        </Typography>
                     </Box>
                 </Popover>
             </Box>

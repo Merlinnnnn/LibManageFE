@@ -1,62 +1,92 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 
 const useWebSocket = (onMessageReceived) => {
   const stompClientRef = useRef(null);
+  const reconnectAttemptsRef = useRef(0);
+  const maxReconnectAttempts = 3;
+
+  const messageHandler = useCallback(
+    (message) => {
+      try {
+        // Parse message từ _body nếu là binary message
+        const messageBody = message._body || message.body;
+        const parsedMessage = JSON.parse(messageBody);
+        console.log('Parsed message:', parsedMessage);
+
+        // Kiểm tra nếu là loan message (có transactionId)
+        if (parsedMessage.transactionId) {
+          console.log('Loan message received, forwarding to handler');
+          onMessageReceived(parsedMessage);
+        } else {
+          // Xử lý notification
+          const userInfo = JSON.parse(localStorage.getItem('info') || '{}');
+          if (parsedMessage.username === userInfo.username) {
+            onMessageReceived(parsedMessage);
+          }
+        }
+      } catch (err) {
+        console.error('Error parsing message:', err);
+        console.error('Raw message:', message);
+      }
+    },
+    [onMessageReceived]
+  );
 
   useEffect(() => {
-    // Lấy token từ sessionStorage
-    const token = sessionStorage.getItem('access_token');
+    if (stompClientRef.current) return;
+
+    const token = localStorage.getItem('access_token');
     if (!token) {
-      console.log('No token found in sessionStorage');
+      console.warn('Không tìm thấy token trong localStorage');
       return;
     }
 
-    // Tạo client STOMP
+    const wsUrl = `http://localhost:8009/ws?token=${token}`;
+    console.log('Đang cố gắng kết nối WebSocket tới:', wsUrl);
+
     const stompClient = new Client({
-      webSocketFactory: () => new SockJS('http://localhost:8009/ws'),
-      connectHeaders: {
-        Authorization: `Bearer ${token}`,
-      },
-      reconnectDelay: 5000, // Đảm bảo tự động reconnect
+      webSocketFactory: () => new SockJS(wsUrl),
+      reconnectDelay: 5000,
+      debug: (str) => console.log('[STOMP]', str),
     });
 
-    // Hàm đăng ký và xử lý thông báo
-    const subscribeToChannel = (channel, onMessage) => {
-      stompClient.subscribe(channel, (message) => {
-        const notification = JSON.parse(message.body);
-        onMessage(notification);
-      });
-    };
-
-    // Hàm xử lý kết nối thành công
     stompClient.onConnect = (frame) => {
-      console.log('Connected:', frame);
-      // Đăng ký nhận thông báo từ nhiều kênh khác nhau
-      subscribeToChannel('/user/queue/notifications', onMessageReceived);
-      subscribeToChannel('/user/queue/loans', onMessageReceived);
+      console.log('Đã kết nối WebSocket:', frame);
+      reconnectAttemptsRef.current = 0;
+      stompClient.subscribe('/user/queue/notifications', messageHandler);
+      stompClient.subscribe('/user/queue/loans', messageHandler);
     };
 
-    // Hàm xử lý lỗi của broker
     stompClient.onStompError = (frame) => {
-      console.log('Broker error:', frame.headers['message']);
-      console.log('Details:', frame.body);
+      console.error('STOMP lỗi:', frame.headers['message']);
+      console.error('Chi tiết:', frame.body);
     };
 
-    // Kích hoạt kết nối
+    stompClient.onWebSocketClose = (event) => {
+      console.error('Kết nối WebSocket thất bại:', event.reason || 'Không rõ lý do');
+      
+      reconnectAttemptsRef.current += 1;
+      if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+        console.warn('Đã vượt quá số lần reconnect cho phép');
+        return;
+      }
+    };
+
     stompClient.activate();
     stompClientRef.current = stompClient;
 
-    // Cleanup khi component unmount
     return () => {
       if (stompClientRef.current) {
+        console.log('Đang ngắt kết nối WebSocket...');
         stompClientRef.current.deactivate();
+        stompClientRef.current = null;
       }
     };
-  }, [onMessageReceived]); // Chỉ gọi lại effect nếu `onMessageReceived` thay đổi
+  }, [messageHandler]);
 
-  return stompClientRef.current;
+  return null;
 };
 
 export default useWebSocket;

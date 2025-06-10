@@ -235,8 +235,10 @@ export default function BookShelf() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [openTypeFilter, setOpenTypeFilter] = useState(true);
   const [openCourseFilter, setOpenCourseFilter] = useState(true);
+  const [programBooks, setProgramBooks] = useState<Book[]>([]);
+  const [currentProgramSlide, setCurrentProgramSlide] = useState(0);
 
-  const booksPerPage = 5;
+  const booksPerPage = 10;
   const muiTheme = useTheme();
 
   const handleTypeToggle = (typeId: number) => {
@@ -445,7 +447,7 @@ export default function BookShelf() {
           }
         }}
       >
-        Mượn sách
+        Chi tiết
       </Button>
     );
   };
@@ -510,8 +512,20 @@ export default function BookShelf() {
     }
   };
 
+  const fetchProgramRecommendations = async () => {
+    try {
+      const response = await apiService.get<RecommendationsResponse>('/api/v1/recommendations/program');
+      if (response.data?.data?.content) {
+        setProgramBooks(response.data.data.content);
+      }
+    } catch (error) {
+      console.log('Lỗi khi tải sách học kỳ:', error);
+    }
+  };
+
   useEffect(() => {
     fetchRecommendations();
+    fetchProgramRecommendations();
   }, []);
 
   // Add scroll event listener
@@ -561,7 +575,10 @@ export default function BookShelf() {
         py: 4,
         position: 'relative'
       }}>
-        <Container maxWidth="xl">
+        <Container maxWidth={false} disableGutters sx={{ px: { xs: 2, sm: 4, md: 6 } }}>
+          {/* Giảm padding hai bên */}
+          {/* Nếu cần, có thể dùng maxWidth="lg" hoặc disableGutters */}
+          {/* <Container maxWidth="lg" disableGutters sx={{ px: 1 }}> */}
           {/* Hero Section */}
           <Box sx={{
             bgcolor: 'primary.main',
@@ -768,15 +785,151 @@ export default function BookShelf() {
             </Box>
           )}
 
+          {/* Program Books Recommendation Section */}
+          {programBooks.length > 0 && (
+            <Box id="program-books" sx={{ mb: 6, position: 'relative' }}>
+              <Typography variant="h5" sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
+                <SchoolIcon color="secondary" sx={{ mr: 1 }} />
+                Sách Có Thể Học Trong Kỳ Này
+              </Typography>
+              {/* Navigation Buttons */}
+              <IconButton
+                onClick={() => setCurrentProgramSlide((prev) => Math.max(0, prev - 1))}
+                disabled={currentProgramSlide === 0}
+                sx={{
+                  position: 'absolute',
+                  left: -20,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  bgcolor: 'background.paper',
+                  boxShadow: 2,
+                  '&:hover': {
+                    bgcolor: 'background.paper',
+                  },
+                  zIndex: 2,
+                  display: { xs: 'none', md: 'flex' }
+                }}
+              >
+                <KeyboardArrowLeftIcon />
+              </IconButton>
+              <IconButton
+                onClick={() => setCurrentProgramSlide((prev) => Math.min(Math.ceil(programBooks.length / 3) - 1, prev + 1))}
+                disabled={currentProgramSlide >= Math.ceil(programBooks.length / 3) - 1}
+                sx={{
+                  position: 'absolute',
+                  right: -20,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  bgcolor: 'background.paper',
+                  boxShadow: 2,
+                  '&:hover': {
+                    bgcolor: 'background.paper',
+                  },
+                  zIndex: 2,
+                  display: { xs: 'none', md: 'flex' }
+                }}
+              >
+                <KeyboardArrowRightIcon />
+              </IconButton>
+              <Box sx={{
+                overflow: 'hidden',
+                position: 'relative',
+                mx: { xs: -2, md: 0 }
+              }}>
+                <Box sx={{
+                  display: 'flex',
+                  transition: 'transform 0.3s ease-in-out',
+                  transform: `translateX(-${currentProgramSlide * 100}%)`,
+                  width: '100%'
+                }}>
+                  {Array.from({ length: Math.ceil(programBooks.length / 3) }).map((_, groupIndex) => (
+                    <Box
+                      key={groupIndex}
+                      sx={{
+                        minWidth: '100%',
+                        display: 'flex',
+                        gap: 2,
+                        px: 2
+                      }}
+                    >
+                      {programBooks.slice(groupIndex * 3, (groupIndex + 1) * 3).map((book) => (
+                        <Paper
+                          key={book.documentId}
+                          sx={{
+                            p: 2,
+                            borderRadius: 3,
+                            height: '100%',
+                            transition: 'transform 0.3s',
+                            width: 'calc(33.333% - 16px)',
+                            flex: '0 0 auto',
+                            '&:hover': {
+                              transform: 'translateY(-5px)',
+                              boxShadow: 6
+                            },
+                            background: 'linear-gradient(to bottom right, #ffffff, #e3eaf5)'
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', mb: 2 }}>
+                            <Avatar
+                              src={book.coverImage || ''}
+                              variant="rounded"
+                              sx={{
+                                width: 70,
+                                height: 100,
+                                mr: 2,
+                                boxShadow: 3
+                              }}
+                            />
+                            <Box>
+                              <Typography variant="h6" sx={{ 
+                                fontWeight: 600,
+                                fontSize: '1rem',
+                                lineHeight: 1.2,
+                                mb: 0.5
+                              }}>
+                                {book.documentName}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                                Tác giả: {book.author}
+                              </Typography>
+                              <Chip
+                                label={book.documentCategory}
+                                size="small"
+                                color="primary"
+                                sx={{ mt: 1, height: 24 }}
+                              />
+                            </Box>
+                          </Box>
+                          <Typography variant="body2" sx={{ 
+                            mb: 2,
+                            fontSize: '0.875rem',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}>
+                            {book?.description || 'Không có mô tả'}
+                          </Typography>
+                          {renderFileButtons(book)}
+                        </Paper>
+                      ))}
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            </Box>
+          )}
+
           {/* Main Content */}
           <Grid container spacing={4}>
             {/* Filters Sidebar */}
-            <Grid item xs={12} md={3.5}>
+            <Grid item xs={12} md={2.5}>
               <Paper id="filter-section" sx={{
                 p: 3,
                 borderRadius: 3,
                 position: 'sticky',
-                top: { xs: 80, sm: 88 },
+                top: { xs: 20, sm: 28 },
                 boxShadow: 3,
                 maxHeight: 'calc(100vh - 100px)',
                 overflowY: 'auto',
@@ -857,12 +1010,14 @@ export default function BookShelf() {
             </Grid>
 
             {/* Books List */}
-            <Grid item xs={12} md={8.5}>
+            <Grid item xs={12} md={9.5}>
               <Paper id="book-list" sx={{
-                p: 3,
+                p: { xs: 0.5, sm: 1.5, md: 2 },
                 borderRadius: 3,
                 minHeight: '60vh',
-                boxShadow: 3
+                boxShadow: 3,
+                width: '100%',
+                maxWidth: '100%',
               }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                   <Typography variant="h5" sx={{ display: 'flex', alignItems: 'center' }}>
@@ -887,15 +1042,16 @@ export default function BookShelf() {
                     ))}
                   </Box>
                 ) : books.length > 0 ? (
-                  <>
-                    <Box sx={{ mb: 4 }}>
+                  <Box sx={{ mb: 4 }}>
+                    <Grid container spacing={3} alignItems="stretch">
                       {books.map((book) => (
-                        <Box key={book?.documentId} mb={3}>
-                          <BookInfo id={book?.documentId?.toString() || ''} books={books} />
-                        </Box>
+                        <Grid item xs={12} md={6} key={book?.documentId} sx={{ display: 'flex' }}>
+                          <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', height: '100%' }}>
+                            <BookInfo id={book?.documentId?.toString() || ''} books={books} />
+                          </Box>
+                        </Grid>
                       ))}
-                    </Box>
-
+                    </Grid>
                     <Box id="pagination" sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
                       <Pagination
                         count={totalPages}
@@ -906,7 +1062,7 @@ export default function BookShelf() {
                         size="large"
                       />
                     </Box>
-                  </>
+                  </Box>
                 ) : (
                   <Box sx={{
                     textAlign: 'center',

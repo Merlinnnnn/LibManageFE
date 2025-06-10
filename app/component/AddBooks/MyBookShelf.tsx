@@ -40,6 +40,7 @@ import SchoolIcon from '@mui/icons-material/School';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import AddBookDialog from './AddDigital';
 import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import LocalLibraryIcon from '@mui/icons-material/LocalLibrary';
 import ListIcon from '@mui/icons-material/List';
 import AccessList from './AccessList';
@@ -171,7 +172,7 @@ const MyBookShelf: React.FC = () => {
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
     const [bookToToggle, setBookToToggle] = useState<Book | null>(null);
     const [activeTab, setActiveTab] = useState(0);
-    const booksPerPage = 5;
+    const booksPerPage = 10;
     const [accessListOpen, setAccessListOpen] = useState(false);
     const [selectedDigitalId, setSelectedDigitalId] = useState<number | null>(null);
     const [allBooks, setAllBooks] = useState<Book[]>([]);
@@ -464,6 +465,18 @@ const MyBookShelf: React.FC = () => {
         }
     };
 
+    const handleToggleFavorite = async (bookId: string) => {
+        try {
+            // Remove from favorites
+            await apiService.delete(`/api/v1/documents/${bookId}/favorite`);
+            // Refresh favorites list
+            const favoritesData = await fetchFavoriteBooks();
+            setFavoriteBooks(favoritesData);
+        } catch (error) {
+            console.error('Error removing from favorites:', error);
+        }
+    };
+
     return (
         <Box>
             <Header />
@@ -473,7 +486,7 @@ const MyBookShelf: React.FC = () => {
                 py: 4,
                 position: 'relative'
             }}>
-                <Container maxWidth="xl">
+                <Container maxWidth={false} disableGutters sx={{ px: { xs: 2, sm: 4, md: 6 } }}>
                     {/* Search Bar */}
                     <Box sx={{ 
                         bgcolor: 'primary.main',
@@ -563,12 +576,12 @@ const MyBookShelf: React.FC = () => {
                     {/* Main Content */}
                     <Grid container spacing={4}>
                         {/* Filters Sidebar */}
-                        <Grid item xs={12} md={3.5}>
+                        <Grid item xs={12} md={2.5}>
                             <Paper sx={{ 
-                                p: 3, 
-                                borderRadius: 4,
+                                p: 3,
+                                borderRadius: 3,
                                 position: 'sticky',
-                                top: { xs: 80, sm: 88 },
+                                top: { xs: 20, sm: 28 },
                                 boxShadow: 3,
                                 maxHeight: 'calc(100vh - 100px)',
                                 overflowY: 'auto',
@@ -649,12 +662,14 @@ const MyBookShelf: React.FC = () => {
                         </Grid>
 
                         {/* Books List */}
-                        <Grid item xs={12} md={8.5}>
+                        <Grid item xs={12} md={9.5}>
                             <Paper sx={{ 
-                                p: 3, 
-                                borderRadius: 4,
+                                p: { xs: 0.5, sm: 1.5, md: 2 },
+                                borderRadius: 3,
                                 minHeight: '60vh',
-                                boxShadow: 3
+                                boxShadow: 3,
+                                width: '100%',
+                                maxWidth: '100%',
                             }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                                     <Typography variant="h5" sx={{ 
@@ -738,118 +753,121 @@ const MyBookShelf: React.FC = () => {
                                             </Box>
                                         ) : currentBooks.length > 0 ? (
                                             <>
-                                                <Grid container spacing={3}>
+                                                <Grid container spacing={3} alignItems="stretch">
                                                     {currentBooks.map((book) => (
-                                                        <Grid item xs={12} key={book.id}>
-                                                            <Card sx={{ 
-                                                                display: 'flex', 
-                                                                boxShadow: 3, 
-                                                                p: 2, 
-                                                                width: '100%', 
-                                                                borderRadius: 4,
-                                                                transition: 'transform 0.3s ease-in-out',
-                                                                '&:hover': {
-                                                                    transform: 'translateY(-5px)',
-                                                                    boxShadow: 6
-                                                                }
-                                                            }}>
-                                                                <CardMedia
-                                                                    component="img"
-                                                                    sx={{
-                                                                        width: 150,
-                                                                        height: 200,
-                                                                        objectFit: 'cover',
-                                                                        bgcolor: '#f5f5f5',
-                                                                        border: '1px solid black',
-                                                                        borderRadius: 4
-                                                                    }}
-                                                                    image={book.coverImage || 'https://th.bing.com/th/id/OIP.cB5B7jK44BU3VNazD-SqYgHaHa?rs=1&pid=ImgDetMain'}
-                                                                    alt={book.title}
-                                                                />
+                                                        <Grid item xs={12} md={6} key={book.id} sx={{ display: 'flex' }}>
+                                                            <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', height: '100%' }}>
+                                                                <Card sx={{ 
+                                                                    display: 'flex', 
+                                                                    boxShadow: 3, 
+                                                                    p: 2, 
+                                                                    width: '100%', 
+                                                                    borderRadius: 4,
+                                                                    transition: 'transform 0.3s ease-in-out',
+                                                                    height: '100%',
+                                                                    '&:hover': {
+                                                                        transform: 'translateY(-5px)',
+                                                                        boxShadow: 6
+                                                                    }
+                                                                }}>
+                                                                    <CardMedia
+                                                                        component="img"
+                                                                        sx={{
+                                                                            width: 150,
+                                                                            height: 200,
+                                                                            objectFit: 'cover',
+                                                                            bgcolor: '#f5f5f5',
+                                                                            border: '1px solid black',
+                                                                            borderRadius: 4
+                                                                        }}
+                                                                        image={book.coverImage || 'https://th.bing.com/th/id/OIP.cB5B7jK44BU3VNazD-SqYgHaHa?rs=1&pid=ImgDetMain'}
+                                                                        alt={book.title}
+                                                                    />
 
-                                                                <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                                        <Box>
-                                                                            <Typography variant="h6" fontWeight="bold">
-                                                                                {book.title}
-                                                                            </Typography>
-                                                                            <Typography variant="body2" color="text.secondary">
-                                                                                by {book.author}
-                                                                            </Typography>
+                                                                    <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                                            <Box>
+                                                                                <Typography variant="h6" fontWeight="bold">
+                                                                                    {book.title}
+                                                                                </Typography>
+                                                                                <Typography variant="body2" color="text.secondary">
+                                                                                    by {book.author}
+                                                                                </Typography>
+                                                                            </Box>
+                                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                                <Chip
+                                                                                    label={getStatusLabel(book.approvalStatus)}
+                                                                                    color={getStatusColor(book.approvalStatus)}
+                                                                                    size="small"
+                                                                                    sx={{ 
+                                                                                        borderRadius: '10px',
+                                                                                        fontWeight: 500
+                                                                                    }}
+                                                                                />
+                                                                                <IconButton
+                                                                                    onClick={() => handleAccessListClick(book.id)}
+                                                                                    color="primary"
+                                                                                    sx={{
+                                                                                        backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                                                                                        '&:hover': {
+                                                                                            backgroundColor: 'rgba(25, 118, 210, 0.12)',
+                                                                                        },
+                                                                                        borderRadius: '10px'
+                                                                                    }}
+                                                                                >
+                                                                                    <ListIcon />
+                                                                                </IconButton>
+                                                                                <Typography variant="body2" sx={{ mr: 1 }}>
+                                                                                    {book.isPublic ? 'Public' : 'Private'}
+                                                                                </Typography>
+                                                                                <Switch
+                                                                                    checked={book.isPublic}
+                                                                                    onChange={() => handleTogglePublic(book)}
+                                                                                    color={book.isPublic ? 'success' : 'error'}
+                                                                                />
+                                                                            </Box>
                                                                         </Box>
-                                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                                            <Chip
-                                                                                label={getStatusLabel(book.approvalStatus)}
-                                                                                color={getStatusColor(book.approvalStatus)}
-                                                                                size="small"
-                                                                                sx={{ 
-                                                                                    borderRadius: '10px',
-                                                                                    fontWeight: 500
-                                                                                }}
-                                                                            />
-                                                                            <IconButton
-                                                                                onClick={() => handleAccessListClick(book.id)}
-                                                                                color="primary"
-                                                                                sx={{
-                                                                                    backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                                                                                    '&:hover': {
-                                                                                        backgroundColor: 'rgba(25, 118, 210, 0.12)',
-                                                                                    },
-                                                                                    borderRadius: '10px'
-                                                                                }}
-                                                                            >
-                                                                                <ListIcon />
-                                                                            </IconButton>
-                                                                            <Typography variant="body2" sx={{ mr: 1 }}>
-                                                                                {book.isPublic ? 'Public' : 'Private'}
-                                                                            </Typography>
-                                                                            <Switch
-                                                                                checked={book.isPublic}
-                                                                                onChange={() => handleTogglePublic(book)}
-                                                                                color={book.isPublic ? 'success' : 'error'}
-                                                                            />
+
+                                                                        <Typography variant="body2">Uploaded: {book.uploadDate}</Typography>
+                                                                        <Typography variant="body2">Size: {book.fileSize}</Typography>
+
+                                                                        <Box mt={1}>
+                                                                            <Typography variant="body2">Courses: {book.courses.join(', ')}</Typography>
                                                                         </Box>
-                                                                    </Box>
 
-                                                                    <Typography variant="body2">Uploaded: {book.uploadDate}</Typography>
-                                                                    <Typography variant="body2">Size: {book.fileSize}</Typography>
-
-                                                                    <Box mt={1}>
-                                                                        <Typography variant="body2">Courses: {book.courses.join(', ')}</Typography>
-                                                                    </Box>
-
-                                                                    <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                                                                        {book.wordFile && (
-                                                                            <Chip
-                                                                                icon={<DescriptionIcon />}
-                                                                                label="Word"
-                                                                                color="primary"
-                                                                                variant="outlined"
-                                                                                sx={{ 
-                                                                                    borderRadius: '10px',
-                                                                                    '& .MuiChip-icon': {
-                                                                                        color: 'primary.main'
-                                                                                    }
-                                                                                }}
-                                                                            />
-                                                                        )}
-                                                                        {book.pdfFile && (
-                                                                            <Chip
-                                                                                icon={<PictureAsPdfIcon />}
-                                                                                label="PDF"
-                                                                                color="error"
-                                                                                variant="outlined"
-                                                                                sx={{ 
-                                                                                    borderRadius: '10px',
-                                                                                    '& .MuiChip-icon': {
-                                                                                        color: 'error.main'
-                                                                                    }
-                                                                                }}
-                                                                            />
-                                                                        )}
-                                                                    </Box>
-                                                                </CardContent>
-                                                            </Card>
+                                                                        <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                                                                            {book.wordFile && (
+                                                                                <Chip
+                                                                                    icon={<DescriptionIcon />}
+                                                                                    label="Word"
+                                                                                    color="primary"
+                                                                                    variant="outlined"
+                                                                                    sx={{ 
+                                                                                        borderRadius: '10px',
+                                                                                        '& .MuiChip-icon': {
+                                                                                            color: 'primary.main'
+                                                                                        }
+                                                                                    }}
+                                                                                />
+                                                                            )}
+                                                                            {book.pdfFile && (
+                                                                                <Chip
+                                                                                    icon={<PictureAsPdfIcon />}
+                                                                                    label="PDF"
+                                                                                    color="error"
+                                                                                    variant="outlined"
+                                                                                    sx={{ 
+                                                                                        borderRadius: '10px',
+                                                                                        '& .MuiChip-icon': {
+                                                                                            color: 'error.main'
+                                                                                        }
+                                                                                    }}
+                                                                                />
+                                                                            )}
+                                                                        </Box>
+                                                                    </CardContent>
+                                                                </Card>
+                                                            </Box>
                                                         </Grid>
                                                     ))}
                                                 </Grid>
@@ -896,78 +914,116 @@ const MyBookShelf: React.FC = () => {
                                             </Box>
                                         ) : currentFavorites.length > 0 ? (
                                             <>
-                                                <Grid container spacing={3}>
+                                                <Grid container spacing={3} alignItems="stretch">
                                                     {currentFavorites.map((book) => (
-                                                        <Grid item xs={12} key={book.documentId}>
-                                                            <Card sx={{ display: 'flex', boxShadow: 3, p: 2, width: '100%', borderRadius: '20px' }}>
-                                                                <CardMedia
-                                                                    component="img"
-                                                                    sx={{
-                                                                        width: 150,
-                                                                        height: 200,
-                                                                        objectFit: 'cover',
-                                                                        bgcolor: '#f5f5f5',
-                                                                        border: '1px solid black',
-                                                                        borderRadius: '20px'
-                                                                    }}
-                                                                    image={book.coverImage || 'https://th.bing.com/th/id/OIP.cB5B7jK44BU3VNazD-SqYgHaHa?rs=1&pid=ImgDetMain'}
-                                                                    alt={book.documentName}
-                                                                />
+                                                        <Grid item xs={12} md={6} key={book.documentId} sx={{ display: 'flex' }}>
+                                                            <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', height: '100%' }}>
+                                                                <Card sx={{ 
+                                                                    display: 'flex', 
+                                                                    boxShadow: 3, 
+                                                                    p: 2, 
+                                                                    width: '100%', 
+                                                                    borderRadius: 4,
+                                                                    transition: 'transform 0.3s ease-in-out',
+                                                                    height: '100%',
+                                                                    '&:hover': {
+                                                                        transform: 'translateY(-5px)',
+                                                                        boxShadow: 6
+                                                                    }
+                                                                }}>
+                                                                    <CardMedia
+                                                                        component="img"
+                                                                        sx={{
+                                                                            width: 150,
+                                                                            height: 200,
+                                                                            objectFit: 'cover',
+                                                                            bgcolor: '#f5f5f5',
+                                                                            border: '1px solid black',
+                                                                            borderRadius: 4
+                                                                        }}
+                                                                        image={book.coverImage || 'https://th.bing.com/th/id/OIP.cB5B7jK44BU3VNazD-SqYgHaHa?rs=1&pid=ImgDetMain'}
+                                                                        alt={book.documentName}
+                                                                    />
 
-                                                                <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                                                                    <Box>
-                                                                        <Typography variant="h6" fontWeight="bold">
-                                                                            {book.documentName}
+                                                                    <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                                            <Box>
+                                                                                <Typography variant="h6" fontWeight="bold">
+                                                                                    {book.documentName}
+                                                                                </Typography>
+                                                                                <Typography variant="body2" color="text.secondary">
+                                                                                    by {book.author}
+                                                                                </Typography>
+                                                                            </Box>
+                                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                                <IconButton
+                                                                                    onClick={() => handleToggleFavorite(book.documentId)}
+                                                                                    sx={{
+                                                                                        color: 'error.main',
+                                                                                        '&:hover': {
+                                                                                            color: 'error.dark',
+                                                                                            transform: 'scale(1.1)',
+                                                                                        },
+                                                                                        transition: 'all 0.3s ease',
+                                                                                        p: 0.5
+                                                                                    }}
+                                                                                >
+                                                                                    <FavoriteIcon sx={{ fontSize: 28 }} />
+                                                                                </IconButton>
+                                                                            </Box>
+                                                                        </Box>
+
+                                                                        <Typography variant="body2" sx={{ mt: 1 }}>
+                                                                            Uploaded: {book.uploadDate}
                                                                         </Typography>
-                                                                        <Typography variant="body2" color="text.secondary">
-                                                                            by {book.author}
+                                                                        <Typography variant="body2">
+                                                                            Size: {book.fileSize}
                                                                         </Typography>
-                                                                    </Box>
 
-                                                                    <Typography variant="body2">Uploaded: {book.uploadDate}</Typography>
-                                                                    <Typography variant="body2">Size: {book.fileSize}</Typography>
-
-                                                                    <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                                                                        {book.wordFile && (
-                                                                            <Chip
-                                                                                icon={<DescriptionIcon />}
-                                                                                label="Word"
-                                                                                color="primary"
-                                                                                variant="outlined"
-                                                                                sx={{ 
-                                                                                    borderRadius: '10px',
-                                                                                    '& .MuiChip-icon': {
-                                                                                        color: 'primary.main'
-                                                                                    }
-                                                                                }}
-                                                                            />
-                                                                        )}
-                                                                        {book.pdfFile && (
-                                                                            <Chip
-                                                                                icon={<PictureAsPdfIcon />}
-                                                                                label="PDF"
-                                                                                color="error"
-                                                                                variant="outlined"
-                                                                                sx={{ 
-                                                                                    borderRadius: '10px',
-                                                                                    '& .MuiChip-icon': {
-                                                                                        color: 'error.main'
-                                                                                    }
-                                                                                }}
-                                                                            />
-                                                                        )}
-                                                                    </Box>
-                                                                </CardContent>
-                                                            </Card>
+                                                                        <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                                                                            {book.wordFile && (
+                                                                                <Chip
+                                                                                    icon={<DescriptionIcon />}
+                                                                                    label="Word"
+                                                                                    color="primary"
+                                                                                    variant="outlined"
+                                                                                    sx={{ 
+                                                                                        borderRadius: '10px',
+                                                                                        '& .MuiChip-icon': {
+                                                                                            color: 'primary.main'
+                                                                                        }
+                                                                                    }}
+                                                                                />
+                                                                            )}
+                                                                            {book.pdfFile && (
+                                                                                <Chip
+                                                                                    icon={<PictureAsPdfIcon />}
+                                                                                    label="PDF"
+                                                                                    color="error"
+                                                                                    variant="outlined"
+                                                                                    sx={{ 
+                                                                                        borderRadius: '10px',
+                                                                                        '& .MuiChip-icon': {
+                                                                                            color: 'error.main'
+                                                                                        }
+                                                                                    }}
+                                                                                />
+                                                                            )}
+                                                                        </Box>
+                                                                    </CardContent>
+                                                                </Card>
+                                                            </Box>
                                                         </Grid>
                                                     ))}
                                                 </Grid>
                                                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
                                                     <Pagination
-                                                        count={Math.ceil(favoriteBooks.length / booksPerPage)}
-                                                        page={favoritesPage}
-                                                        onChange={(event, page) => setFavoritesPage(page)}
+                                                        count={Math.ceil(favoriteBooks.length / 10)}
+                                                        page={favoritesPage + 1}
+                                                        onChange={(event, page) => setFavoritesPage(page - 1)}
                                                         color="primary"
+                                                        shape="rounded"
+                                                        size="large"
                                                     />
                                                 </Box>
                                             </>

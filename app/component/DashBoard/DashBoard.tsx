@@ -201,44 +201,33 @@ const Dashboard: React.FC = () => {
               </ResponsiveContainer>
             </Paper>
           </Grid>
+          {/* Fine Statistics Bar Chart */}
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 4, borderRadius: 4, boxShadow: 3, bgcolor: '#fff', '&:hover': { boxShadow: 6 } }}>
-              <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 'bold', mb: 3 }}>
-                Phân bố vai trò người dùng
+              <Typography variant="h6" gutterBottom sx={{ color: 'error.main', fontWeight: 'bold', mb: 3 }}>
+                Thống kê tiền phạt
               </Typography>
-              <Box sx={{ height: 350, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={Array.isArray(statistics.users.roleDistribution) ? statistics.users.roleDistribution : []}
-                      dataKey="count"
-                      nameKey="role"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      label={({ role, percent }) => `${role}: ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {Array.isArray(statistics.users.roleDistribution) && statistics.users.roleDistribution.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      formatter={(value: number) => [`${value} người dùng`, 'Số lượng']}
-                      contentStyle={{
-                        backgroundColor: theme.palette.background.paper,
-                        border: `1px solid ${theme.palette.divider}`,
-                        borderRadius: 4,
-                      }}
-                    />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-                <Typography variant="subtitle1" sx={{ mt: 2, fontWeight: 500 }}>
-                  Tổng số người dùng: {statistics.users.totalUsers}
-                </Typography>
-              </Box>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={[{
+                  'Chờ thanh toán': statistics.fines.pendingFines,
+                  'Đã thanh toán': statistics.fines.paidFines,
+                  'Tổng phạt': statistics.fines.totalFines
+                }]}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey={() => ''} tick={false} />
+                  <YAxis />
+                  <Tooltip formatter={(value: number) => [`${value.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}`, 'Số tiền']} />
+                  <Legend />
+                  <Bar dataKey="Chờ thanh toán" fill="#ff9800" name="Chờ thanh toán" />
+                  <Bar dataKey="Đã thanh toán" fill="#4caf50" name="Đã thanh toán" />
+                  <Bar dataKey="Tổng phạt" fill="#f44336" name="Tổng phạt" />
+                </BarChart>
+              </ResponsiveContainer>
             </Paper>
           </Grid>
+
+          
         </Grid>
       </Box>
     </Box>

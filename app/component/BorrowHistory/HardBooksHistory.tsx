@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Box, Typography, Paper, CircularProgress, Button,
   useTheme, useMediaQuery, Dialog, DialogTitle,
@@ -21,6 +21,8 @@ interface Book {
   returnDate: string | null;
   status: string;
   returnCondition: string | null;
+  fineAmount?: number;
+  paymentStatus?: string;
 }
 
 interface ApiResponse {
@@ -41,6 +43,15 @@ interface ApiResponse {
   };
 }
 
+const SANDBOX_URL = 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
+
+function buildVnpayUrl(params: Record<string, string | number>) {
+  const query = Object.entries(params)
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
+    .join('&');
+  return `${SANDBOX_URL}?${query}`;
+}
+
 const HardBooksHistory = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -52,10 +63,20 @@ const HardBooksHistory = () => {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [showQrDialog, setShowQrDialog] = useState(false);
+  const [vnpayParams, setVnpayParams] = useState<any | null>(null);
+  const vnpayFormRef = useRef<HTMLFormElement>(null);
+  const [payingId, setPayingId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchHardBooks();
   }, []);
+
+  useEffect(() => {
+    if (vnpayParams && vnpayFormRef.current) {
+      vnpayFormRef.current.submit();
+      setVnpayParams(null); // reset sau khi submit
+    }
+  }, [vnpayParams]);
 
   const fetchHardBooks = async () => {
     setLoading(true);
@@ -131,8 +152,52 @@ const HardBooksHistory = () => {
         return 'Đang mượn';
       case 'RETURNED':
         return 'Đã trả';
+      case 'CANCELLED_AUTO':
+        return 'Đã bị hủy tự động';
       default:
         return status;
+    }
+  };
+
+  const getPaymentStatus = (status: string) => {
+    switch (status) {
+      case 'NON_PAYMENT':
+        return { label: 'Không bị phạt', color: 'default' };
+      case 'UNPAID':
+        return { label: 'Chưa thanh toán', color: 'warning' };
+      case 'PAID':
+        return { label: 'Đã thanh toán', color: 'success' };
+      default:
+        return { label: status, color: 'default' };
+    }
+  };
+
+  const handleVNPayPayment = async (book: Book) => {
+    try {
+      if (!book.transactionId) {
+        alert('Không tìm thấy mã giao dịch!');
+        return;
+      }
+      setPayingId(book.transactionId);
+      setError(null);
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`http://localhost:8009/api/v1/vnpay/submitOrder/${book.transactionId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (data && data.redirectUrl) {
+        window.open(data.redirectUrl, '_blank');
+      } else {
+        alert('Không thể tạo đơn thanh toán. Vui lòng thử lại sau.');
+      }
+    } catch (e) {
+      console.error('Error:', e);
+      alert('Không thể tạo link thanh toán VNPay!');
+    } finally {
+      setPayingId(null);
     }
   };
 
@@ -229,6 +294,38 @@ const HardBooksHistory = () => {
                   Ngày trả: {new Date(book.returnDate).toLocaleDateString()}
                 </Typography>
               )}
+              {/* Thông tin phạt */}
+              {typeof book.fineAmount === 'number' && book.fineAmount > 0 && (
+                <Box sx={{ mb: 1 }}>
+                  <Typography variant="body2" color="error" sx={{ fontWeight: 500 }}>
+                    Tiền phạt: {book.fineAmount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
+                  </Typography>
+                  <Typography variant="body2" sx={{ display: 'inline-block', mr: 1 }}>
+                    Trạng thái phạt: 
+                  </Typography>
+                  <Box component="span" sx={{ display: 'inline-block', verticalAlign: 'middle' }}>
+                    <span style={{
+                      color: book.paymentStatus === 'PAID' ? '#388e3c' : (book.paymentStatus === 'UNPAID' ? '#ed6c02' : '#888'),
+                      fontWeight: 600
+                    }}>
+                      {getPaymentStatus(book.paymentStatus || '').label}
+                    </span>
+                  </Box>
+                  {/* Nút thanh toán VNPay */}
+                  {book.paymentStatus === 'UNPAID' && (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      size="small"
+                      sx={{ ml: 2, borderRadius: 2, textTransform: 'none' }}
+                      onClick={() => handleVNPayPayment(book)}
+                      disabled={payingId === book.transactionId}
+                    >
+                      {payingId === book.transactionId ? <CircularProgress size={18} color="inherit" /> : 'Thanh toán VNPay'}
+                    </Button>
+                  )}
+                </Box>
+              )}
               <Box sx={{ display: 'flex', gap: 1 }}>
                 {book.status === 'RESERVED' && (
                   <Button
@@ -270,8 +367,20 @@ const HardBooksHistory = () => {
         onClose={handleCloseQrDialog}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '16px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+          }
+        }}
       >
-        <DialogTitle>
+        <DialogTitle sx={{ 
+          textAlign: 'center',
+          fontSize: '1.5rem',
+          fontWeight: 'bold',
+          pt: 3,
+          pb: 1
+        }}>
           {selectedBook?.status === 'RESERVED' ? 'Mã QR nhận sách' : 'Mã QR trả sách'}
         </DialogTitle>
         <DialogContent>
@@ -279,34 +388,112 @@ const HardBooksHistory = () => {
             display: 'flex', 
             flexDirection: 'column', 
             alignItems: 'center',
-            gap: 2,
-            py: 2
+            gap: 3,
+            py: 3
           }}>
             {qrCodeUrl && (
               <Box
-                component="img"
-                src={qrCodeUrl}
-                alt="QR Code"
                 sx={{
-                  width: 200,
-                  height: 200,
-                  objectFit: 'contain'
+                  p: 2,
+                  backgroundColor: 'white',
+                  borderRadius: '16px',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                  transition: 'transform 0.3s ease',
+                  '&:hover': {
+                    transform: 'scale(1.02)'
+                  }
                 }}
-              />
+              >
+                <Box
+                  component="img"
+                  src={qrCodeUrl}
+                  alt="QR Code"
+                  sx={{
+                    width: 250,
+                    height: 250,
+                    objectFit: 'contain',
+                    display: 'block'
+                  }}
+                />
+              </Box>
             )}
-            <Typography variant="body2" color="text.secondary" align="center">
-              {selectedBook?.status === 'RESERVED' 
-                ? 'Vui lòng mang mã QR này đến thư viện để nhận sách'
-                : 'Vui lòng mang mã QR này đến thư viện để trả sách'}
-            </Typography>
+            <Box sx={{ 
+              textAlign: 'center',
+              maxWidth: '400px',
+              mx: 'auto'
+            }}>
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  mb: 1,
+                  color: 'text.primary',
+                  fontWeight: 'medium'
+                }}
+              >
+                {selectedBook?.documentName}
+              </Typography>
+              <Typography 
+                variant="body1" 
+                color="text.secondary" 
+                sx={{ 
+                  lineHeight: 1.6,
+                  mb: 2
+                }}
+              >
+                {selectedBook?.status === 'RESERVED' 
+                  ? 'Vui lòng mang mã QR này đến thư viện để nhận sách'
+                  : 'Vui lòng mang mã QR này đến thư viện để trả sách'}
+              </Typography>
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ 
+                  fontStyle: 'italic',
+                  opacity: 0.8
+                }}
+              >
+                Mã QR này chỉ có hiệu lực một lần và sẽ hết hạn sau 24 giờ
+              </Typography>
+            </Box>
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseQrDialog} sx={{ borderRadius: '8px' }}>
+        <DialogActions sx={{ 
+          px: 3, 
+          pb: 3,
+          justifyContent: 'center'
+        }}>
+          <Button 
+            onClick={handleCloseQrDialog} 
+            variant="contained"
+            sx={{ 
+              borderRadius: '8px',
+              px: 4,
+              py: 1,
+              textTransform: 'none',
+              fontSize: '1rem'
+            }}
+          >
             Đóng
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Hidden VNPay Form */}
+      <form
+        ref={vnpayFormRef}
+        method="POST"
+        action={SANDBOX_URL}
+        style={{ display: 'none' }}
+      >
+        {vnpayParams && Object.entries(vnpayParams).map(([key, value]) => (
+          <input
+            key={key}
+            type="hidden"
+            name={key}
+            value={String(value)}
+          />
+        ))}
+      </form>
     </Box>
   );
 };

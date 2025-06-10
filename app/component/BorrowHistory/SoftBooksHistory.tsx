@@ -5,12 +5,15 @@ import {
 } from '@mui/material';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import AssignmentReturnIcon from '@mui/icons-material/AssignmentReturn';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import apiService from '@/app/untils/api';
 import { useRouter } from 'next/navigation';
 
 interface AccessRequest {
   id: number;
-  uploadId: number;
+  digitalId: number;
+  coverImage: string;
   requesterId: string;
   ownerId: string;
   reviewerId: string | null;
@@ -18,7 +21,8 @@ interface AccessRequest {
   decisionTime: string | null;
   licenseExpiry: string | null;
   status: string;
-  fileType?: string;
+  requesterName: string | null;
+  ownerName: string | null;
 }
 
 interface ApiResponse {
@@ -85,11 +89,7 @@ const SoftBooksHistory = () => {
   };
 
   const handleRead = (book: AccessRequest) => {
-    if (book.fileType?.includes('word')) {
-      router.push(`/readword?id=${book.uploadId}`);
-    } else {
-      router.push(`/readpdf?id=${book.uploadId}`);
-    }
+    router.push(`/readpdf?id=${book.digitalId}`);
   };
 
   const handleReturn = (book: AccessRequest) => {
@@ -156,6 +156,23 @@ const SoftBooksHistory = () => {
             }}
           >
             <Box sx={{ flex: 1 }}>
+              <Box sx={{ 
+                width: '100%', 
+                height: '200px', 
+                mb: 2,
+                borderRadius: '8px',
+                overflow: 'hidden'
+              }}>
+                <img 
+                  src={book.coverImage} 
+                  alt={`Book cover ${book.digitalId}`}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
+                />
+              </Box>
               <Typography variant="h6" sx={{ 
                 fontWeight: 'bold',
                 mb: 1,
@@ -164,7 +181,7 @@ const SoftBooksHistory = () => {
                 WebkitBoxOrient: 'vertical',
                 overflow: 'hidden'
               }}>
-                Mã sách: {book.uploadId}
+                Mã sách: {book.digitalId}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 Trạng thái: {book.status === 'APPROVED' ? 'Đã duyệt' : 
@@ -180,7 +197,7 @@ const SoftBooksHistory = () => {
                 </Typography>
               )}
               {book.licenseExpiry && (
-                <Typography variant="body2" sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ mb: 2, color: 'warning.main' }}>
                   Ngày hết hạn: {new Date(book.licenseExpiry).toLocaleDateString()}
                 </Typography>
               )}
@@ -188,29 +205,45 @@ const SoftBooksHistory = () => {
                 {book.status === 'APPROVED' && (
                   <>
                     <Button
-                      variant="contained"
+                      variant="outlined"
                       size="small"
-                      onClick={() => router.push(`/readpdf?id=${book.uploadId}`)}
-                      startIcon={<MenuBookIcon />}
-                      sx={{ 
-                        borderRadius: '8px',
-                        textTransform: 'none'
+                      startIcon={<DescriptionOutlinedIcon sx={{ color: '#1976d2' }} />}
+                      onClick={() => router.push(`/readword?id=${book.digitalId}`)}
+                      sx={{
+                        borderRadius: '20px',
+                        borderColor: '#1976d2',
+                        color: '#1976d2',
+                        backgroundColor: '#fff',
+                        textTransform: 'none',
+                        fontWeight: 500,
+                        '&:hover': {
+                          borderColor: '#1565c0',
+                          backgroundColor: '#e3f2fd',
+                        },
                       }}
                     >
-                      Đọc PDF
+                      Word
                     </Button>
                     <Button
-                      variant="contained"
+                      variant="outlined"
                       size="small"
-                      color="secondary"
-                      onClick={() => router.push(`/readword?id=${book.uploadId}`)}
-                      startIcon={<MenuBookIcon />}
-                      sx={{ 
-                        borderRadius: '8px',
-                        textTransform: 'none'
+                      startIcon={<PictureAsPdfOutlinedIcon sx={{ color: '#d32f2f' }} />}
+                      onClick={() => router.push(`/readpdf?id=${book.digitalId}`)}
+                      sx={{
+                        borderRadius: '20px',
+                        borderColor: '#d32f2f',
+                        color: '#d32f2f',
+                        backgroundColor: '#fff',
+                        textTransform: 'none',
+                        fontWeight: 500,
+                        ml: 1,
+                        '&:hover': {
+                          borderColor: '#b71c1c',
+                          backgroundColor: '#ffebee',
+                        },
                       }}
                     >
-                      Đọc Word
+                      PDF
                     </Button>
                     <Button
                       variant="outlined"

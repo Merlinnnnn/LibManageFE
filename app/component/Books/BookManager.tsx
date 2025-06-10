@@ -35,6 +35,8 @@ import {
   Add as AddIcon,
   Key as KeyIcon,
   Delete as DeleteIcon,
+  Autorenew as AutorenewIcon,
+  Block as BlockIcon,
 } from '@mui/icons-material';
 import apiService from '../../untils/api';
 import Sidebar from '../SideBar';
@@ -177,9 +179,26 @@ export default function BookManager() {
     }
   };
 
-  const handleToggleKeyStatus = (uploadId: number) => {
-    console.log(1);
-    // Future implementation: call API to toggle key status
+  const handleRevokeKey = async (uploadId: number) => {
+    try {
+      await apiService.post(`/api/v1/drm/revoke/${uploadId}`);
+      if (drmData?.digitalDocumentId) {
+        handleViewDrmKeys(drmData.digitalDocumentId);
+      }
+    } catch (error) {
+      console.error('Error revoking key:', error);
+    }
+  };
+
+  const handleRenewKey = async (uploadId: number) => {
+    try {
+      await apiService.post(`/api/v1/drm/renew-key/${uploadId}`);
+      if (drmData?.digitalDocumentId) {
+        handleViewDrmKeys(drmData.digitalDocumentId);
+      }
+    } catch (error) {
+      console.error('Error renewing key:', error);
+    }
   };
 
   const handleDrmRowClick = (uploadId: number) => {
@@ -459,29 +478,43 @@ export default function BookManager() {
                       <TableCell>{upload.uploadId}</TableCell>
                       <TableCell>{upload.filePath}</TableCell>
                       <TableCell sx={{ wordBreak: 'break-all' }}>
-                        {expandedDrmRow === upload.uploadId ? (
-                          upload.key.contentKey
+                        {upload.key && upload.key.contentKey ? (
+                          expandedDrmRow === upload.uploadId ? (
+                            upload.key.contentKey
+                          ) : (
+                            <Tooltip title={upload.key.contentKey} placement="top">
+                              <span>{upload.key.contentKey.substring(0, TRUNCATE_LENGTH) + (upload.key.contentKey.length > TRUNCATE_LENGTH ? '...' : '')}</span>
+                            </Tooltip>
+                          )
                         ) : (
-                          <Tooltip title={upload.key.contentKey} placement="top">
-                            <span>{upload.key.contentKey.substring(0, TRUNCATE_LENGTH) + (upload.key.contentKey.length > TRUNCATE_LENGTH ? '...' : '')}</span>
-                          </Tooltip>
+                          <span style={{ color: 'red' }}>No key</span>
                         )}
                       </TableCell>
-                      <TableCell>{upload.key.active ? 'Yes' : 'No'}</TableCell>
+                      <TableCell>{upload.key && upload.key.active ? 'Yes' : 'No'}</TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
-                        <Switch
-                          checked={upload.key.active}
-                          onChange={() => handleToggleKeyStatus(upload.uploadId)}
-                          inputProps={{ 'aria-label': 'toggle key status' }}
-                          sx={{
-                            '& .MuiSwitch-switchBase': {
-                              borderRadius: '15px',
-                            },
-                            '& .MuiSwitch-thumb': {
-                              borderRadius: '15px',
-                            }
-                          }}
-                        />
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Button
+                            variant="outlined"
+                            color="error"
+                            size="small"
+                            startIcon={<BlockIcon />}
+                            onClick={() => handleRevokeKey(upload.uploadId)}
+                            disabled={!(upload.key && upload.key.active)}
+                            sx={{ borderRadius: '8px', textTransform: 'none' }}
+                          >
+                            Revoke
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            color="primary"
+                            size="small"
+                            startIcon={<AutorenewIcon />}
+                            onClick={() => handleRenewKey(upload.uploadId)}
+                            sx={{ borderRadius: '8px', textTransform: 'none' }}
+                          >
+                            Renew
+                          </Button>
+                        </Box>
                       </TableCell>
                     </TableRow>
                   ))}

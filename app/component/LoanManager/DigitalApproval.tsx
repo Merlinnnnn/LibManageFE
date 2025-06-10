@@ -20,7 +20,11 @@ import {
   IconButton,
   Tooltip,
   Snackbar,
-  Alert
+  Alert,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
 import CheckIcon from '@mui/icons-material/Check';
@@ -93,6 +97,9 @@ const PendingApprovalTable = () => {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+  const [pdfMenuAnchor, setPdfMenuAnchor] = useState<null | HTMLElement>(null);
+  const [wordMenuAnchor, setWordMenuAnchor] = useState<null | HTMLElement>(null);
+  const [selectedDoc, setSelectedDoc] = useState<DigitalDocument | null>(null);
   const router = useRouter();
 
   const fetchDocuments = async () => {
@@ -121,6 +128,22 @@ const PendingApprovalTable = () => {
 
   const handleReadWord = (uploadId: number) => {
     router.push(`/adminreadbook?id=${uploadId}`);
+  };
+
+  const handlePdfMenuOpen = (event: React.MouseEvent<HTMLElement>, doc: DigitalDocument) => {
+    setPdfMenuAnchor(event.currentTarget);
+    setSelectedDoc(doc);
+  };
+
+  const handleWordMenuOpen = (event: React.MouseEvent<HTMLElement>, doc: DigitalDocument) => {
+    setWordMenuAnchor(event.currentTarget);
+    setSelectedDoc(doc);
+  };
+
+  const handleMenuClose = () => {
+    setPdfMenuAnchor(null);
+    setWordMenuAnchor(null);
+    setSelectedDoc(null);
   };
 
   const handleApprove = async (id: number) => {
@@ -210,18 +233,128 @@ const PendingApprovalTable = () => {
                   </TableCell>
                   <TableCell>
                     {doc.uploads.some(u => u.fileType === 'application/pdf') && (
-                      <Tooltip title="Đọc PDF">
-                        <IconButton color="primary" onClick={() => handleReadPdf(doc.uploads.find(u => u.fileType === 'application/pdf')!.uploadId)}>
-                          <DescriptionIcon />
-                        </IconButton>
-                      </Tooltip>
+                      <>
+                        {doc.uploads.filter(u => u.fileType === 'application/pdf').length > 1 ? (
+                          <>
+                            <Tooltip title="Đọc PDF">
+                              <IconButton 
+                                color="primary" 
+                                onClick={(e) => handlePdfMenuOpen(e, doc)}
+                              >
+                                <DescriptionIcon />
+                              </IconButton>
+                            </Tooltip>
+                            <Menu
+                              anchorEl={pdfMenuAnchor}
+                              open={Boolean(pdfMenuAnchor)}
+                              onClose={handleMenuClose}
+                              PaperProps={{
+                                sx: {
+                                  maxHeight: 300,
+                                  width: '250px',
+                                }
+                              }}
+                            >
+                              {doc.uploads
+                                .filter(u => u.fileType === 'application/pdf')
+                                .map((upload) => (
+                                  <MenuItem 
+                                    key={upload.uploadId}
+                                    onClick={() => {
+                                      handleReadPdf(upload.uploadId);
+                                      handleMenuClose();
+                                    }}
+                                  >
+                                    <ListItemIcon>
+                                      <DescriptionIcon fontSize="small" />
+                                    </ListItemIcon>
+                                    <ListItemText 
+                                      primary={upload.fileName}
+                                      primaryTypographyProps={{
+                                        sx: {
+                                          overflow: 'hidden',
+                                          textOverflow: 'ellipsis',
+                                          whiteSpace: 'nowrap'
+                                        }
+                                      }}
+                                    />
+                                  </MenuItem>
+                                ))}
+                            </Menu>
+                          </>
+                        ) : (
+                          <Tooltip title="Đọc PDF">
+                            <IconButton 
+                              color="primary" 
+                              onClick={() => handleReadPdf(doc.uploads.find(u => u.fileType === 'application/pdf')!.uploadId)}
+                            >
+                              <DescriptionIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </>
                     )}
                     {doc.uploads.some(u => u.fileType === 'application/msword' || u.fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') && (
-                      <Tooltip title="Đọc Word">
-                        <IconButton color="secondary" onClick={() => handleReadWord(doc.uploads.find(u => u.fileType === 'application/msword' || u.fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')!.uploadId)}>
-                          <DescriptionIcon />
-                        </IconButton>
-                      </Tooltip>
+                      <>
+                        {doc.uploads.filter(u => u.fileType === 'application/msword' || u.fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document').length > 1 ? (
+                          <>
+                            <Tooltip title="Đọc Word">
+                              <IconButton 
+                                color="secondary" 
+                                onClick={(e) => handleWordMenuOpen(e, doc)}
+                              >
+                                <DescriptionIcon />
+                              </IconButton>
+                            </Tooltip>
+                            <Menu
+                              anchorEl={wordMenuAnchor}
+                              open={Boolean(wordMenuAnchor)}
+                              onClose={handleMenuClose}
+                              PaperProps={{
+                                sx: {
+                                  maxHeight: 300,
+                                  width: '250px',
+                                }
+                              }}
+                            >
+                              {doc.uploads
+                                .filter(u => u.fileType === 'application/msword' || u.fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+                                .map((upload) => (
+                                  <MenuItem 
+                                    key={upload.uploadId}
+                                    onClick={() => {
+                                      handleReadWord(upload.uploadId);
+                                      handleMenuClose();
+                                    }}
+                                  >
+                                    <ListItemIcon>
+                                      <DescriptionIcon fontSize="small" />
+                                    </ListItemIcon>
+                                    <ListItemText 
+                                      primary={upload.fileName}
+                                      primaryTypographyProps={{
+                                        sx: {
+                                          overflow: 'hidden',
+                                          textOverflow: 'ellipsis',
+                                          whiteSpace: 'nowrap'
+                                        }
+                                      }}
+                                    />
+                                  </MenuItem>
+                                ))}
+                            </Menu>
+                          </>
+                        ) : (
+                          <Tooltip title="Đọc Word">
+                            <IconButton 
+                              color="secondary" 
+                              onClick={() => handleReadWord(doc.uploads.find(u => u.fileType === 'application/msword' || u.fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')!.uploadId)}
+                            >
+                              <DescriptionIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </>
                     )}
                     <Tooltip title="Duyệt">
                       <IconButton color="success" onClick={() => handleApprove(doc.digitalDocumentId)}>

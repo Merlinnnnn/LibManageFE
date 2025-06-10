@@ -163,17 +163,25 @@ const Header: React.FC = () => {
   }, [setMode]);
 
   useWebSocket((notification: Notification) => {
-    setNotifications((prevNotifications) => {
-      const isNotificationExists = prevNotifications.some(
-        (existingNotification) => existingNotification.username === notification.username
-      );
+    // Lấy thông tin user từ localStorage
+    const userInfo = JSON.parse(localStorage.getItem('info') || '{}');
+    
+    // Chỉ cập nhật nếu thông báo dành cho user hiện tại
+    if (notification.username === userInfo.username) {
+      setNotifications((prevNotifications) => {
+        const isNotificationExists = prevNotifications.some(
+          (existingNotification) => existingNotification.id === notification.id
+        );
 
-      if (!isNotificationExists) {
-        setUnreadCount(prev => prev + 1);
-        return [notification, ...prevNotifications];
-      }
-      return prevNotifications;
-    });
+        if (!isNotificationExists) {
+          // Không tăng unreadCount ở đây nữa, sẽ để fetchUnreadCount xử lý
+          return [notification, ...prevNotifications];
+        }
+        return prevNotifications;
+      });
+      // Gọi fetchUnreadCount để cập nhật số lượng thông báo chưa đọc từ server
+      fetchUnreadCount();
+    }
   });
 
   const handleToggleTheme = () => {
@@ -241,7 +249,8 @@ const Header: React.FC = () => {
 
   return (
     <AppBar
-      position="sticky"
+      //position="sticky"
+      position="static"
       sx={{
         background: mode === 'dark' 
           ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)' 
@@ -496,7 +505,7 @@ const Header: React.FC = () => {
                     Thành viên
                   </Typography>
                 </Box>
-                <Divider />
+                {/* <Divider />
                 <MenuItem 
                   component={Link}
                   href="/bookfavo"
@@ -505,7 +514,7 @@ const Header: React.FC = () => {
                 >
                   <FavoriteBorderIcon sx={{ mr: 1.5, color: 'text.secondary' }} />
                   Yêu thích
-                </MenuItem>
+                </MenuItem> */}
                 <MenuItem 
                   id="info"
                   component={Link}

@@ -109,71 +109,178 @@ const AccessList: React.FC<AccessListProps> = ({ open, onClose, uploadId }) => {
     };
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pr: 1 }}>
-                Access Requests
-                <IconButton aria-label="close" onClick={onClose} size="small">
+        <Dialog 
+            open={open} 
+            onClose={onClose} 
+            maxWidth="md" 
+            fullWidth
+            PaperProps={{
+                sx: {
+                    borderRadius: 3,
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                }
+            }}
+        >
+            <DialogTitle 
+                sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between',
+                    pr: 1,
+                    pb: 2,
+                    borderBottom: '1px solid',
+                    borderColor: 'divider',
+                    background: 'linear-gradient(45deg, #6a1b9a 30%, #9c27b0 90%)',
+                    color: 'white'
+                }}
+            >
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    Danh sách yêu cầu truy cập
+                </Typography>
+                <IconButton 
+                    aria-label="close" 
+                    onClick={onClose} 
+                    size="small"
+                    sx={{ 
+                        color: 'white',
+                        '&:hover': {
+                            backgroundColor: 'rgba(255,255,255,0.1)'
+                        }
+                    }}
+                >
                     <CloseIcon />
                 </IconButton>
             </DialogTitle>
-            <DialogContent>
+            <DialogContent sx={{ p: 3 }}>
                 {loading ? (
-                    <Box display="flex" justifyContent="center" p={3}>
-                        <CircularProgress />
+                    <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+                        <CircularProgress size={40} />
                     </Box>
                 ) : error ? (
-                    <Typography color="error">{error}</Typography>
+                    <Box 
+                        display="flex" 
+                        justifyContent="center" 
+                        alignItems="center" 
+                        minHeight="200px"
+                        bgcolor="error.light"
+                        borderRadius={2}
+                        p={3}
+                    >
+                        <Typography color="error.main" variant="h6">
+                            {error}
+                        </Typography>
+                    </Box>
                 ) : accessRequests.length === 0 ? (
-                    <Typography>No access requests found</Typography>
+                    <Box 
+                        display="flex" 
+                        flexDirection="column"
+                        justifyContent="center" 
+                        alignItems="center" 
+                        minHeight="200px"
+                        bgcolor="grey.50"
+                        borderRadius={2}
+                        p={3}
+                    >
+                        <Typography variant="h6" color="text.secondary" gutterBottom>
+                            Chưa có yêu cầu truy cập
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            Sẽ hiển thị tại đây khi có người yêu cầu truy cập tài liệu của bạn
+                        </Typography>
+                    </Box>
                 ) : (
-                    <TableContainer component={Paper}>
+                    <TableContainer 
+                        component={Paper}
+                        sx={{ 
+                            mt: 2,
+                            borderRadius: 2,
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+                            overflow: 'hidden'
+                        }}
+                    >
                         <Table>
                             <TableHead>
-                                <TableRow>
-                                    <TableCell>Người mượn</TableCell>
-                                    <TableCell>Status</TableCell>
-                                    <TableCell>Request Time</TableCell>
-                                    <TableCell>Decision Time</TableCell>
-                                    <TableCell>Actions</TableCell>
+                                <TableRow sx={{ backgroundColor: 'grey.50' }}>
+                                    <TableCell sx={{ fontWeight: 600 }}>Người mượn</TableCell>
+                                    <TableCell sx={{ fontWeight: 600 }}>Trạng thái</TableCell>
+                                    <TableCell sx={{ fontWeight: 600 }}>Thời gian yêu cầu</TableCell>
+                                    <TableCell sx={{ fontWeight: 600 }}>Thời gian quyết định</TableCell>
+                                    <TableCell sx={{ fontWeight: 600 }}>Thao tác</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
                                 {accessRequests.map((request) => (
-                                    <TableRow key={request.id}>
-                                        <TableCell>{request.requesterName || request.requesterId}</TableCell>
+                                    <TableRow 
+                                        key={request.id}
+                                        sx={{ 
+                                            '&:hover': {
+                                                backgroundColor: 'grey.50'
+                                            }
+                                        }}
+                                    >
+                                        <TableCell>
+                                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                                {request.requesterName || request.requesterId}
+                                            </Typography>
+                                        </TableCell>
                                         <TableCell>
                                             <Chip
                                                 label={getStatusLabel(request.status)}
                                                 color={getStatusColor(request.status) as any}
                                                 size="small"
-                                                sx={{ borderRadius: 2, fontWeight: 500, fontSize: 14 }}
+                                                sx={{ 
+                                                    borderRadius: 2,
+                                                    fontWeight: 500,
+                                                    fontSize: 13,
+                                                    minWidth: 100
+                                                }}
                                             />
                                         </TableCell>
-                                        <TableCell>{new Date(request.requestTime).toLocaleString()}</TableCell>
                                         <TableCell>
-                                            {request.decisionTime 
-                                                ? new Date(request.decisionTime).toLocaleString()
-                                                : 'Pending'}
+                                            <Typography variant="body2">
+                                                {new Date(request.requestTime).toLocaleString('vi-VN')}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Typography variant="body2">
+                                                {request.decisionTime 
+                                                    ? new Date(request.decisionTime).toLocaleString('vi-VN')
+                                                    : 'Đang chờ'}
+                                            </Typography>
                                         </TableCell>
                                         <TableCell>
                                             {request.status === 'PENDING' && (
                                                 <Box sx={{ display: 'flex', gap: 1 }}>
-                                                    <Tooltip title="Approve Request">
+                                                    <Tooltip title="Duyệt yêu cầu">
                                                         <IconButton 
                                                             onClick={() => handleApprove(request.id)}
                                                             color="success"
                                                             size="small"
+                                                            sx={{
+                                                                backgroundColor: 'success.light',
+                                                                '&:hover': {
+                                                                    backgroundColor: 'success.main',
+                                                                    color: 'white'
+                                                                }
+                                                            }}
                                                         >
-                                                            <CheckCircleIcon />
+                                                            <CheckCircleIcon fontSize="small" />
                                                         </IconButton>
                                                     </Tooltip>
-                                                    <Tooltip title="Reject Request">
+                                                    <Tooltip title="Từ chối yêu cầu">
                                                         <IconButton 
                                                             onClick={() => handleReject(request.id)}
                                                             color="error"
                                                             size="small"
+                                                            sx={{
+                                                                backgroundColor: 'error.light',
+                                                                '&:hover': {
+                                                                    backgroundColor: 'error.main',
+                                                                    color: 'white'
+                                                                }
+                                                            }}
                                                         >
-                                                            <CancelIcon />
+                                                            <CancelIcon fontSize="small" />
                                                         </IconButton>
                                                     </Tooltip>
                                                 </Box>
