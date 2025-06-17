@@ -292,7 +292,7 @@ const FloatingChat: React.FC = () => {
             justifyContent: 'space-between', 
             alignItems: 'center' 
           }}>
-            <Typography variant="h6">Trợ lý Thư viện</Typography>
+            <Typography variant="h6">Trợ lý thư viện</Typography>
             <IconButton onClick={() => setOpen(false)} sx={{ color: 'white' }}>
               <CloseIcon />
             </IconButton>

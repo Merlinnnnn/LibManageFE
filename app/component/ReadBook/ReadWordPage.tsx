@@ -315,9 +315,9 @@ const ReadWordPage = () => {
         }}>
           Đọc tài liệu Word
         </Typography>
-        <Typography variant="body1" color="#b0b0b0" sx={{ textAlign: 'center' }}>
+        {/* <Typography variant="body1" color="#b0b0b0" sx={{ textAlign: 'center' }}>
           ID: {id}
-        </Typography>
+        </Typography> */}
       </Paper>
 
       <Paper elevation={3} sx={{ 

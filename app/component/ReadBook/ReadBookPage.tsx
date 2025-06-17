@@ -336,12 +336,12 @@ const ReadPdfPage = () => {
         }}>
           Đọc tài liệu PDF
         </Typography>
-        <Typography variant="body1" color="#b0b0b0" sx={{ textAlign: 'center' }}>
+        {/* <Typography variant="body1" color="#b0b0b0" sx={{ textAlign: 'center' }}>
           ID: {id}
-        </Typography>
-        <Typography variant="body2" color="#b0b0b0" sx={{ textAlign: 'center', mt: 1 }}>
+        </Typography> */}
+        {/* <Typography variant="body2" color="#b0b0b0" sx={{ textAlign: 'center', mt: 1 }}>
           Sử dụng PDF.js version: {pdfVersion}
-        </Typography>
+        </Typography> */}
       </Paper>
 
       <Paper elevation={3} sx={{ 

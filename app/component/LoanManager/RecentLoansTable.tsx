@@ -25,12 +25,14 @@ import {
     Grid,
     Tooltip,
     TablePagination,
-    Fab
+    Fab,
+    Snackbar
 } from '@mui/material';
 import QrCodeIcon from '@mui/icons-material/QrCode';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import ClearIcon from '@mui/icons-material/Clear';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import apiService from '@/app/untils/api';
 import useWebSocket from '@/app/services/useWebSocket';
 
@@ -110,6 +112,10 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR, refreshTr
     const [showFilters, setShowFilters] = useState(false);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [showCashDialog, setShowCashDialog] = useState(false);
+    const [cashLoan, setCashLoan] = useState<Loan | null>(null);
+    const [cashLoading, setCashLoading] = useState(false);
+    const [snackbar, setSnackbar] = useState<{open: boolean, message: string, severity: 'success'|'error'}>({open: false, message: '', severity: 'success'});
 
     const fetchLoans = async () => {
         setLoading(true);
@@ -254,6 +260,32 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR, refreshTr
                 return { label: 'Đã đóng', color: 'success' };
             default:
                 return { label: status, color: 'default' };
+        }
+    };
+
+    const handleOpenCashDialog = (loan: Loan) => {
+        setCashLoan(loan);
+        setShowCashDialog(true);
+    };
+
+    const handleCloseCashDialog = () => {
+        setShowCashDialog(false);
+        setCashLoan(null);
+    };
+
+    const handleConfirmCashPayment = async () => {
+        if (!cashLoan) return;
+        setCashLoading(true);
+        try {
+            await apiService.post(`/api/v1/loans/${cashLoan.transactionId}/paymentcash`);
+            setSnackbar({open: true, message: 'Thanh toán tiền mặt thành công!', severity: 'success'});
+            setShowCashDialog(false);
+            setCashLoan(null);
+            fetchLoans();
+        } catch (err) {
+            setSnackbar({open: true, message: 'Thanh toán thất bại!', severity: 'error'});
+        } finally {
+            setCashLoading(false);
         }
     };
 
@@ -421,6 +453,13 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR, refreshTr
                                                     size="small"
                                                     sx={{ borderRadius: 2 }}
                                                 />
+                                                {loan.paymentStatus === 'UNPAID' && (
+                                                    <Tooltip title="Xác nhận thanh toán tiền mặt">
+                                                        <IconButton size="small" color="success" onClick={() => handleOpenCashDialog(loan)}>
+                                                            <AttachMoneyIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                )}
                                             </TableCell>
                                         </TableRow>
                                     );
@@ -464,6 +503,30 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR, refreshTr
             >
                 <QrCodeIcon />
             </Fab>
+
+            <Dialog open={showCashDialog} onClose={handleCloseCashDialog}>
+                <DialogTitle>Xác nhận thanh toán tiền mặt</DialogTitle>
+                <DialogContent>
+                    Bạn có chắc chắn muốn xác nhận người dùng <b>{cashLoan?.username}</b> đã thanh toán tiền mặt cho khoản phạt này không?
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseCashDialog} disabled={cashLoading}>Hủy</Button>
+                    <Button onClick={handleConfirmCashPayment} color="success" variant="contained" disabled={cashLoading}>
+                        {cashLoading ? <CircularProgress size={20} /> : 'Xác nhận'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={3000}
+                onClose={() => setSnackbar({...snackbar, open: false})}
+                message={snackbar.message}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+                ContentProps={{
+                    style: { backgroundColor: snackbar.severity === 'success' ? '#43a047' : '#d32f2f', color: '#fff' }
+                }}
+            />
         </Box>
     );
 };
