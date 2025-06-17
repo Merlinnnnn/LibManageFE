@@ -254,20 +254,31 @@ const HardBooksHistory = () => {
               borderRadius: '12px',
               backgroundColor: 'rgba(0,0,0,0.02)',
               transition: 'all 0.3s ease',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
               '&:hover': {
                 transform: 'translateY(-4px)',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
               }
             }}
           >
-            <Box sx={{ flex: 1 }}>
+            <Box sx={{ 
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 0 // Important for text truncation to work
+            }}>
               <Typography variant="h6" sx={{ 
                 fontWeight: 'bold',
                 mb: 1,
                 display: '-webkit-box',
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: 'vertical',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                height: '3.6em', // 2 lines of text
+                lineHeight: '1.8em'
               }}>
                 {book.documentName}
               </Typography>
@@ -276,57 +287,112 @@ const HardBooksHistory = () => {
                 sx={{ 
                   mb: 1,
                   color: getStatusColor(book.status),
-                  fontWeight: 'medium'
+                  fontWeight: 'medium',
+                  height: '1.5em',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 {getStatusText(book.status)}
               </Typography>
-              <Typography variant="body2" sx={{ mb: 1 }}>
+              <Typography variant="body2" sx={{ 
+                mb: 1,
+                height: '1.5em',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
                 Ngày đặt: {new Date(book.loanDate).toLocaleDateString()}
               </Typography>
               {book.dueDate && (
-                <Typography variant="body2" sx={{ mb: 1 }}>
+                <Typography variant="body2" sx={{ 
+                  mb: 1,
+                  height: '1.5em',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}>
                   Hạn trả: {new Date(book.dueDate).toLocaleDateString()}
                 </Typography>
               )}
               {book.returnDate && (
-                <Typography variant="body2" sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ 
+                  mb: 2,
+                  height: '1.5em',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}>
                   Ngày trả: {new Date(book.returnDate).toLocaleDateString()}
                 </Typography>
               )}
               {/* Thông tin phạt */}
               {typeof book.fineAmount === 'number' && book.fineAmount > 0 && (
-                <Box sx={{ mb: 1 }}>
-                  <Typography variant="body2" color="error" sx={{ fontWeight: 500 }}>
+                <Box sx={{ 
+                  mb: 1,
+                  minHeight: '3em' // Fixed height for fine information
+                }}>
+                  <Typography variant="body2" color="error" sx={{ 
+                    fontWeight: 500,
+                    height: '1.5em',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
                     Tiền phạt: {book.fineAmount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
                   </Typography>
-                  <Typography variant="body2" sx={{ display: 'inline-block', mr: 1 }}>
-                    Trạng thái phạt: 
-                  </Typography>
-                  <Box component="span" sx={{ display: 'inline-block', verticalAlign: 'middle' }}>
-                    <span style={{
-                      color: book.paymentStatus === 'PAID' ? '#388e3c' : (book.paymentStatus === 'UNPAID' ? '#ed6c02' : '#888'),
-                      fontWeight: 600
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body2" sx={{ 
+                      height: '1.5em',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
                     }}>
-                      {getPaymentStatus(book.paymentStatus || '').label}
-                    </span>
+                      Trạng thái phạt: 
+                    </Typography>
+                    <Box component="span" sx={{ 
+                      display: 'inline-block',
+                      verticalAlign: 'middle',
+                      height: '1.5em',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      <span style={{
+                        color: book.paymentStatus === 'PAID' ? '#388e3c' : (book.paymentStatus === 'UNPAID' ? '#ed6c02' : '#888'),
+                        fontWeight: 600
+                      }}>
+                        {getPaymentStatus(book.paymentStatus || '').label}
+                      </span>
+                    </Box>
+                    {/* Nút thanh toán VNPay */}
+                    {book.paymentStatus === 'UNPAID' && (
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        sx={{ 
+                          ml: 2, 
+                          borderRadius: 2, 
+                          textTransform: 'none',
+                          flexShrink: 0 // Prevent button from shrinking
+                        }}
+                        onClick={() => handleVNPayPayment(book)}
+                        disabled={payingId === book.transactionId}
+                      >
+                        {payingId === book.transactionId ? <CircularProgress size={18} color="inherit" /> : 'Thanh toán VNPay'}
+                      </Button>
+                    )}
                   </Box>
-                  {/* Nút thanh toán VNPay */}
-                  {book.paymentStatus === 'UNPAID' && (
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      size="small"
-                      sx={{ ml: 2, borderRadius: 2, textTransform: 'none' }}
-                      onClick={() => handleVNPayPayment(book)}
-                      disabled={payingId === book.transactionId}
-                    >
-                      {payingId === book.transactionId ? <CircularProgress size={18} color="inherit" /> : 'Thanh toán VNPay'}
-                    </Button>
-                  )}
                 </Box>
               )}
-              <Box sx={{ display: 'flex', gap: 1 }}>
+              <Box sx={{ 
+                display: 'flex', 
+                gap: 1,
+                mt: 'auto', // Push buttons to bottom
+                pt: 2 // Add some padding at top
+              }}>
                 {book.status === 'RESERVED' && (
                   <Button
                     variant="contained"

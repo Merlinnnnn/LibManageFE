@@ -203,7 +203,7 @@ const PendingApprovalTable = () => {
             <TableRow>
               <TableCell sx={{ fontWeight: 600 }}>Tên sách</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Tác giả</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Nhà xuất bản</TableCell>
+              {/* <TableCell sx={{ fontWeight: 600 }}>Nhà xuất bản</TableCell> */}
               <TableCell sx={{ fontWeight: 600 }}>Mô tả</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Trạng thái</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Action</TableCell>
@@ -221,7 +221,7 @@ const PendingApprovalTable = () => {
                 <TableRow key={doc.digitalDocumentId}>
                   <TableCell>{doc.documentName}</TableCell>
                   <TableCell>{doc.author}</TableCell>
-                  <TableCell>{doc.publisher}</TableCell>
+                  {/* <TableCell>{doc.publisher}</TableCell> */}
                   <TableCell>{doc.description}</TableCell>
                   <TableCell>
                     <Chip 

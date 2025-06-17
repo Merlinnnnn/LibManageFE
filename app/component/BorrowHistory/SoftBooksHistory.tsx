@@ -245,7 +245,7 @@ const SoftBooksHistory = () => {
                     >
                       PDF
                     </Button>
-                    <Button
+                    {/* <Button
                       variant="outlined"
                       size="small"
                       onClick={() => handleReturn(book)}
@@ -256,7 +256,7 @@ const SoftBooksHistory = () => {
                       }}
                     >
                       Trả
-                    </Button>
+                    </Button> */}
                   </>
                 )}
                 {book.status === 'PENDING' && (

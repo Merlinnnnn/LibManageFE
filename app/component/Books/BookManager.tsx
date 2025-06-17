@@ -62,6 +62,7 @@ interface Book {
     availableCopies: number;
   } | null;
   digitalDocument: {
+    digitalDocumentId: number;
     uploads: {
       fileName: string;
       fileType: string;
@@ -161,12 +162,13 @@ export default function BookManager() {
     setSelectedCategory(event.target.value);
   };
 
-  const handleViewDrmKeys = async (documentId: number) => {
+  const handleViewDrmKeys = async (digitalDocumentId: number | undefined) => {
+    if (!digitalDocumentId) return;
     setLoadingDrm(true);
     setDrmData(null);
     setExpandedDrmRow(null);
     try {
-      const response = await apiService.get<DrmApiResponse>(`/api/v1/drm/${documentId}/uploads`);
+      const response = await apiService.get<DrmApiResponse>(`/api/v1/drm/${digitalDocumentId}/uploads`);
       if (response.data?.success && response.data?.data) {
         setDrmData(response.data.data);
         setOpenDrmDialog(true);
@@ -335,7 +337,7 @@ export default function BookManager() {
                         </Box>
                       </TableCell>
                       <TableCell>{book.author}</TableCell>
-                      <TableCell>{book.publisher}</TableCell>
+                      <TableCell>{book.documentCategory === 'DIGITAL' ? '-' : book.publisher}</TableCell>
                       <TableCell>
                         <Chip
                           label={book.documentCategory}
@@ -365,7 +367,9 @@ export default function BookManager() {
                         ))}
                       </TableCell>
                       <TableCell>
-                        {book.physicalDocument ? (
+                        {book.documentCategory === 'DIGITAL' ? (
+                          '-'
+                        ) : book.physicalDocument ? (
                           `${book.physicalDocument.availableCopies}/${book.physicalDocument.quantity}`
                         ) : (
                           book.digitalDocument?.uploads.length || 0
@@ -375,12 +379,12 @@ export default function BookManager() {
                         {/* Key Icon Button */}
                         <IconButton
                           color="primary"
-                          onClick={() => handleViewDrmKeys(book.documentId)}
-                          disabled={book.documentCategory !== 'DIGITAL' && book.documentCategory !== 'BOTH' || loadingDrm}
+                          onClick={() => handleViewDrmKeys(book.digitalDocument?.digitalDocumentId)}
+                          disabled={(!book.digitalDocument) || loadingDrm}
                           title="View DRM Keys"
                           sx={{ borderRadius: '15px' }}
                         >
-                          {loadingDrm && drmData?.digitalDocumentId === book.documentId ? <CircularProgress size={20} /> : <KeyIcon />}
+                          <KeyIcon />
                         </IconButton>
                         {/* Delete Button */}
                         <IconButton
@@ -457,8 +461,6 @@ export default function BookManager() {
                 <TableHead>
                   <TableRow>
                     <TableCell>File Name</TableCell>
-                    <TableCell>Upload ID</TableCell>
-                    <TableCell>File Path</TableCell>
                     <TableCell>Content Key</TableCell>
                     <TableCell>Active</TableCell>
                     <TableCell>Action</TableCell>
@@ -474,21 +476,11 @@ export default function BookManager() {
                         '&:hover': { backgroundColor: '#f5f5f5' }
                       }}
                     >
-                      <TableCell>{upload.fileName}</TableCell>
-                      <TableCell>{upload.uploadId}</TableCell>
-                      <TableCell>{upload.filePath}</TableCell>
-                      <TableCell sx={{ wordBreak: 'break-all' }}>
-                        {upload.key && upload.key.contentKey ? (
-                          expandedDrmRow === upload.uploadId ? (
-                            upload.key.contentKey
-                          ) : (
-                            <Tooltip title={upload.key.contentKey} placement="top">
-                              <span>{upload.key.contentKey.substring(0, TRUNCATE_LENGTH) + (upload.key.contentKey.length > TRUNCATE_LENGTH ? '...' : '')}</span>
-                            </Tooltip>
-                          )
-                        ) : (
-                          <span style={{ color: 'red' }}>No key</span>
-                        )}
+                      <TableCell sx={{ maxWidth: 400, wordBreak: 'break-all' }}>
+                        {upload.fileName}
+                      </TableCell>
+                      <TableCell>
+                        {upload.key && upload.key.contentKey ? 'Có' : 'Không có'}
                       </TableCell>
                       <TableCell>{upload.key && upload.key.active ? 'Yes' : 'No'}</TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>

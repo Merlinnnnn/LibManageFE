@@ -97,6 +97,21 @@ const LoanManagerPage: React.FC = () => {
   const [scannedBook, setScannedBook] = useState<ScanResponse['data'] | null>(null);
   const [damageChecked, setDamageChecked] = useState(false);
   const [fineLoading, setFineLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const infoString = localStorage.getItem('info');
+    if (infoString) {
+      try {
+        const info = JSON.parse(infoString);
+        if (info.roles && Array.isArray(info.roles)) {
+          setIsAdmin(info.roles.includes('ADMIN'));
+        }
+      } catch (e) {
+        setIsAdmin(false);
+      }
+    }
+  }, []);
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setSnackbarSeverity(type);
@@ -239,8 +254,8 @@ const LoanManagerPage: React.FC = () => {
             >
               <Tab label="Quản lý mượn sách" {...a11yProps(0)} />
               <Tab label="Quản lý yêu cầu đăng sách" {...a11yProps(1)} />
-              <Tab label="Quản lý người dùng" {...a11yProps(2)} />
-              <Tab label="Quản lý yêu cầu truy cập" {...a11yProps(3)} />
+              {isAdmin && <Tab label="Quản lý người dùng" {...a11yProps(2)} />}
+              <Tab label="Quản lý yêu cầu truy cập" {...a11yProps(isAdmin ? 3 : 2)} />
             </Tabs>
 
             <TabPanel value={value} index={0}>
@@ -249,10 +264,12 @@ const LoanManagerPage: React.FC = () => {
             <TabPanel value={value} index={1}>
               <DigitalApproval />
             </TabPanel>
-            <TabPanel value={value} index={2}>
-              <NewStudentsTable />
-            </TabPanel>
-            <TabPanel value={value} index={3}>
+            {isAdmin && (
+              <TabPanel value={value} index={2}>
+                <NewStudentsTable />
+              </TabPanel>
+            )}
+            <TabPanel value={value} index={isAdmin ? 3 : 2}>
               <AccessListTable />
             </TabPanel>
           </Paper>

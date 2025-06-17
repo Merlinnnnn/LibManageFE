@@ -6,6 +6,11 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import apiService from '@/app/untils/api';
 
+interface ResetPasswordResponse {
+  success: boolean;
+  message?: string;
+}
+
 const ResetPasswordPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -36,7 +41,7 @@ const ResetPasswordPage = () => {
     }
     setLoading(true);
     try {
-      const res = await apiService.post('/api/v1/auth/reset-password', {
+      const res = await apiService.post<ResetPasswordResponse>('/api/v1/auth/reset-password', {
         token,
         password,
         confirmPassword,

@@ -1047,7 +1047,14 @@ export default function BookShelf() {
                       {books.map((book) => (
                         <Grid item xs={12} md={6} key={book?.documentId} sx={{ display: 'flex' }}>
                           <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', height: '100%' }}>
-                            <BookInfo id={book?.documentId?.toString() || ''} books={books} />
+                            <BookInfo 
+                                id={book?.documentId?.toString() || ''} 
+                                books={books} 
+                                onTitleClick={(id) => {
+                                    setOpenDetailDiolog(true);
+                                    setSelectedBookId(id);
+                                }}
+                            />
                           </Box>
                         </Grid>
                       ))}

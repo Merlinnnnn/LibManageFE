@@ -1,5 +1,3 @@
-// Updated FloatingChat.tsx with safe null checks and direct payload handling
-
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
@@ -12,9 +10,6 @@ import {
   Stack,
   Avatar,
   Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
 } from '@mui/material';
 import ChatIcon from '@mui/icons-material/Chat';
 import CloseIcon from '@mui/icons-material/Close';
@@ -22,7 +17,6 @@ import apiService from '@/app/untils/api';
 import BookInfo from '../Books/BookInfo';
 import BookDetail from '../Books/BookDetail';
 
-// Types
 interface QuickReply {
   text: string;
   payload: string;
@@ -156,11 +150,9 @@ const FloatingChat: React.FC = () => {
   const handleSend = async (text: string, payload?: string | object) => {
     if (!text.trim() && !payload) return;
     
-    // Add user message to chat
     if (!payload) {
       setMessages((prev) => [...prev, { from: 'user', text }]);
     } else {
-      // If it's a payload action, show the action text
       const payloadObj = typeof payload === 'string' ? JSON.parse(payload) : payload;
       if (payloadObj.eventName === 'summarize') {
         setMessages((prev) => [...prev, { from: 'user', text: 'Tóm tắt sách' }]);
@@ -171,7 +163,6 @@ const FloatingChat: React.FC = () => {
     setInput('');
   
     try {
-      // Parse payload contents into main request object
       let requestData: any = {
         message: text,
         sessionId
@@ -190,7 +181,6 @@ const FloatingChat: React.FC = () => {
       }
 
       const res = await apiService.post<ChatResponse>('/api/chat', requestData);
-      console.log('res', res);
   
       const { data } = res;
   
@@ -223,7 +213,6 @@ const FloatingChat: React.FC = () => {
   };
 
   const handleGetBtn = async (url: string) => {
-    // Lấy id từ url dạng /api/v1/documents/1
     const match = url.match(/\/api\/v1\/documents\/(\d+)/);
     if (match) {
       setSelectedBookId(match[1]);
@@ -235,7 +224,6 @@ const FloatingChat: React.FC = () => {
     try {
       const payloadObj = typeof payload === 'string' ? JSON.parse(payload) : payload;
       
-      // Check if it's a loan request
       if (url.includes('/api/v1/loans')) {
         const response = await apiService.post<LoanResponse>(url, payloadObj);
         if (response.data.success) {
@@ -248,7 +236,6 @@ const FloatingChat: React.FC = () => {
           setMessages((prev) => [...prev, { from: 'bot', text: 'Xin lỗi, đã có lỗi xảy ra.' }]);
         }
       } else {
-        // Handle other POST requests with chat response format
         const response = await apiService.post<ChatResponse>(url, payloadObj);
         if (response.data.success) {
           const botMessage: Message = {
@@ -285,41 +272,134 @@ const FloatingChat: React.FC = () => {
       )}
 
       {open && (
-        <Paper elevation={8} sx={{ position: 'fixed', bottom: 24, right: 24, width: 380, height: 520, display: 'flex', flexDirection: 'column', borderRadius: 3, overflow: 'hidden', zIndex: 1300 }}>
-          <Box sx={{ bgcolor: 'primary.main', color: 'white', p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Paper elevation={8} sx={{ 
+          position: 'fixed', 
+          bottom: 24, 
+          right: 24, 
+          width: 380, 
+          height: 520, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          borderRadius: 3, 
+          overflow: 'hidden', 
+          zIndex: 1300 
+        }}>
+          <Box sx={{ 
+            bgcolor: 'primary.main', 
+            color: 'white', 
+            p: 2, 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center' 
+          }}>
             <Typography variant="h6">Trợ lý Thư viện</Typography>
             <IconButton onClick={() => setOpen(false)} sx={{ color: 'white' }}>
               <CloseIcon />
             </IconButton>
           </Box>
 
-          <Box sx={{ flex: 1, p: 2, overflowY: 'auto', bgcolor: '#f9f9f9' }}>
+          <Box sx={{ 
+            flex: 1, 
+            p: 2, 
+            overflowY: 'auto', 
+            bgcolor: '#f9f9f9',
+            '&::-webkit-scrollbar': {
+              width: '6px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: '#bdbdbd',
+              borderRadius: '3px',
+            }
+          }}>
             {messages.map((msg, i) => (
-              <Box key={i} sx={{ mb: 2, display: 'flex', flexDirection: 'column', alignItems: msg.from === 'user' ? 'flex-end' : 'flex-start' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box 
+                key={i} 
+                sx={{ 
+                  mb: 2.5, 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: msg.from === 'user' ? 'flex-end' : 'flex-start' 
+                }}
+              >
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'flex-end', 
+                  gap: 1,
+                  maxWidth: '80%'
+                }}>
                   {msg.from === 'bot' && (
-                    <Avatar src="https://th.bing.com/th/id/OIP.I9KrlBSL9cZmpQU3T2nq-AHaIZ?cb=iwp2&rs=1&pid=ImgDetMain" sx={{ width: 28, height: 28 }} />
+                    <Avatar 
+                      src="https://th.bing.com/th/id/OIP.I9KrlBSL9cZmpQU3T2nq-AHaIZ?cb=iwp2&rs=1&pid=ImgDetMain" 
+                      sx={{ width: 32, height: 32 }} 
+                    />
                   )}
-                  <Box sx={{ bgcolor: msg.from === 'user' ? 'primary.main' : 'grey.200', color: msg.from === 'user' ? 'white' : 'black', px: 2, py: 1, borderRadius: 2, maxWidth: '100%', wordBreak: 'break-word', fontSize: 14 }}>
+                  <Box sx={{ 
+                    bgcolor: msg.from === 'user' ? 'primary.main' : 'grey.200', 
+                    color: msg.from === 'user' ? 'white' : 'black', 
+                    px: 2, 
+                    py: 1.2, 
+                    borderRadius: 2, 
+                    wordBreak: 'break-word',
+                    fontSize: 14,
+                    boxShadow: 1,
+                    ml: msg.from === 'bot' ? 0 : 'auto'
+                  }}>
                     {msg.text}
                   </Box>
                 </Box>
 
                 {Array.isArray(msg.cards) && msg.cards.length > 0 && (
-                  <Stack direction="column" spacing={1} mt={1} width="100%">
+                  <Stack 
+                    direction="column" 
+                    spacing={1.5} 
+                    mt={1.5} 
+                    width="100%"
+                    sx={{ mx: 'auto', mb: 2 }}
+                  >
                     {msg.cards.map((card, idx) => (
-                      <Paper key={idx} sx={{ p: 1, bgcolor: '#fff', boxShadow: 2, borderRadius: 2 }}>
-                        <Typography fontWeight={600}>{card.title}</Typography>
-                        <Typography variant="body2" color="text.secondary">{card.subtitle}</Typography>
-                        {card.imageUrl && <img src={card.imageUrl} alt="card" style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8 }} />}
-                        <Stack mt={1} spacing={1}>
+                      <Paper 
+                        key={idx} 
+                        sx={{ 
+                          p: 1.5, 
+                          bgcolor: '#fff', 
+                          boxShadow: 2, 
+                          borderRadius: 2,
+                          border: '1px solid #eee'
+                        }}
+                      >
+                        <Typography fontWeight={600} sx={{ mb: 0.5 }}>
+                          {card.title}
+                        </Typography>
+                        {card.subtitle && (
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            {card.subtitle}
+                          </Typography>
+                        )}
+                        {card.imageUrl && (
+                          <img 
+                            src={card.imageUrl} 
+                            alt="card" 
+                            style={{ 
+                              width: '100%', 
+                              height: 120, 
+                              objectFit: 'cover', 
+                              borderRadius: 8,
+                              marginBottom: 12
+                            }} 
+                          />
+                        )}
+                        <Stack spacing={1.2}>
                           {card.buttons.map((btn, bidx) => (
                             <Button
                               key={bidx}
                               variant={btn.type === 'POST' ? 'contained' : 'outlined'}
                               fullWidth
                               size="small"
-                              sx={{ textTransform: 'none' }}
+                              sx={{ 
+                                textTransform: 'none',
+                                borderRadius: 2,
+                                py: 0.8
+                              }}
                               onClick={() => {
                                 if (btn.type === 'POST') {
                                   handlePostBtn(btn.payload, btn.url);
@@ -338,33 +418,71 @@ const FloatingChat: React.FC = () => {
                 )}
 
                 {Array.isArray(msg.quickReplies) && msg.quickReplies.length > 0 && (
-                  <Stack direction="row" spacing={1} mt={1} flexWrap="wrap">
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      rowGap: '10px',
+                      columnGap: '8px',
+                      mt: 2,
+                      p: 0,
+                      m: 0,
+                      width: '100%',
+                      justifyContent: msg.from === 'bot' ? 'flex-start' : 'flex-end',
+                    }}
+                  >
                     {msg.quickReplies.map((qr, j) => (
-                      <Button key={j} variant="contained" onClick={() => handleQuickReply(qr)} sx={{ borderRadius: 8, textTransform: 'none', px: 2 }}>{qr.text}</Button>
+                      <Button
+                        key={j}
+                        variant="outlined"
+                        size="small"
+                        onClick={() => handleQuickReply(qr)}
+                        sx={{
+                          borderRadius: 4,
+                          textTransform: 'none',
+                          px: 2,
+                          py: 0.5,
+                          fontSize: 13,
+                          borderWidth: 1.5,
+                          minWidth: 0,
+                          m: 0,
+                          '&:hover': {
+                            borderWidth: 1.5
+                          }
+                        }}
+                      >
+                        {qr.text}
+                      </Button>
                     ))}
-                  </Stack>
+                  </Box>
                 )}
 
                 {Array.isArray(msg.options) && msg.options.length > 0 && (
                   <Stack
                     direction="column"
-                    spacing={1.2}
-                    mt={1}
-                    sx={{ mb: 2, alignItems: 'flex-start' }}
+                    spacing={1}
+                    mt={2}
+                    width="100%"
                   >
                     {msg.options.map((opt, j) => (
                       <Button
                         key={j}
                         variant="outlined"
                         disabled
+                        size="small"
                         sx={{
-                          borderRadius: 8,
+                          borderRadius: 2,
                           textTransform: 'none',
                           px: 2,
+                          py: 1,
                           bgcolor: '#f5f5f5',
                           color: '#333',
                           borderColor: '#e0e0e0',
                           justifyContent: 'flex-start',
+                          fontSize: 13,
+                          '&.Mui-disabled': {
+                            color: '#666'
+                          }
                         }}
                       >
                         {opt}
@@ -377,14 +495,44 @@ const FloatingChat: React.FC = () => {
             <div ref={messagesEndRef} />
           </Box>
 
-          <Box sx={{ p: 1.5, borderTop: '1px solid #ddd', display: 'flex', gap: 1, bgcolor: 'white' }}>
-            <TextField fullWidth size="small" placeholder="Nhập tin nhắn..." value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend(input)} sx={{ '& .MuiOutlinedInput-root': { borderRadius: '18px', px: 1.5 } }} />
-            <Button variant="contained" onClick={() => handleSend(input)} sx={{ borderRadius: '18px' }}>Gửi</Button>
+          <Box sx={{ 
+            p: 1.5, 
+            borderTop: '1px solid #e0e0e0', 
+            display: 'flex', 
+            gap: 1.5, 
+            bgcolor: 'white',
+            alignItems: 'center'
+          }}>
+            <TextField 
+              fullWidth 
+              size="small" 
+              placeholder="Nhập tin nhắn..." 
+              value={input} 
+              onChange={(e) => setInput(e.target.value)} 
+              onKeyDown={(e) => e.key === 'Enter' && handleSend(input)} 
+              sx={{ 
+                '& .MuiOutlinedInput-root': { 
+                  borderRadius: '20px', 
+                  px: 1.5,
+                  fontSize: 14
+                } 
+              }} 
+            />
+            <Button 
+              variant="contained" 
+              onClick={() => handleSend(input)} 
+              sx={{ 
+                borderRadius: '20px',
+                px: 2.5,
+                minWidth: 'auto'
+              }}
+            >
+              Gửi
+            </Button>
           </Box>
         </Paper>
       )}
 
-      {/* Book Info Dialog */}
       <Dialog 
         open={bookInfoOpen} 
         onClose={() => {

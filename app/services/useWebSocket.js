@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
+import { API_BASE_URL } from '../untils/apiConfig';
 
 const useWebSocket = (onMessageReceived) => {
   const stompClientRef = useRef(null);
@@ -43,7 +44,7 @@ const useWebSocket = (onMessageReceived) => {
       return;
     }
 
-    const wsUrl = `http://localhost:8009/ws?token=${token}`;
+    const wsUrl = `${API_BASE_URL}/ws?token=${token}`;
     console.log('Đang cố gắng kết nối WebSocket tới:', wsUrl);
 
     const stompClient = new Client({

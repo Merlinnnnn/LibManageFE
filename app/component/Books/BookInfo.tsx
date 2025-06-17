@@ -29,6 +29,7 @@ import apiService from '../../untils/api';
 interface BookInfoProps {
     id: string;
     books: Book[] | undefined;
+    onTitleClick?: (id: string) => void;
 }
 
 interface GenericApiResponse<T> {
@@ -117,7 +118,7 @@ interface Book {
     } | null;
 }
 
-const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
+const BookInfo: React.FC<BookInfoProps> = ({ id, books, onTitleClick }) => {
     const [book, setBook] = useState<Book | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
@@ -285,7 +286,12 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books }) => {
                 {/* Nội dung sách */}
                 <CardContent sx={{ flex: 1 }}>
                     <Box display="flex" justifyContent="space-between" alignItems="center">
-                        <Typography variant="h6" fontWeight="bold">
+                        <Typography 
+                            variant="h6" 
+                            fontWeight="bold"
+                            sx={{ cursor: onTitleClick ? 'pointer' : 'inherit', '&:hover': onTitleClick ? { color: 'primary.main', textDecoration: 'underline' } : {} }}
+                            onClick={onTitleClick ? () => onTitleClick(book.documentId.toString()) : undefined}
+                        >
                             {book.documentName}
                         </Typography>
                         <IconButton onClick={handleToggleFavorite} aria-label="favorite">

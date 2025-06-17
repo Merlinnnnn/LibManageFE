@@ -258,6 +258,16 @@ const NewStudentsTable: React.FC = () => {
         }
     };
 
+    if (!isAdmin) {
+        return (
+            <Box sx={{ p: 4, textAlign: 'center' }}>
+                <Alert severity="error" sx={{ fontSize: 18, borderRadius: 2, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                    Bạn không có quyền truy cập trang này.
+                </Alert>
+            </Box>
+        );
+    }
+
     return (
         <Box>
             <Box sx={{ mb: 3 }}>

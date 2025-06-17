@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-
+import { API_BASE_URL } from './apiConfig';
 class ApiService {
     private api: AxiosInstance;
 
@@ -43,7 +43,7 @@ class ApiService {
     }
 }
 
-const apiService = new ApiService('https://api-modernlibrary.click');
+const apiService = new ApiService(API_BASE_URL);
 
 
 export default apiService;

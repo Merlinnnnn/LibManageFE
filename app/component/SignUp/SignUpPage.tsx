@@ -117,10 +117,10 @@ const RightForm: React.FC<RightFormProps> = ({
           }
         }}
       >
-        Sign up
+        Đăng ký
       </Typography>
       <Typography variant="body2" sx={{ color: '#aaa', mb: 3 }}>
-        Already have an account?{' '}
+        Đã có tài khoản?{' '}
         <Link
           href="/login"
           underline="hover"
@@ -142,7 +142,7 @@ const RightForm: React.FC<RightFormProps> = ({
             }
           }}
         >
-          Sign in
+          Đăng nhập
         </Link>
       </Typography>
 
@@ -181,7 +181,7 @@ const RightForm: React.FC<RightFormProps> = ({
 
         <TextField
           fullWidth
-          label="Password"
+          label="Mật khẩu"
           type={showPassword ? 'text' : 'password'}
           variant="filled"
           margin="normal"
@@ -230,7 +230,7 @@ const RightForm: React.FC<RightFormProps> = ({
 
         <TextField
           fullWidth
-          label="Confirm Password"
+          label="Xác nhận mật khẩu"
           type={showConfirmPassword ? 'text' : 'password'}
           variant="filled"
           margin="normal"
@@ -327,7 +327,7 @@ const RightForm: React.FC<RightFormProps> = ({
           },
         }}
       >
-        Sign up
+        Đăng ký
       </Button>
 
       <Divider
@@ -343,7 +343,7 @@ const RightForm: React.FC<RightFormProps> = ({
           }
         }}
       >
-        OR
+        HOẶC
       </Divider>
 
       <Button
@@ -368,7 +368,7 @@ const RightForm: React.FC<RightFormProps> = ({
           }
         }}
       >
-        Sign up with Google
+        Đăng ký với Google
       </Button>
     </Box>
   );

@@ -192,7 +192,7 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
                 formData.append('files', selectedFile.file);
             });
             
-            formData.append('publisher', 'abc');
+           // formData.append('publisher', 'abc');
             
             book.documentTypeIds.forEach(id => 
                 formData.append('documentTypeIds', id.toString())
@@ -294,7 +294,7 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
                                         <CloudUploadIcon fontSize="large" color="action" sx={{ mb: 1 }} />
                                         <Typography variant="body2">Click to upload cover image</Typography>
                                         <Typography variant="caption" color="textSecondary">
-                                            *.jpeg, *.jpg, *.png (max 100KB)
+                                            *.jpeg, *.jpg, *.png 
                                         </Typography>
                                     </>
                                 )}
@@ -421,7 +421,7 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
                     <Box width="60%">
                         <TextField
                             fullWidth
-                            label="Title *"
+                            label="Title"
                             name="title"
                             value={book.title}
                             onChange={handleChange}
@@ -446,7 +446,7 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
 
                         <TextField
                             fullWidth
-                            label="Author *"
+                            label="Author"
                             name="author"
                             value={book.author}
                             onChange={handleChange}
