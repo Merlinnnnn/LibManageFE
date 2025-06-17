@@ -235,9 +235,9 @@ const Home: React.FC = () => {
   const theme = useTheme();
   const { checkTokenValidity } = useAuth();
 
-  useEffect(() => {
-    checkTokenValidity();
-  }, []);
+  // useEffect(() => {
+  //   checkTokenValidity();
+  // }, []);
 
   return (
     <Box sx={{ 
