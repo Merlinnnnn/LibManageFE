@@ -49,6 +49,20 @@ interface User {
     roles?: string[];
 }
 
+// Hàm lấy quyền cao nhất
+function getHighestRole(roles?: string[]): string {
+    if (!roles || roles.length === 0) return 'user';
+    if (roles.includes('ADMIN')) return 'admin';
+    if (roles.includes('MANAGER')) return 'manager';
+    return 'user';
+}
+
+// Hàm capitalize cho hiển thị
+function capitalizeRole(role: string): string {
+    if (!role) return '';
+    return role.charAt(0).toUpperCase() + role.slice(1);
+}
+
 const NewStudentsTable: React.FC = () => {
     const theme = useTheme();
     const [students, setStudents] = useState<User[]>([]);
@@ -70,6 +84,13 @@ const NewStudentsTable: React.FC = () => {
     const [openSnackbar, setOpenSnackbar] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
     const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+
+    const [actionLoading, setActionLoading] = useState(false);
+
+    // State cho cập nhật role
+    const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+    const [roleDialogUser, setRoleDialogUser] = useState<User | null>(null);
+    const [roleDialogNewRole, setRoleDialogNewRole] = useState<string>('user');
 
     useEffect(() => {
         // Lấy role từ localStorage
@@ -93,7 +114,8 @@ const NewStudentsTable: React.FC = () => {
 
     useEffect(() => {
         fetchStudents();
-    }, [selectedRole]);
+        // eslint-disable-next-line
+    }, []); // chỉ gọi 1 lần khi mount
 
     useEffect(() => {
         if (selectedUsers.length === 0) {
@@ -115,10 +137,12 @@ const NewStudentsTable: React.FC = () => {
         if (statusFilter !== 'ALL') {
             filtered = filtered.filter(student => statusFilter === 'ACTIVE' ? student.isActive === 'ACTIVE' : student.isActive === 'LOCKED');
         }
-        if (selectedRole === 'manager') {
-            filtered = filtered.filter(student => student.roles && student.roles.includes('MANAGER'));
+        if (selectedRole === 'admin') {
+            filtered = filtered.filter(student => getHighestRole(student.roles) === 'admin');
+        } else if (selectedRole === 'manager') {
+            filtered = filtered.filter(student => getHighestRole(student.roles) === 'manager');
         } else if (selectedRole === 'user') {
-            filtered = filtered.filter(student => !student.roles || !student.roles.includes('MANAGER'));
+            filtered = filtered.filter(student => getHighestRole(student.roles) === 'user');
         }
         setFilteredStudents(filtered);
     }, [searchQuery, students, statusFilter, selectedRole]);
@@ -184,6 +208,7 @@ const NewStudentsTable: React.FC = () => {
                 "content": notificationContent
             };
             try {
+                setActionLoading(true);
                 const response = await apiService.post(`/api/v1/notifications`, payload);
                 setSnackbarMessage('Thông báo đã được gửi thành công!');
                 setSnackbarSeverity('success');
@@ -194,6 +219,8 @@ const NewStudentsTable: React.FC = () => {
                 setSnackbarMessage('Có lỗi xảy ra khi gửi thông báo');
                 setSnackbarSeverity('error');
                 setOpenSnackbar(true);
+            } finally {
+                setActionLoading(false);
             }
         }
     };
@@ -224,21 +251,25 @@ const NewStudentsTable: React.FC = () => {
     const handleDeleteUser = async (userId: string) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa người dùng này?')) return;
         try {
+            setActionLoading(true);
             await apiService.delete(`/api/v1/users/${userId}`);
             setSnackbarMessage('Xóa người dùng thành công!');
             setSnackbarSeverity('success');
             setOpenSnackbar(true);
-            fetchStudents();
+            fetchStudents(); // chỉ fetch lại sau khi xóa
         } catch (error) {
             setSnackbarMessage('Có lỗi xảy ra khi xóa người dùng');
             setSnackbarSeverity('error');
             setOpenSnackbar(true);
+        } finally {
+            setActionLoading(false);
         }
     };
 
     // Khóa/mở khóa user
     const handleToggleLockUser = async (userId: string, isLocked: boolean) => {
         try {
+            setActionLoading(true);
             if (isLocked) {
                 // Mở khóa tài khoản
                 await apiService.patch(`/api/v1/users/${userId}/unlock`);
@@ -250,11 +281,13 @@ const NewStudentsTable: React.FC = () => {
             }
             setSnackbarSeverity('success');
             setOpenSnackbar(true);
-            fetchStudents();
+            fetchStudents(); // chỉ fetch lại sau khi thao tác
         } catch (error) {
             setSnackbarMessage('Có lỗi xảy ra khi cập nhật trạng thái tài khoản');
             setSnackbarSeverity('error');
             setOpenSnackbar(true);
+        } finally {
+            setActionLoading(false);
         }
     };
 
@@ -326,7 +359,8 @@ const NewStudentsTable: React.FC = () => {
                                 }}
                             >
                                 <MenuItem value="user">User</MenuItem>
-                                {isAdmin && <MenuItem value="manager">Manager</MenuItem>}
+                                <MenuItem value="manager">Manager</MenuItem>
+                                <MenuItem value="admin">Admin</MenuItem>
                             </Select>
                         </FormControl>
                     </Grid>
@@ -424,7 +458,26 @@ const NewStudentsTable: React.FC = () => {
                                         <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>{student.lastName}</TableCell>
                                         <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>{student.username}</TableCell>
                                         <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>{student.address}</TableCell>
-                                        <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>{(student.roles && student.roles.length > 0) ? student.roles.join(', ') : 'user'}</TableCell>
+                                        <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>
+                                            {isAdmin ? (
+                                                <Select
+                                                    value={getHighestRole(student.roles)}
+                                                    size="small"
+                                                    onChange={(e) => {
+                                                        setRoleDialogUser(student);
+                                                        setRoleDialogNewRole(e.target.value);
+                                                        setRoleDialogOpen(true);
+                                                    }}
+                                                    sx={{ minWidth: 100, fontWeight: 600, borderRadius: 2 }}
+                                                >
+                                                    <MenuItem value="user">User</MenuItem>
+                                                    <MenuItem value="manager">Manager</MenuItem>
+                                                    <MenuItem value="admin">Admin</MenuItem>
+                                                </Select>
+                                            ) : (
+                                                capitalizeRole(getHighestRole(student.roles))
+                                            )}
+                                        </TableCell>
                                         <TableCell sx={{ fontSize: 15, px: 2, py: 1.5 }}>
                                             {student.isActive === 'LOCKED' ? (
                                                 <Chip label="Đã khóa" color="error" size="small" sx={{ borderRadius: 2, fontSize: 14, height: 24 }} />
@@ -444,11 +497,12 @@ const NewStudentsTable: React.FC = () => {
                                                             backgroundColor: 'rgba(0, 0, 0, 0.04)'
                                                         }
                                                     }}
+                                                    disabled={actionLoading}
                                                 >
                                                     <EmailIcon />
                                                 </IconButton>
                                             </Tooltip>
-                                            {isAdmin && (
+                                            {isAdmin && getHighestRole(student.roles) !== 'admin' && (
                                                 <Tooltip title={student.isActive === 'LOCKED' ? 'Mở khóa người dùng' : 'Khóa người dùng'}>
                                                     <IconButton
                                                         color={student.isActive === 'LOCKED' ? 'success' : 'warning'}
@@ -460,6 +514,7 @@ const NewStudentsTable: React.FC = () => {
                                                             }
                                                         }}
                                                         onClick={() => handleToggleLockUser(student.userId, student.isActive === 'LOCKED')}
+                                                        disabled={actionLoading}
                                                     >
                                                         {student.isActive === 'LOCKED' ? <LockOpenIcon /> : <LockIcon />}
                                                     </IconButton>
@@ -563,8 +618,50 @@ const NewStudentsTable: React.FC = () => {
                             borderRadius: 2,
                             textTransform: 'none'
                         }}
+                        disabled={actionLoading}
                     >
                         Send
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Dialog xác nhận đổi role */}
+            <Dialog open={roleDialogOpen} onClose={() => setRoleDialogOpen(false)}>
+                <DialogTitle>Xác nhận thay đổi quyền</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Bạn có chắc chắn muốn chuyển quyền của <b>{roleDialogUser?.username}</b> thành <b>{capitalizeRole(roleDialogNewRole)}</b>?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setRoleDialogOpen(false)} color="primary">Hủy</Button>
+                    <Button
+                        onClick={async () => {
+                            if (!roleDialogUser) return;
+                            setActionLoading(true);
+                            try {
+                                await apiService.post('/api/v1/roles/user/assignrole', {
+                                    userId: roleDialogUser.userId,
+                                    roles: [roleDialogNewRole.toUpperCase()]
+                                });
+                                setSnackbarMessage('Cập nhật quyền thành công!');
+                                setSnackbarSeverity('success');
+                                setOpenSnackbar(true);
+                                setRoleDialogOpen(false);
+                                fetchStudents();
+                            } catch (error) {
+                                setSnackbarMessage('Có lỗi xảy ra khi cập nhật quyền');
+                                setSnackbarSeverity('error');
+                                setOpenSnackbar(true);
+                            } finally {
+                                setActionLoading(false);
+                            }
+                        }}
+                        color="primary"
+                        variant="contained"
+                        disabled={actionLoading}
+                    >
+                        Xác nhận
                     </Button>
                 </DialogActions>
             </Dialog>

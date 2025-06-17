@@ -8,6 +8,7 @@ import AssignmentReturnIcon from '@mui/icons-material/AssignmentReturn';
 import QrCodeIcon from '@mui/icons-material/QrCode';
 import apiService from '@/app/untils/api';
 import { useRouter } from 'next/navigation';
+import { API_BASE_URL } from '@/app/untils/apiConfig';
 
 interface Book {
   transactionId: number;
@@ -181,7 +182,7 @@ const HardBooksHistory = () => {
       setPayingId(book.transactionId);
       setError(null);
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`http://localhost:8009/api/v1/vnpay/submitOrder/${book.transactionId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/vnpay/submitOrder/${book.transactionId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

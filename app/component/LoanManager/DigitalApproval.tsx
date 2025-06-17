@@ -70,9 +70,9 @@ interface ApiResponse {
 const getStatusLabel = (status: string) => {
   switch (status) {
     case 'APPROVED_BY_AI':
-      return 'Đã duyệt bởi AI';
+      return 'Đã duyệt bởi hệ thống';
     case 'REJECTED_BY_AI':
-      return 'Từ chối bởi AI';
+      return 'Từ chối bởi hệ thống';
     default:
       return status;
   }

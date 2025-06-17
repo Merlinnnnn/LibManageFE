@@ -50,6 +50,8 @@ const useWebSocket = (onMessageReceived) => {
     const stompClient = new Client({
       webSocketFactory: () => new SockJS(wsUrl),
       reconnectDelay: 5000,
+      heartbeatIncoming: 10000,
+      heartbeatOutgoing: 10000,
       debug: (str) => console.log('[STOMP]', str),
     });
 

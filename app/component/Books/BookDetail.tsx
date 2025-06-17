@@ -25,6 +25,30 @@ interface DocumentType {
     description: string;
 }
 
+interface DigitalDocument {
+    digitalDocumentId: number;
+    documentName: string;
+    author: string;
+    publisher: string;
+    description: string;
+    coverImage: string | null;
+    uploads: any[];
+}
+
+interface PhysicalDocument {
+    physicalDocumentId: number;
+    documentName: string;
+    author: string;
+    publisher: string;
+    description: string;
+    coverImage: string | null;
+    isbn: string;
+    quantity: number;
+    borrowedCount: number;
+    unavailableCount: number;
+    availableCopies: number;
+}
+
 interface Book {
     documentId: number;
     documentName: string;
@@ -43,10 +67,13 @@ interface Book {
     documentLink: string;
     documentTypes: DocumentType[];
     coverImage: string;
+    documentCategory: string;
+    digitalDocument?: DigitalDocument;
+    physicalDocument?: PhysicalDocument;
 }
 
 const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
-    const [book, setBook] = useState<any>(null);
+    const [book, setBook] = useState<Book | null>(null);
     const [isFavorite, setIsFavorite] = useState<boolean>(false);
     const [isBorrowed, setIsBorrowed] = useState<boolean>(false);
     const [confirmDialogOpen, setConfirmDialogOpen] = useState<boolean>(false);
@@ -54,6 +81,7 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
     const [snackbarMessage, setSnackbarMessage] = useState<string>('');
     const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
     const [loading, setLoading] = useState(false);
+    const [borrowType, setBorrowType] = useState<'physical' | 'digital' | null>(null);
 
     const showNotification = (type: 'success' | 'error', message: string) => {
         setSnackbarSeverity(type);
@@ -72,7 +100,7 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
                 .then((response: any) => {
                     const data = response.data as any;
                     if (data.code === 1000) {
-                        setBook(data.data);
+                        setBook(data.data as Book);
                     }
                 })
                 .finally(() => setLoading(false));
@@ -142,27 +170,40 @@ const BookDetail: React.FC<BookDetailProps> = ({ id, open, onClose }) => {
 
     const handleConfirmLoan = async () => {
         try {
-            const response = await apiService.post(`/api/v1/loans`, {
-                documentId: id,
-            });
-
-            if (response.status === 200) {
-                setIsBorrowed(true);
-                showNotification('success', 'Đã gửi yêu cầu mượn sách');
+            if (!book) {
+                showNotification('error', 'Không tìm thấy thông tin sách!');
+                setConfirmDialogOpen(false);
+                return;
             }
-            else if (response.status === 3005) {
-                console.log('abc')
+            if (book.documentCategory === 'BOTH' && !borrowType) {
+                showNotification('error', 'Vui lòng chọn loại sách muốn mượn!');
+                return;
             }
-            else {
-                console.log('Error requesting loan');
+            if (book.documentCategory === 'DIGITAL' || (book.documentCategory === 'BOTH' && borrowType === 'digital')) {
+                if (book.digitalDocument?.digitalDocumentId) {
+                    const payload = { digitalId: book.digitalDocument.digitalDocumentId };
+                    await apiService.post('/api/v1/access-requests', payload);
+                    setIsBorrowed(true);
+                    showNotification('success', 'Yêu cầu mượn sách điện tử đã được gửi thành công!');
+                } else {
+                    showNotification('error', 'Không tìm thấy mã sách điện tử!');
+                }
+            } else if (book.documentCategory === 'PHYSICAL' || (book.documentCategory === 'BOTH' && borrowType === 'physical')) {
+                if (book.physicalDocument?.physicalDocumentId) {
+                    const payload = { physicalDocId: book.physicalDocument.physicalDocumentId };
+                    await apiService.post('/api/v1/loans', payload);
+                    setIsBorrowed(true);
+                    showNotification('success', 'Yêu cầu mượn sách vật lý đã được gửi thành công!');
+                } else {
+                    showNotification('error', 'Không tìm thấy mã sách vật lý!');
+                }
             }
-        } catch (error) {
-            const typedError = error as { response?: { data?: { message?: string } } };
-            console.log('Error requesting loan:', typedError.response?.data?.message || 'Unknown error');
-            showNotification('error', typedError.response?.data?.message || 'Error requesting loan');
-        }
-        finally {
+        } catch (error: any) {
+            const errorMessage = error?.response?.data?.message || 'Có lỗi xảy ra khi gửi yêu cầu mượn sách!';
+            showNotification('error', errorMessage);
+        } finally {
             setConfirmDialogOpen(false);
+            setBorrowType(null);
         }
     };
 

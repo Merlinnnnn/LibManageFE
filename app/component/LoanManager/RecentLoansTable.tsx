@@ -48,6 +48,7 @@ interface Loan {
     returnCondition: string | null;
     fineAmount?: number;
     paymentStatus?: string;
+    librarianName?: string;
 }
 
 interface ApiResponse {
@@ -369,6 +370,7 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR, refreshTr
                         <TableRow sx={{ backgroundColor: theme.palette.grey[200] }}>
                             <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Tên sách</TableCell>
                             <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Người mượn</TableCell>
+                            <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Người duyệt</TableCell>
                             <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Ngày mượn</TableCell>
                             <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Hạn trả</TableCell>
                             <TableCell sx={{ fontWeight: 600, px: 2, py: 1.5, borderBottom: `2px solid ${theme.palette.divider}` }}>Trạng thái</TableCell>
@@ -394,6 +396,7 @@ const RecentLoansTable: React.FC<RecentLoansTableProps> = ({ onScanQR, refreshTr
                                         <TableRow key={loan.transactionId}>
                                             <TableCell>{loan.documentName}</TableCell>
                                             <TableCell>{loan.username}</TableCell>
+                                            <TableCell>{loan.librarianName || '-'}</TableCell>
                                             <TableCell>{new Date(loan.loanDate).toLocaleDateString()}</TableCell>
                                             <TableCell>
                                                 {loan.dueDate ? new Date(loan.dueDate).toLocaleDateString() : '-'}

@@ -54,6 +54,7 @@ interface DigitalDocument {
     description: string;
     coverImage: string | null;
     uploads: Upload[];
+    visibilityStatus?: string;
 }
 
 interface FavoriteRes {
@@ -267,7 +268,7 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books, onTitleClick }) => {
 
     return (
         <>
-            <Card sx={{ display: 'flex', boxShadow: 3, p: 2, width: '100%', borderRadius: '20px', overflow: 'hidden', position: 'relative'}}>
+            <Card sx={{ display: 'flex', boxShadow: 3, p: 2, width: '100%', borderRadius: '20px', overflow: 'hidden', position: 'relative', minHeight: 260, height: '100%' }}>
                 {/* Ảnh bìa */}
                 <CardMedia
                     component="img"
@@ -276,7 +277,6 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books, onTitleClick }) => {
                         height: 200, 
                         objectFit: 'cover', 
                         bgcolor: '#f5f5f5',
-                        //border: '1px solid black',
                         borderRadius: '20px'
                     }}
                     image={book.coverImage || '/no-cover.png'}
@@ -284,7 +284,14 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books, onTitleClick }) => {
                 />
                 
                 {/* Nội dung sách */}
-                <CardContent sx={{ flex: 1 }}>
+                <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', minHeight: 200, justifyContent: 'space-between' }}>
+                    {/* Tag loại sách */}
+                    <Chip
+                        label={book.documentCategory === 'PHYSICAL' ? 'Sách giấy' : book.documentCategory === 'DIGITAL' ? 'Sách điện tử' : 'Sách giấy & điện tử'}
+                        color={book.documentCategory === 'PHYSICAL' ? 'primary' : book.documentCategory === 'DIGITAL' ? 'success' : 'secondary'}
+                        size="small"
+                        sx={{ mb: 1, fontWeight: 600, borderRadius: 2 }}
+                    />
                     <Box display="flex" justifyContent="space-between" alignItems="center">
                         <Typography 
                             variant="h6" 
@@ -305,10 +312,21 @@ const BookInfo: React.FC<BookInfoProps> = ({ id, books, onTitleClick }) => {
                     <Typography variant="body2" color="text.secondary">
                         bởi {book.author}
                     </Typography>
-                    <Typography variant="body2">Nhà xuất bản: {book.publisher}</Typography>
-                    <Typography variant="body2">Ngày xuất bản: {book.publishedDate || 'N/A'}</Typography>
-                    <Typography variant="body2">Ngôn ngữ: {book.language || 'N/A'}</Typography>
-                    <Typography variant="body2">Có sẵn: {book.quantity} bản</Typography>
+                    {/* Chỉ hiển thị các dòng dưới nếu KHÔNG phải sách điện tử */}
+                    {book.documentCategory !== 'DIGITAL' && (
+                        <>
+                            <Typography variant="body2">Nhà xuất bản: {book.publisher}</Typography>
+                            <Typography variant="body2">Ngày xuất bản: {book.publishedDate || 'N/A'}</Typography>
+                            <Typography variant="body2">Ngôn ngữ: {book.language || 'N/A'}</Typography>
+                            <Typography variant="body2">Có sẵn: {book.quantity} bản</Typography>
+                        </>
+                    )}
+                    {/* Nếu là sách điện tử, hiển thị trạng thái public/private */}
+                    {book.documentCategory === 'DIGITAL' && (
+                        <Typography variant="body2">
+                            Trạng thái: {(book.digitalDocument as any)?.visibilityStatus === 'PUBLIC' ? 'Public' : 'Private'}
+                        </Typography>
+                    )}
                     
                     {/* Mô tả sách */}
                     <Box mt={1}>

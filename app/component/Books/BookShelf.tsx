@@ -757,10 +757,10 @@ export default function BookShelf() {
                                 Tác giả: {book.author}
                               </Typography>
                               <Chip
-                                label={book.documentCategory}
+                                label={book.documentCategory === 'PHYSICAL' ? 'Sách giấy' : book.documentCategory === 'DIGITAL' ? 'Sách điện tử' : 'Sách giấy & điện tử'}
+                                color={book.documentCategory === 'PHYSICAL' ? 'primary' : book.documentCategory === 'DIGITAL' ? 'success' : 'secondary'}
                                 size="small"
-                                color="primary"
-                                sx={{ mt: 1, height: 24 }}
+                                sx={{ mb: 1, fontWeight: 600, borderRadius: 2 }}
                               />
                             </Box>
                           </Box>
@@ -893,10 +893,10 @@ export default function BookShelf() {
                                 Tác giả: {book.author}
                               </Typography>
                               <Chip
-                                label={book.documentCategory}
+                                label={book.documentCategory === 'PHYSICAL' ? 'Sách giấy' : book.documentCategory === 'DIGITAL' ? 'Sách điện tử' : 'Sách giấy & điện tử'}
+                                color={book.documentCategory === 'PHYSICAL' ? 'primary' : book.documentCategory === 'DIGITAL' ? 'success' : 'secondary'}
                                 size="small"
-                                color="primary"
-                                sx={{ mt: 1, height: 24 }}
+                                sx={{ mb: 1, fontWeight: 600, borderRadius: 2 }}
                               />
                             </Box>
                           </Box>
@@ -924,17 +924,18 @@ export default function BookShelf() {
           {/* Main Content */}
           <Grid container spacing={4}>
             {/* Filters Sidebar */}
-            <Grid item xs={12} md={2.5}>
+            <Grid item xs={12} md={3} order={{ xs: 1, md: 1 }}>
               <Paper id="filter-section" sx={{
-                p: 3,
+                p: { xs: 1.5, sm: 2, md: 3 },
                 borderRadius: 3,
-                position: 'sticky',
-                top: { xs: 20, sm: 28 },
+                position: { md: 'sticky' },
+                top: { xs: 0, sm: 20, md: 28 },
                 boxShadow: 3,
-                maxHeight: 'calc(100vh - 100px)',
-                overflowY: 'auto',
-                minWidth: 320,
+                maxHeight: { md: 'calc(100vh - 100px)' },
+                overflowY: { md: 'auto' },
+                minWidth: { xs: 'unset', md: 220, lg: 320 },
                 width: '100%',
+                mb: { xs: 2, md: 0 },
               }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                   <FilterListIcon color="primary" sx={{ mr: 1 }} />
@@ -1010,9 +1011,9 @@ export default function BookShelf() {
             </Grid>
 
             {/* Books List */}
-            <Grid item xs={12} md={9.5}>
+            <Grid item xs={12} md={9} order={{ xs: 2, md: 2 }}>
               <Paper id="book-list" sx={{
-                p: { xs: 0.5, sm: 1.5, md: 2 },
+                p: { xs: 1, sm: 1.5, md: 2 },
                 borderRadius: 3,
                 minHeight: '60vh',
                 boxShadow: 3,

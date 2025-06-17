@@ -192,7 +192,7 @@ const UploadBookDialog: React.FC<UploadBookDialogProps> = ({
                 formData.append('files', selectedFile.file);
             });
             
-           // formData.append('publisher', 'abc');
+            formData.append('publisher', 'abc');
             
             book.documentTypeIds.forEach(id => 
                 formData.append('documentTypeIds', id.toString())

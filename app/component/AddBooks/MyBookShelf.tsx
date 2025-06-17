@@ -134,6 +134,7 @@ const getStatusColor = (status: string) => {
         case 'PENDING':
             return 'warning';
         case 'REJECTED':
+        case 'REJECTED_BY_AI':
             return 'error';
         default:
             return 'default';
@@ -148,6 +149,8 @@ const getStatusLabel = (status: string) => {
         case 'PENDING':
             return 'Đang chờ';
         case 'REJECTED':
+            return 'Từ chối';
+        case 'REJECTED_BY_AI':
             return 'Từ chối';
         default:
             return status;
@@ -583,17 +586,19 @@ const MyBookShelf: React.FC = () => {
                     {/* Main Content */}
                     <Grid container spacing={4}>
                         {/* Filters Sidebar */}
-                        <Grid item xs={12} md={2.5}>
+                        <Grid item xs={12} md={3}>
                             <Paper sx={{ 
-                                p: 3,
+                                p: { xs: 1.5, sm: 2, md: 3 },
                                 borderRadius: 3,
-                                position: 'sticky',
-                                top: { xs: 20, sm: 28 },
+                                position: { md: 'sticky' },
+                                top: { xs: 0, sm: 20, md: 28 },
                                 boxShadow: 3,
-                                maxHeight: 'calc(100vh - 100px)',
-                                overflowY: 'auto',
-                                minWidth: 320,
+                                maxHeight: { md: 'calc(100vh - 100px)' },
+                                overflowY: { md: 'auto' },
+                                minWidth: { xs: 0, sm: 0, md: 220, lg: 320 },
                                 width: '100%',
+                                mb: { xs: 3, md: 0 },
+                                boxSizing: 'border-box',
                             }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                                     <FilterListIcon color="primary" sx={{ mr: 1 }} />
@@ -669,14 +674,15 @@ const MyBookShelf: React.FC = () => {
                         </Grid>
 
                         {/* Books List */}
-                        <Grid item xs={12} md={9.5}>
+                        <Grid item xs={12} md={9}>
                             <Paper sx={{ 
-                                p: { xs: 0.5, sm: 1.5, md: 2 },
+                                p: { xs: 1, sm: 1.5, md: 2 },
                                 borderRadius: 3,
                                 minHeight: '60vh',
                                 boxShadow: 3,
                                 width: '100%',
                                 maxWidth: '100%',
+                                mt: { xs: 2, md: 0 },
                             }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                                     <Typography variant="h5" sx={{ 
@@ -767,11 +773,12 @@ const MyBookShelf: React.FC = () => {
                                                                 <Card sx={{ 
                                                                     display: 'flex', 
                                                                     boxShadow: 3, 
-                                                                    p: 2, 
+                                                                    p: { xs: 1, sm: 2 },
                                                                     width: '100%', 
                                                                     borderRadius: 4,
                                                                     transition: 'transform 0.3s ease-in-out',
                                                                     height: '100%',
+                                                                    minHeight: 180,
                                                                     '&:hover': {
                                                                         transform: 'translateY(-5px)',
                                                                         boxShadow: 6
@@ -780,8 +787,8 @@ const MyBookShelf: React.FC = () => {
                                                                     <CardMedia
                                                                         component="img"
                                                                         sx={{
-                                                                            width: 150,
-                                                                            height: 200,
+                                                                            width: { xs: 90, sm: 120, md: 150 },
+                                                                            height: { xs: 120, sm: 160, md: 200 },
                                                                             objectFit: 'cover',
                                                                             bgcolor: '#f5f5f5',
                                                                             border: '1px solid black',
@@ -790,61 +797,55 @@ const MyBookShelf: React.FC = () => {
                                                                         image={book.coverImage || 'https://th.bing.com/th/id/OIP.cB5B7jK44BU3VNazD-SqYgHaHa?rs=1&pid=ImgDetMain'}
                                                                         alt={book.title}
                                                                     />
-
-                                                                    <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                                            <Box>
-                                                                                <Typography variant="h6" fontWeight="bold">
-                                                                                    {book.title}
-                                                                                </Typography>
-                                                                                <Typography variant="body2" color="text.secondary">
-                                                                                    by {book.author}
-                                                                                </Typography>
-                                                                            </Box>
-                                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                                                <Chip
-                                                                                    label={getStatusLabel(book.approvalStatus)}
-                                                                                    color={getStatusColor(book.approvalStatus)}
-                                                                                    size="small"
-                                                                                    sx={{ 
+                                                                    <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: { xs: 1, sm: 2 } }}>
+                                                                        {/* Nút ở trên */}
+                                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, flexWrap: 'wrap' }}>
+                                                                            <Chip
+                                                                                label={getStatusLabel(book.approvalStatus)}
+                                                                                color={getStatusColor(book.approvalStatus)}
+                                                                                size="small"
+                                                                                sx={{ 
+                                                                                    borderRadius: '10px',
+                                                                                    fontWeight: 500
+                                                                                }}
+                                                                            />
+                                                                            {!book.isPublic && (
+                                                                                <IconButton
+                                                                                    onClick={() => handleAccessListClick(book.id)}
+                                                                                    color="primary"
+                                                                                    sx={{
+                                                                                        backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                                                                                        '&:hover': {
+                                                                                            backgroundColor: 'rgba(25, 118, 210, 0.12)',
+                                                                                        },
                                                                                         borderRadius: '10px',
-                                                                                        fontWeight: 500
+                                                                                        p: 0.5
                                                                                     }}
-                                                                                />
-                                                                                {!book.isPublic && (
-                                                                                    <IconButton
-                                                                                        onClick={() => handleAccessListClick(book.id)}
-                                                                                        color="primary"
-                                                                                        sx={{
-                                                                                            backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                                                                                            '&:hover': {
-                                                                                                backgroundColor: 'rgba(25, 118, 210, 0.12)',
-                                                                                            },
-                                                                                            borderRadius: '10px'
-                                                                                        }}
-                                                                                    >
-                                                                                        <ListIcon />
-                                                                                    </IconButton>
-                                                                                )}
-                                                                                <Typography variant="body2" sx={{ mr: 1 }}>
-                                                                                    {book.isPublic ? 'Public' : 'Private'}
-                                                                                </Typography>
-                                                                                <Switch
-                                                                                    checked={book.isPublic}
-                                                                                    onChange={() => handleTogglePublic(book)}
-                                                                                    color={book.isPublic ? 'success' : 'error'}
-                                                                                />
-                                                                            </Box>
+                                                                                >
+                                                                                    <ListIcon />
+                                                                                </IconButton>
+                                                                            )}
+                                                                            <Typography variant="body2" sx={{ mr: 1 }}>
+                                                                                {book.isPublic ? 'Public' : 'Private'}
+                                                                            </Typography>
+                                                                            <Switch
+                                                                                checked={book.isPublic}
+                                                                                onChange={() => handleTogglePublic(book)}
+                                                                                color={book.isPublic ? 'success' : 'error'}
+                                                                                sx={{ ml: 1 }}
+                                                                            />
                                                                         </Box>
-
-                                                                        <Typography variant="body2">Uploaded: {book.uploadDate}</Typography>
-                                                                        <Typography variant="body2">Size: {book.fileSize}</Typography>
-
-                                                                        <Box mt={1}>
-                                                                            <Typography variant="body2">Courses: {book.courses.join(', ')}</Typography>
-                                                                        </Box>
-
-                                                                        <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                                                                        {/* Tên sách */}
+                                                                        <Typography variant="h6" fontWeight="bold" sx={{ fontSize: { xs: '1rem', sm: '1.2rem' }, mb: 0.5 }}>
+                                                                            {book.title}
+                                                                        </Typography>
+                                                                        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                                                                            by {book.author}
+                                                                        </Typography>
+                                                                        <Typography variant="body2" sx={{ mb: 0.5 }}>Uploaded: {book.uploadDate}</Typography>
+                                                                        <Typography variant="body2" sx={{ mb: 0.5 }}>Size: {book.fileSize}</Typography>
+                                                                        <Typography variant="body2" sx={{ mb: 0.5 }}>Courses: {book.courses.join(', ')}</Typography>
+                                                                        <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                                                                             {book.wordFile && (
                                                                                 <Chip
                                                                                     icon={<DescriptionIcon />}

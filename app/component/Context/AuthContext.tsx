@@ -3,6 +3,7 @@ import apiService from '../../untils/api';
 import { useRouter } from 'next/navigation';
 import {jwtDecode} from 'jwt-decode';  // Import thư viện jwt-decode
 import { AxiosError } from 'axios'; // Import AxiosError
+import { API_BASE_URL } from '@/app/untils/apiConfig';
 
 // Định nghĩa interface cho response của API
 interface LoginResponse {
@@ -155,7 +156,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const loginGoogle = async () => {
-    const googleLoginUrl = 'http://localhost:8009/oauth2/authorization/google';
+    const googleLoginUrl = `${API_BASE_URL}/oauth2/authorization/google`;
     const width = 500;
     const height = 600;
     const left = window.screenX + (window.outerWidth - width) / 2;
